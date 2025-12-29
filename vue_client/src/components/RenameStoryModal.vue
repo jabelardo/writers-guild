@@ -1,6 +1,6 @@
 <template>
-  <Modal title="Rename Story" :close-on-overlay-click="false" @close="$emit('close')">
-    <div class="rename-content">
+  <Modal title="Edit Story" :close-on-overlay-click="false" @close="$emit('close')">
+    <div class="edit-story-content">
       <div class="form-group">
         <label for="storyTitle">Story Title *</label>
         <input
@@ -10,8 +10,22 @@
           type="text"
           class="text-input"
           placeholder="Enter story title..."
-          @keydown.enter="renameStory"
+          @keydown.enter.prevent
         />
+      </div>
+
+      <div class="form-group">
+        <label for="storyScenario">Story Scenario</label>
+        <textarea
+          id="storyScenario"
+          v-model="storyScenario"
+          class="textarea-input"
+          placeholder="Set a scenario for this story. This describes the initial situation, setting, or premise..."
+          rows="4"
+        ></textarea>
+        <p class="form-help">
+          When set, the story scenario replaces character-specific scenarios in the AI prompt.
+        </p>
       </div>
     </div>
 
@@ -21,11 +35,11 @@
       </button>
       <button
         class="btn btn-primary"
-        :disabled="!storyTitle.trim() || renaming"
-        @click="renameStory"
+        :disabled="!storyTitle.trim() || saving"
+        @click="saveStory"
       >
         <i class="fas fa-save"></i>
-        {{ renaming ? 'Saving...' : 'Rename' }}
+        {{ saving ? 'Saving...' : 'Save' }}
       </button>
     </template>
   </Modal>
@@ -48,7 +62,8 @@ const emit = defineEmits(['close', 'updated'])
 
 const toast = useToast()
 const storyTitle = ref(props.story.title || '')
-const renaming = ref(false)
+const storyScenario = ref(props.story.scenario || '')
+const saving = ref(false)
 const titleInput = ref(null)
 
 onMounted(() => {
@@ -60,30 +75,31 @@ onMounted(() => {
   }
 })
 
-async function renameStory() {
-  if (!storyTitle.value.trim() || renaming.value) return
+async function saveStory() {
+  if (!storyTitle.value.trim() || saving.value) return
 
   try {
-    renaming.value = true
+    saving.value = true
 
     await storiesAPI.updateMetadata(props.story.id, {
-      title: storyTitle.value.trim()
+      title: storyTitle.value.trim(),
+      scenario: storyScenario.value.trim()
     })
 
-    toast.success('Story renamed successfully')
+    toast.success('Story updated successfully')
     emit('updated')
     emit('close')
   } catch (error) {
-    console.error('Failed to rename story:', error)
-    toast.error('Failed to rename story: ' + error.message)
+    console.error('Failed to update story:', error)
+    toast.error('Failed to update story: ' + error.message)
   } finally {
-    renaming.value = false
+    saving.value = false
   }
 }
 </script>
 
 <style scoped>
-.rename-content {
+.edit-story-content {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -116,5 +132,30 @@ async function renameStory() {
 
 .text-input:focus {
   border-color: var(--accent-primary);
+}
+
+.textarea-input {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 100px;
+  outline: none;
+}
+
+.textarea-input:focus {
+  border-color: var(--accent-primary);
+}
+
+.form-help {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 0;
 }
 </style>

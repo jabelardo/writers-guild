@@ -7,7 +7,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 /**
  * Initialize the SQLite database with schema
@@ -93,6 +93,7 @@ function createAllTables(db) {
       title TEXT NOT NULL,
       description TEXT DEFAULT '',
       content TEXT DEFAULT '',
+      scenario TEXT DEFAULT '',
       word_count INTEGER DEFAULT 0,
       needs_rewrite_prompt INTEGER DEFAULT 0,
       avatar_windows TEXT DEFAULT '[]',
@@ -322,6 +323,15 @@ function migrateSchema(db, fromVersion) {
       `);
 
       console.log('Added story_history tables');
+    }
+
+    // Migration to version 7: Add scenario column to stories
+    if (fromVersion < 7) {
+      console.log('Adding scenario column to stories table...');
+
+      db.exec("ALTER TABLE stories ADD COLUMN scenario TEXT DEFAULT ''");
+
+      console.log('Added scenario column');
     }
 
     db.prepare('UPDATE schema_version SET version = ?').run(SCHEMA_VERSION);

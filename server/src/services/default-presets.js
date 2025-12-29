@@ -7,6 +7,7 @@
  * Default system prompt template with granular placeholders for full customization
  *
  * Available variables:
+ * - has_story_scenario, story_scenario (story-level scenario override)
  * - has_single_character, has_multiple_characters, has_lorebook, has_persona
  * - character.name, character.description, character.personality, character.scenario, character.mes_example
  * - characters (array) - each has: name, description, personality, scenario
@@ -23,14 +24,18 @@
  */
 export const DEFAULT_SYSTEM_PROMPT_TEMPLATE = `You are a creative writing assistant helping to write a novel-style story.
 
-{{#if has_single_character}}
+{{#if has_story_scenario}}
+=== SCENARIO ===
+{{story_scenario}}
+
+{{/if}}{{#if has_single_character}}
 === CHARACTER PROFILE ===
 Name: {{character.name}}
 {{#if character.description}}Description: {{character.description}}
 {{/if}}{{#if character.personality}}Personality: {{character.personality}}
-{{/if}}{{#if character.scenario}}
+{{/if}}{{#unless has_story_scenario}}{{#if character.scenario}}
 Current Scenario: {{character.scenario}}
-{{/if}}{{#if include_dialogue_examples}}{{#if character.mes_example}}
+{{/if}}{{/unless}}{{#if include_dialogue_examples}}{{#if character.mes_example}}
 === DIALOGUE STYLE EXAMPLES ===
 {{character.mes_example}}
 {{/if}}{{/if}}
@@ -89,7 +94,9 @@ export const DEFAULT_PROMPT_TEMPLATES = {
 
   rewriteThirdPerson: "Rewrite the following text to be in third person narrative perspective, using past tense. Assume reference to \"you\" in the original text are meant to reference the user's Persona, if one is provided. Change all verbs to past tense. Maintain the same events, dialogue, and meaning, but from a third-person narrator's viewpoint. Feel free to correct errors in grammar, punctuation, and paragraph formatting. Only return the rewritten text by itself in your response.\n\nText to rewrite:\n\n{{storyContent}}",
 
-  ideate: "Instead of continuing the story, please provide 3-5 creative suggestions for what {{user}} could do next to move this story forward. Consider the characters, setting, and current situation. Format your response as a numbered list of actionable ideas."
+  ideate: "Instead of continuing the story, please provide 3-5 creative suggestions for what {{user}} could do next to move this story forward. Consider the characters, setting, and current situation. Format your response as a numbered list of actionable ideas.",
+
+  storyStarter: "Write the opening 3-5 paragraphs for a new story. Establish the setting, introduce the characters naturally, and create an engaging hook that draws readers in. Focus on vivid scene-setting and character introduction without rushing into action. End at a natural point that invites continuation."
 };
 
 export function getDefaultPresets() {
@@ -142,7 +149,8 @@ export function getDefaultPresets() {
         character: null,
         instruction: null,
         rewriteThirdPerson: null,
-        ideate: null
+        ideate: null,
+        storyStarter: null
       }
     },
   };
@@ -195,7 +203,9 @@ export function createPresetFromSettings(settings) {
       continue: null,
       character: null,
       instruction: null,
-      rewriteThirdPerson: null
+      rewriteThirdPerson: null,
+      ideate: null,
+      storyStarter: null
     }
   };
 }

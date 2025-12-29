@@ -26,7 +26,7 @@
         <button
           class="icon-btn"
           @click="showRenameStory = true"
-          title="Rename Story"
+          title="Edit Story"
         >
           <i class="fas fa-pencil"></i>
         </button>
@@ -92,27 +92,41 @@
 
         <!-- Toolbar Buttons -->
         <div v-else class="toolbar-main-buttons">
-          <button
-            class="btn btn-secondary"
-            :disabled="!story || storyCharacters.length === 0"
-            @click="handleCharacterResponse"
-          >
-            <i class="fas fa-comments"></i> Continue for Character
-          </button>
-          <button
-            class="btn btn-primary"
-            :disabled="!story"
-            @click="handleContinue"
-          >
-            <i class="fas fa-play"></i> Continue
-          </button>
-          <button
-            class="btn btn-secondary"
-            :disabled="!story"
-            @click="showCustomPromptModal = true"
-          >
-            <i class="fas fa-wand-magic-sparkles"></i> Continue with Instruction
-          </button>
+          <!-- Show Story Starter when content is empty -->
+          <template v-if="isStoryEmpty">
+            <button
+              class="btn btn-primary btn-large"
+              :disabled="!story"
+              @click="handleStoryStarter"
+            >
+              <i class="fas fa-rocket"></i> Start Story
+            </button>
+          </template>
+
+          <!-- Show regular continue buttons when content exists -->
+          <template v-else>
+            <button
+              class="btn btn-secondary"
+              :disabled="!story || storyCharacters.length === 0"
+              @click="handleCharacterResponse"
+            >
+              <i class="fas fa-comments"></i> Continue for Character
+            </button>
+            <button
+              class="btn btn-primary"
+              :disabled="!story"
+              @click="handleContinue"
+            >
+              <i class="fas fa-play"></i> Continue
+            </button>
+            <button
+              class="btn btn-secondary"
+              :disabled="!story"
+              @click="showCustomPromptModal = true"
+            >
+              <i class="fas fa-wand-magic-sparkles"></i> Continue with Instruction
+            </button>
+          </template>
           <div class="toolbar-icon-group">
             <button
               class="btn btn-secondary icon-btn"
@@ -273,7 +287,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { storiesAPI, charactersAPI, settingsAPI } from '../services/api'
 import { useToast } from '../composables/useToast'
@@ -338,6 +352,11 @@ const avatarWindows = ref([])
 
 const storyCharacters = ref([])
 const shouldShowReasoning = ref(false) // Setting from server
+
+// Computed: is story content empty?
+const isStoryEmpty = computed(() => {
+  return !content.value || content.value.trim().length === 0
+})
 
 // Auto-save
 let autoSaveTimeout = null
@@ -655,6 +674,115 @@ function handleCharacterSelected(characterId) {
 
 async function handleCustomPrompt(instruction) {
   await generate(true, instruction, null)
+}
+
+async function handleStoryStarter() {
+  if (generating.value) return
+
+  // Create abort controller for cancellation
+  abortController = new AbortController()
+
+  try {
+    generating.value = true
+    generationStatus.value = 'Thinking...'
+    reasoning.value = ''
+    showReasoningPanel.value = false
+
+    let generatedContent = ''
+    let reasoningText = ''
+
+    // Stream generation with abort signal
+    const stream = storiesAPI.storyStarter(props.storyId, abortController.signal)
+
+    for await (const chunk of stream) {
+      // Capture prompts
+      if (chunk.prompts) {
+        lastPrompts.value = {
+          system: chunk.prompts.system || '',
+          user: chunk.prompts.user || ''
+        }
+      }
+
+      // Handle queue status (AI Horde)
+      if (chunk.queueStatus) {
+        const { position, waitTime, finished, faulted } = chunk.queueStatus
+        if (faulted) {
+          generationStatus.value = 'Queue error'
+        } else if (finished) {
+          generationStatus.value = 'Processing...'
+        } else if (position === 0) {
+          generationStatus.value = `Generating... (ETA: ${waitTime}s)`
+        } else {
+          generationStatus.value = `In queue: position ${position} (ETA: ${waitTime}s)`
+        }
+      }
+
+      // Handle reasoning
+      if (chunk.reasoning) {
+        if (!showReasoningPanel.value && shouldShowReasoning.value) {
+          showReasoningPanel.value = true
+        }
+        reasoningText += chunk.reasoning
+        reasoning.value = reasoningText
+      }
+
+      // Handle content
+      if (chunk.content) {
+        if (generationStatus.value === 'Thinking...' || generationStatus.value.includes('queue') || generationStatus.value.includes('Processing')) {
+          generationStatus.value = 'Writing...'
+        }
+
+        generatedContent += chunk.content
+        content.value = generatedContent
+
+        // Auto-scroll editor
+        await nextTick()
+        if (editorRef.value) {
+          editorRef.value.scrollTop = editorRef.value.scrollHeight
+        }
+      }
+
+      if (chunk.finished) {
+        break
+      }
+    }
+
+    // Add two line breaks
+    if (generatedContent) {
+      generatedContent += '\n\n'
+      content.value = generatedContent
+      normalizeTrailingLineBreaks()
+
+      await nextTick()
+      if (editorRef.value) {
+        editorRef.value.selectionStart = generatedContent.length
+        editorRef.value.selectionEnd = generatedContent.length
+        editorRef.value.scrollTop = editorRef.value.scrollHeight
+        editorRef.value.focus()
+      }
+    }
+
+    // Save
+    await saveStory(true)
+    toast.success('Story started!')
+  } catch (error) {
+    if (error.name === 'AbortError' || error.message === 'Generation cancelled') {
+      console.log('Story starter was cancelled by user')
+      toast.info('Generation cancelled')
+    } else {
+      console.error('Story starter error:', error)
+      const errorMessage = error.message || 'Unknown error occurred'
+      await confirm({
+        message: `Story Starter Failed\n\n${errorMessage}`,
+        confirmText: 'OK',
+        cancelText: 'Dismiss',
+        variant: 'danger'
+      })
+    }
+  } finally {
+    generating.value = false
+    abortController = null
+  }
 }
 
 async function generate(isCustom, instruction, characterId) {

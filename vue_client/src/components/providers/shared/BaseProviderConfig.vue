@@ -96,7 +96,8 @@ const localPromptTemplates = computed({
       character: templates.character ?? null,
       instruction: templates.instruction ?? null,
       rewriteThirdPerson: templates.rewriteThirdPerson ?? null,
-      ideate: templates.ideate ?? null
+      ideate: templates.ideate ?? null,
+      storyStarter: templates.storyStarter ?? null
     }
   },
   set(value) {

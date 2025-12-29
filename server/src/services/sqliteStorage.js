@@ -42,7 +42,7 @@ export class SqliteStorageService {
 
       // Stories
       listStories: this.db.prepare(`
-        SELECT id, title, description, created, modified, persona_character_id, config_preset_id, word_count
+        SELECT id, title, description, scenario, created, modified, persona_character_id, config_preset_id, word_count
         FROM stories
         ORDER BY modified DESC
       `),
@@ -54,7 +54,8 @@ export class SqliteStorageService {
       setStoryNeedsRewritePrompt: this.db.prepare('UPDATE stories SET needs_rewrite_prompt = ? WHERE id = ?'),
       updateStoryAvatarWindows: this.db.prepare('UPDATE stories SET avatar_windows = ? WHERE id = ?'),
       updateStoryMetadata: this.db.prepare(`
-        UPDATE stories SET title = @title, description = @description, persona_character_id = @personaCharacterId,
+        UPDATE stories SET title = @title, description = @description, scenario = @scenario,
+                          persona_character_id = @personaCharacterId,
                           config_preset_id = @configPresetId, modified = @modified
         WHERE id = @id
       `),
@@ -302,6 +303,7 @@ export class SqliteStorageService {
         id: row.id,
         title: row.title,
         description: row.description,
+        scenario: row.scenario || '',
         created: row.created,
         modified: row.modified,
         characterIds,
@@ -333,6 +335,7 @@ export class SqliteStorageService {
       id: row.id,
       title: row.title,
       description: row.description,
+      scenario: row.scenario || '',
       content: row.content || '',
       created: row.created,
       modified: row.modified,
@@ -409,6 +412,7 @@ export class SqliteStorageService {
       id: storyId,
       title: updates.title ?? existing.title,
       description: updates.description ?? existing.description,
+      scenario: updates.scenario !== undefined ? updates.scenario : (existing.scenario || ''),
       personaCharacterId: updates.personaCharacterId !== undefined ? updates.personaCharacterId : existing.persona_character_id,
       configPresetId: updates.configPresetId !== undefined ? updates.configPresetId : existing.config_preset_id,
       modified

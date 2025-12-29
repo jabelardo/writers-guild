@@ -214,12 +214,13 @@ router.put('/:id/avatar-windows', asyncHandler(async (req, res) => {
 
 // Update story metadata
 router.put('/:id', asyncHandler(async (req, res) => {
-  const { title, description, configPresetId } = req.body;
+  const { title, description, configPresetId, scenario } = req.body;
   const updates = {};
 
   if (title !== undefined) updates.title = title.trim();
   if (description !== undefined) updates.description = description.trim();
   if (configPresetId !== undefined) updates.configPresetId = configPresetId;
+  if (scenario !== undefined) updates.scenario = scenario.trim();
 
   if (Object.keys(updates).length === 0) {
     throw new AppError('No updates provided', 400);
@@ -963,6 +964,47 @@ router.post('/:id/ideate', asyncHandler(async (req, res) => {
       res.write(`data: ${JSON.stringify({ cancelled: true })}\n\n`);
     } else {
       console.error('[Ideate] Generation error:', error);
+      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+    }
+    res.end();
+  }
+}));
+
+// Story Starter - Generate opening for a fresh story
+router.post('/:id/story-starter', asyncHandler(async (req, res) => {
+  const { id: storyId } = req.params;
+
+  const context = await loadGenerationContext(storyId);
+  const { preset, provider, characterCards, persona } = context;
+
+  setupSSE(res);
+
+  // Create abort controller for cancellation support
+  const abortController = new AbortController();
+  console.log(`[StoryStarter] Starting story opener for story ${storyId}`);
+
+  // Handle client disconnection (for SSE, listen to response close event)
+  res.on('close', () => {
+    if (!res.writableEnded && !abortController.signal.aborted) {
+      console.log('[StoryStarter] Client disconnected, aborting generation');
+      abortController.abort();
+    }
+  });
+
+  // Get userName for template
+  const userName = persona?.name || 'the user';
+
+  try {
+    await streamGeneration(res, provider, preset, context, 'storyStarter', {
+      characterCards,
+      userName
+    }, abortController.signal);
+  } catch (error) {
+    if (error.message === 'Generation cancelled' || abortController.signal.aborted) {
+      console.log('[StoryStarter] Generation was cancelled by user');
+      res.write(`data: ${JSON.stringify({ cancelled: true })}\n\n`);
+    } else {
+      console.error('[StoryStarter] Generation error:', error);
       res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
     }
     res.end();

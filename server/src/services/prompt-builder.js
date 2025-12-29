@@ -249,6 +249,10 @@ export class PromptBuilder {
 
     // Prepare granular template data
     const templateData = {
+      // Story scenario (overrides character scenarios when set)
+      has_story_scenario: !!(story?.scenario && story.scenario.trim()),
+      story_scenario: story?.scenario || '',
+
       // Character data
       has_single_character: !!characterCard,
       has_multiple_characters: !!allCharacterCards,
@@ -368,6 +372,9 @@ export class PromptBuilder {
           break;
         case "ideate":
           defaultTemplate = DEFAULT_PROMPT_TEMPLATES.ideate;
+          break;
+        case "storyStarter":
+          defaultTemplate = DEFAULT_PROMPT_TEMPLATES.storyStarter;
           break;
         case "custom":
           defaultTemplate = templates.custom;

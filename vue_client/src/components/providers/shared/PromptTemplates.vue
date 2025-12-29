@@ -170,6 +170,35 @@
           <pre class="default-content">{{ DEFAULT_TEMPLATES.ideate }}</pre>
         </div>
       </div>
+
+      <!-- Story Starter Template -->
+      <div class="form-group">
+        <div class="label-row">
+          <label for="templateStoryStarter">Story Starter Template</label>
+          <button
+            type="button"
+            class="btn-toggle"
+            @click="toggleCustomization('storyStarter')"
+          >
+            {{ isCustomized('storyStarter') ? 'Use Default' : 'Customize' }}
+          </button>
+        </div>
+        <p class="field-description">
+          Used when starting a fresh story. Available placeholders: <code v-text="'{{char}}'"></code>, <code v-text="'{{user}}'"></code>.
+        </p>
+        <textarea
+          v-if="isCustomized('storyStarter')"
+          id="templateStoryStarter"
+          v-model="localTemplates.storyStarter"
+          class="textarea-input"
+          rows="3"
+          placeholder="Enter custom story starter template..."
+        ></textarea>
+        <div v-else class="default-display">
+          <div class="default-label">Using System Default:</div>
+          <pre class="default-content">{{ DEFAULT_TEMPLATES.storyStarter }}</pre>
+        </div>
+      </div>
     </section>
   </div>
 </template>
@@ -186,7 +215,8 @@ const DEFAULT_TEMPLATES = ref({
   character: '',
   instruction: '',
   rewriteThirdPerson: '',
-  ideate: ''
+  ideate: '',
+  storyStarter: ''
 })
 
 const isLoading = ref(true)
@@ -225,7 +255,8 @@ const getTemplates = () => {
     character: templates.character ?? null,
     instruction: templates.instruction ?? null,
     rewriteThirdPerson: templates.rewriteThirdPerson ?? null,
-    ideate: templates.ideate ?? null
+    ideate: templates.ideate ?? null,
+    storyStarter: templates.storyStarter ?? null
   }
 }
 
@@ -263,6 +294,10 @@ const localTemplates = reactive({
   ideate: computed({
     get: () => getTemplates().ideate,
     set: (value) => updateTemplate('ideate', value)
+  }),
+  storyStarter: computed({
+    get: () => getTemplates().storyStarter,
+    set: (value) => updateTemplate('storyStarter', value)
   })
 })
 

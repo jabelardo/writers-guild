@@ -95,11 +95,18 @@
           <!-- Show Story Starter when content is empty -->
           <template v-if="isStoryEmpty">
             <button
-              class="btn btn-primary btn-large"
+              class="btn btn-primary"
               :disabled="!story"
               @click="handleStoryStarter"
             >
               <i class="fas fa-rocket"></i> Start Story
+            </button>
+            <button
+              class="btn btn-secondary"
+              :disabled="!story"
+              @click="showGreetingSelector = true"
+            >
+              <i class="fas fa-message"></i> Select Greeting
             </button>
           </template>
 

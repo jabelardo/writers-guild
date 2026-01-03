@@ -279,6 +279,12 @@ router.delete('/:id', asyncHandler(async (req, res) => {
   res.json({ success: true });
 }));
 
+// Duplicate story
+router.post('/:id/duplicate', asyncHandler(async (req, res) => {
+  const story = await storage.duplicateStory(req.params.id);
+  res.status(201).json({ story });
+}));
+
 // ==================== Story-Character Associations ====================
 
 // Get characters for this story

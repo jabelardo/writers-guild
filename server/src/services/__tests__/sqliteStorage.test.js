@@ -162,6 +162,96 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
       const updated = await storage.getStory(story.id);
       expect(updated.avatarWindows).toEqual(avatarWindows);
     });
+
+    it('should duplicate story with basic properties', async () => {
+      const original = await storage.createStory('Original Story', 'Original description');
+      await storage.updateStoryContent(original.id, 'Story content here');
+      await storage.updateStoryMetadata(original.id, { scenario: 'A test scenario' });
+
+      const duplicate = await storage.duplicateStory(original.id);
+
+      expect(duplicate.id).not.toBe(original.id);
+      expect(duplicate.title).toBe('Original Story (Copy)');
+      expect(duplicate.description).toBe('Original description');
+      expect(duplicate.content).toBe('Story content here');
+      expect(duplicate.scenario).toBe('A test scenario');
+    });
+
+    it('should duplicate story with character associations', async () => {
+      const story = await storage.createStory('Story with chars', 'Desc');
+      const characterData = {
+        spec: 'chara_card_v2',
+        spec_version: '2.0',
+        data: { name: 'Test Char', description: 'A character' }
+      };
+      await storage.saveCharacter('char-dup-1', characterData, null);
+      await storage.saveCharacter('char-dup-2', { ...characterData, data: { name: 'Char 2' } }, null);
+      await storage.addCharacterToStory(story.id, 'char-dup-1');
+      await storage.addCharacterToStory(story.id, 'char-dup-2');
+
+      const duplicate = await storage.duplicateStory(story.id);
+
+      expect(duplicate.characterIds).toHaveLength(2);
+      expect(duplicate.characterIds).toContain('char-dup-1');
+      expect(duplicate.characterIds).toContain('char-dup-2');
+    });
+
+    it('should duplicate story with lorebook associations', async () => {
+      const story = await storage.createStory('Story with lorebook', 'Desc');
+      await storage.saveLorebook('lb-dup-1', { name: 'Test Lorebook', entries: [] });
+      await storage.addLorebookToStory(story.id, 'lb-dup-1');
+
+      const duplicate = await storage.duplicateStory(story.id);
+
+      expect(duplicate.lorebookIds).toHaveLength(1);
+      expect(duplicate.lorebookIds).toContain('lb-dup-1');
+    });
+
+    it('should duplicate story with persona and preset', async () => {
+      const story = await storage.createStory('Story with persona', 'Desc');
+      const characterData = {
+        spec: 'chara_card_v2',
+        spec_version: '2.0',
+        data: { name: 'Persona', description: 'User persona' }
+      };
+      await storage.saveCharacter('persona-dup', characterData, null);
+      await storage.setStoryPersona(story.id, 'persona-dup');
+      await storage.savePreset('preset-dup', { name: 'Test Preset', provider: 'test' });
+      await storage.updateStoryMetadata(story.id, { configPresetId: 'preset-dup' });
+
+      const duplicate = await storage.duplicateStory(story.id);
+
+      expect(duplicate.personaCharacterId).toBe('persona-dup');
+      expect(duplicate.configPresetId).toBe('preset-dup');
+    });
+
+    it('should duplicate story with avatar windows', async () => {
+      const story = await storage.createStory('Story with avatars', 'Desc');
+      const avatarWindows = [
+        { id: 'w1', characterId: 'c1', x: 50, y: 50, width: 150, height: 150 }
+      ];
+      await storage.updateStoryAvatarWindows(story.id, avatarWindows);
+
+      const duplicate = await storage.duplicateStory(story.id);
+
+      expect(duplicate.avatarWindows).toEqual(avatarWindows);
+    });
+
+    it('should throw error when duplicating non-existent story', async () => {
+      await expect(storage.duplicateStory('non-existent-id')).rejects.toThrow('Story not found');
+    });
+
+    it('should create duplicate with new timestamps', async () => {
+      const original = await storage.createStory('Old Story', 'Desc');
+      // Small delay to ensure timestamps differ
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      const duplicate = await storage.duplicateStory(original.id);
+
+      expect(new Date(duplicate.created).getTime()).toBeGreaterThanOrEqual(
+        new Date(original.created).getTime()
+      );
+    });
   });
 
   describe('Character Operations', () => {

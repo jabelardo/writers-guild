@@ -56,6 +56,12 @@ export const storiesAPI = {
     })
   },
 
+  duplicate(storyId) {
+    return request(`/stories/${storyId}/duplicate`, {
+      method: 'POST',
+    })
+  },
+
   updateContent(storyId, content) {
     return request(`/stories/${storyId}/content`, {
       method: 'PUT',

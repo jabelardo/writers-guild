@@ -320,6 +320,74 @@ describe('Stories API Routes - CRUD Operations', () => {
     });
   });
 
+  describe('POST /:id/duplicate - Duplicate Story', () => {
+    it('should duplicate a story with basic properties', async () => {
+      // Create a story with content
+      const createResponse = await request(app)
+        .post('/api/stories')
+        .send({ title: 'Original Story', description: 'Original description' })
+        .expect(201);
+
+      const storyId = createResponse.body.story.id;
+
+      // Add some content
+      await request(app)
+        .put(`/api/stories/${storyId}/content`)
+        .send({ content: 'Story content here' })
+        .expect(200);
+
+      // Duplicate the story
+      const duplicateResponse = await request(app)
+        .post(`/api/stories/${storyId}/duplicate`)
+        .expect(201);
+
+      expect(duplicateResponse.body).toHaveProperty('story');
+      expect(duplicateResponse.body.story.id).not.toBe(storyId);
+      expect(duplicateResponse.body.story.title).toBe('Original Story (Copy)');
+      expect(duplicateResponse.body.story.description).toBe('Original description');
+      expect(duplicateResponse.body.story.content).toBe('Story content here');
+    });
+
+    it('should return 500 for non-existent story', async () => {
+      await request(app)
+        .post('/api/stories/non-existent-id/duplicate')
+        .expect(500);
+    });
+
+    it('should duplicate story and include it in list', async () => {
+      // Create a story
+      const createResponse = await request(app)
+        .post('/api/stories')
+        .send({ title: 'To Duplicate', description: 'Test' })
+        .expect(201);
+
+      const storyId = createResponse.body.story.id;
+
+      // Get count before
+      const beforeList = await request(app)
+        .get('/api/stories')
+        .expect(200);
+      const countBefore = beforeList.body.stories.length;
+
+      // Duplicate
+      await request(app)
+        .post(`/api/stories/${storyId}/duplicate`)
+        .expect(201);
+
+      // Get count after
+      const afterList = await request(app)
+        .get('/api/stories')
+        .expect(200);
+
+      expect(afterList.body.stories.length).toBe(countBefore + 1);
+
+      // Verify both original and copy exist
+      const titles = afterList.body.stories.map(s => s.title);
+      expect(titles).toContain('To Duplicate');
+      expect(titles).toContain('To Duplicate (Copy)');
+    });
+  });
+
   describe('POST /:id/rewrite-prompt - Set Rewrite Flag', () => {
     it('should set rewrite prompt flag to true', async () => {
       const createResponse = await request(app)

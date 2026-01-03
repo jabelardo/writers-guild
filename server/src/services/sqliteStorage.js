@@ -459,6 +459,63 @@ export class SqliteStorageService {
     return { success: true };
   }
 
+  async duplicateStory(storyId) {
+    const existing = this.stmts.getStory.get(storyId);
+    if (!existing) {
+      throw new Error(`Story not found: ${storyId}`);
+    }
+
+    const newId = uuidv4();
+    const now = new Date().toISOString();
+
+    // Generate new title with "(Copy)" suffix
+    const newTitle = `${existing.title} (Copy)`;
+
+    // Use transaction to ensure atomicity
+    const transaction = this.db.transaction(() => {
+      // Insert new story with copied data
+      this.stmts.insertStory.run({
+        id: newId,
+        title: newTitle,
+        description: existing.description || '',
+        content: existing.content || '',
+        wordCount: existing.word_count || 0,
+        needsRewritePrompt: existing.needs_rewrite_prompt || 0,
+        personaCharacterId: existing.persona_character_id,
+        configPresetId: existing.config_preset_id,
+        created: now,
+        modified: now
+      });
+
+      // Copy scenario if present
+      if (existing.scenario) {
+        this.db.prepare('UPDATE stories SET scenario = ? WHERE id = ?').run(existing.scenario, newId);
+      }
+
+      // Copy avatar windows if present
+      if (existing.avatar_windows) {
+        this.stmts.updateStoryAvatarWindows.run(existing.avatar_windows, newId);
+      }
+
+      // Copy character associations
+      const characterRows = this.stmts.getStoryCharacterIds.all(storyId);
+      for (const row of characterRows) {
+        this.stmts.addStoryCharacter.run(newId, row.character_id);
+      }
+
+      // Copy lorebook associations
+      const lorebookRows = this.stmts.getStoryLorebookIds.all(storyId);
+      for (const row of lorebookRows) {
+        this.stmts.addStoryLorebook.run(newId, row.lorebook_id);
+      }
+    });
+
+    transaction();
+
+    // Return the new story
+    return this.getStory(newId);
+  }
+
   // ==================== Character Operations ====================
 
   async listAllCharacters() {

@@ -50,6 +50,7 @@
           :stories="stories"
           :characters="characters"
           @open="openStory"
+          @duplicate="duplicateStory"
           @delete="deleteStory"
         />
       </template>
@@ -376,6 +377,17 @@ function editCharacter(characterId) {
 
 function editLorebook(lorebookId) {
   router.push({ name: 'lorebook-detail', params: { lorebookId } })
+}
+
+async function duplicateStory(story) {
+  try {
+    await storiesAPI.duplicate(story.id)
+    await loadStories(true)
+    toast.success('Story duplicated successfully')
+  } catch (error) {
+    console.error('Error duplicating story:', error)
+    toast.error('Failed to duplicate story: ' + error.message)
+  }
 }
 
 async function deleteStory(story) {

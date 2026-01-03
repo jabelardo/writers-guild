@@ -16,8 +16,11 @@
         <button class="btn btn-small btn-primary" @click="$emit('open', row.id)">
           <i class="fas fa-folder-open"></i> Open
         </button>
+        <button class="btn btn-small btn-secondary" @click="$emit('duplicate', row)" title="Duplicate story">
+          <i class="fas fa-copy"></i>
+        </button>
         <button class="btn btn-small btn-secondary" @click="$emit('delete', row)">
-          <i class="fas fa-trash"></i> Delete
+          <i class="fas fa-trash"></i>
         </button>
       </div>
     </template>
@@ -39,7 +42,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['open', 'delete'])
+defineEmits(['open', 'duplicate', 'delete'])
 
 const columns = [
   {

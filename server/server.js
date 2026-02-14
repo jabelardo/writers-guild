@@ -15,6 +15,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import bodyParser from 'body-parser';
+import basicAuth from './src/middleware/basic-auth.js';
 
 // Import route handlers
 import storiesRouter from './src/routes/stories.js';
@@ -77,6 +78,9 @@ app.use(cors({
   origin: config.security.cors.origins,
   credentials: true
 }));
+
+// Optional HTTP Basic Authentication
+app.use(basicAuth());
 
 // Body parsing middleware
 // Disable compression for SSE (text/event-stream)

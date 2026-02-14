@@ -9,4 +9,7 @@ services:
       - ./server/config.yaml:/app/config.yaml
     environment:
       - NODE_ENV=production
+      # Optional: Uncomment to enable HTTP Basic Authentication
+      # - BASIC_AUTH_USERNAME=admin
+      # - BASIC_AUTH_PASSWORD=changeme
     restart: unless-stopped

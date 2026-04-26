@@ -36,8 +36,8 @@
         <span v-if="provider === 'anthropic'" class="provider-note">
           (Anthropic max: 1.0)
         </span>
-        <span v-if="provider === 'deepseek' && model === 'deepseek-reasoner'" class="warning-note">
-          ⚠️ Temperature is ignored by deepseek-reasoner
+        <span v-if="provider === 'deepseek' && localSettings.thinking" class="warning-note">
+          ⚠️ Temperature is ignored when thinking mode is enabled
         </span>
       </small>
     </div>

@@ -8,15 +8,13 @@ import { parseSSEStream, transformers } from './shared/stream-parser.js';
 
 export class DeepSeekProvider extends LLMProvider {
   constructor(config) {
-    // DeepSeek-specific defaults
     const deepseekConfig = {
       ...config,
       baseURL: config.baseURL || "https://api.deepseek.com/v1",
-      model: config.model || "deepseek-reasoner"
+      model: config.model || "deepseek-v4-flash"
     };
 
     super(deepseekConfig);
-    // promptBuilder is now initialized in base class
   }
 
   /**
@@ -27,7 +25,7 @@ export class DeepSeekProvider extends LLMProvider {
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 128000 // DeepSeek Reasoner context window
+      maxContextWindow: 1000000 // V4 models support 1M token context
     };
   }
 
@@ -45,14 +43,46 @@ export class DeepSeekProvider extends LLMProvider {
     return { valid: true };
   }
 
-  // buildPrompts() is now inherited from base class
-  // No need to override unless custom logic is required
-
   /**
-   * Check if current model is deepseek-reasoner (which ignores sampling params)
+   * Build the request body for /chat/completions.
+   * Thinking mode is now decoupled from model choice — toggled per-request.
+   * When thinking is enabled, sampling parameters are ignored by the API,
+   * so we omit them to keep the payload clean.
    */
-  isReasonerModel() {
-    return this.model === 'deepseek-reasoner';
+  buildRequestBody(messages, options, stream) {
+    const thinkingEnabled = options.thinking === true;
+
+    const body = {
+      model: this.model,
+      messages,
+      stream,
+      max_tokens: options.maxTokens || 4000,
+      thinking: thinkingEnabled
+        ? {
+            type: "enabled",
+            reasoning_effort: options.reasoningEffort === "max" ? "max" : "high"
+          }
+        : { type: "disabled" }
+    };
+
+    if (!thinkingEnabled) {
+      body.temperature = options.temperature !== undefined ? options.temperature : 1.5;
+      if (options.top_p !== null && options.top_p !== undefined) {
+        body.top_p = options.top_p;
+      }
+      if (options.frequency_penalty !== null && options.frequency_penalty !== undefined) {
+        body.frequency_penalty = options.frequency_penalty;
+      }
+      if (options.presence_penalty !== null && options.presence_penalty !== undefined) {
+        body.presence_penalty = options.presence_penalty;
+      }
+    }
+
+    if (options.stop_sequences && options.stop_sequences.length > 0) {
+      body.stop = options.stop_sequences;
+    }
+
+    return body;
   }
 
   /**
@@ -68,37 +98,7 @@ export class DeepSeekProvider extends LLMProvider {
       { role: "user", content: userPrompt },
     ];
 
-    const requestBody = {
-      model: this.model,
-      messages: messages,
-      stream: false,
-      max_tokens: options.maxTokens || 4000,
-    };
-
-    // deepseek-reasoner ignores temperature and other sampling params
-    // but for compatibility, we still send them (they just have no effect)
-    if (this.isReasonerModel() && options.temperature !== undefined) {
-      console.warn('[DeepSeek] Note: deepseek-reasoner model ignores temperature and sampling parameters');
-    }
-
-    requestBody.temperature = options.temperature !== undefined ? options.temperature : 1.5;
-
-    // Add optional sampling parameters if provided (only effective for deepseek-chat)
-    if (!this.isReasonerModel()) {
-      if (options.top_p !== null && options.top_p !== undefined) {
-        requestBody.top_p = options.top_p;
-      }
-      if (options.frequency_penalty !== null && options.frequency_penalty !== undefined) {
-        requestBody.frequency_penalty = options.frequency_penalty;
-      }
-      if (options.presence_penalty !== null && options.presence_penalty !== undefined) {
-        requestBody.presence_penalty = options.presence_penalty;
-      }
-    }
-
-    if (options.stop_sequences && options.stop_sequences.length > 0) {
-      requestBody.stop = options.stop_sequences;
-    }
+    const requestBody = this.buildRequestBody(messages, options, false);
 
     const response = await fetch(`${this.baseURL}/chat/completions`, {
       method: "POST",
@@ -141,38 +141,7 @@ export class DeepSeekProvider extends LLMProvider {
     ];
 
     const controller = new AbortController();
-
-    const requestBody = {
-      model: this.model,
-      messages: messages,
-      stream: true,
-      max_tokens: options.maxTokens || 4000,
-    };
-
-    // deepseek-reasoner ignores temperature and other sampling params
-    // but for compatibility, we still send them (they just have no effect)
-    if (this.isReasonerModel() && options.temperature !== undefined) {
-      console.warn('[DeepSeek] Note: deepseek-reasoner model ignores temperature and sampling parameters');
-    }
-
-    requestBody.temperature = options.temperature !== undefined ? options.temperature : 1.5;
-
-    // Add optional sampling parameters if provided (only effective for deepseek-chat)
-    if (!this.isReasonerModel()) {
-      if (options.top_p !== null && options.top_p !== undefined) {
-        requestBody.top_p = options.top_p;
-      }
-      if (options.frequency_penalty !== null && options.frequency_penalty !== undefined) {
-        requestBody.frequency_penalty = options.frequency_penalty;
-      }
-      if (options.presence_penalty !== null && options.presence_penalty !== undefined) {
-        requestBody.presence_penalty = options.presence_penalty;
-      }
-    }
-
-    if (options.stop_sequences && options.stop_sequences.length > 0) {
-      requestBody.stop = options.stop_sequences;
-    }
+    const requestBody = this.buildRequestBody(messages, options, true);
 
     const response = await fetch(`${this.baseURL}/chat/completions`, {
       method: "POST",
@@ -250,14 +219,13 @@ export class DeepSeekProvider extends LLMProvider {
 
       const data = await response.json();
 
-      // Transform DeepSeek model data
       return data.data.map(model => ({
         id: model.id,
-        name: model.id, // DeepSeek doesn't provide separate display names
+        name: model.id,
         description: this.getModelDescription(model.id),
-        contextLength: 64000, // DeepSeek models support 64k context
+        contextLength: 1000000, // V4 models: 1M tokens
         pricing: {
-          prompt: 0, // Pricing not provided by API
+          prompt: 0,
           completion: 0
         },
         created: model.created,
@@ -274,8 +242,10 @@ export class DeepSeekProvider extends LLMProvider {
    */
   getModelDescription(modelId) {
     const descriptions = {
-      'deepseek-chat': 'DeepSeek-V3 in non-thinking mode, optimized for general conversation and tasks',
-      'deepseek-reasoner': 'DeepSeek-V3 in thinking mode, optimized for advanced reasoning, math, and coding'
+      'deepseek-v4-flash': 'DeepSeek V4 Flash — fast, low-cost, 1M context. Supports optional thinking mode.',
+      'deepseek-v4-pro': 'DeepSeek V4 Pro — higher-quality, 1M context. Supports optional thinking mode.',
+      'deepseek-chat': 'Deprecated — aliases to deepseek-v4-flash (non-thinking).',
+      'deepseek-reasoner': 'Deprecated — aliases to deepseek-v4-flash (thinking enabled).'
     };
     return descriptions[modelId] || '';
   }

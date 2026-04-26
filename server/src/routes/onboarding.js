@@ -255,14 +255,16 @@ function getProviderPresetConfig(provider, apiKey) {
         apiConfig: {
           apiKey: apiKey,
           baseURL: 'https://api.deepseek.com/v1',
-          model: 'deepseek-chat'
+          model: 'deepseek-v4-flash'
         },
         ...baseConfig,
         generationSettings: {
           ...baseConfig.generationSettings,
           maxTokens: 4000,
           maxContextTokens: 128000,
-          temperature: 1.5, // DeepSeek works well with higher temps
+          temperature: 1.0,
+          thinking: false,
+          reasoningEffort: 'high',
         }
       };
 

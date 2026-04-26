@@ -166,12 +166,14 @@ export function createPresetFromSettings(settings) {
     apiConfig: {
       apiKey: settings.apiKey || "",
       baseURL: "https://api.deepseek.com/v1",
-      model: "deepseek-reasoner"
+      model: "deepseek-v4-flash"
     },
     generationSettings: {
       maxTokens: settings.maxTokens || 4000,
       maxContextTokens: settings.maxContextTokens || 128000,
-      temperature: settings.temperature !== undefined ? settings.temperature : 1.5,
+      temperature: settings.temperature !== undefined ? settings.temperature : 1.0,
+      thinking: false,
+      reasoningEffort: "high",
       includeDialogueExamples: settings.includeDialogueExamples || false,
       // Advanced sampling parameters (optional, null = use API defaults)
       top_p: null,

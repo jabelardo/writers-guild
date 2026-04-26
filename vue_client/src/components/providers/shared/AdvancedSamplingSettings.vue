@@ -268,16 +268,16 @@ const supportsTopK = computed(() => {
 })
 
 const supportsFrequencyPenalty = computed(() => {
-  // DeepSeek reasoner doesn't support these parameters
-  if (props.provider === 'deepseek' && props.model === 'deepseek-reasoner') {
+  // DeepSeek ignores these when thinking mode is enabled
+  if (props.provider === 'deepseek' && props.modelValue?.thinking) {
     return false
   }
   return ['openai', 'deepseek', 'openrouter'].includes(props.provider)
 })
 
 const supportsPresencePenalty = computed(() => {
-  // DeepSeek reasoner doesn't support these parameters
-  if (props.provider === 'deepseek' && props.model === 'deepseek-reasoner') {
+  // DeepSeek ignores these when thinking mode is enabled
+  if (props.provider === 'deepseek' && props.modelValue?.thinking) {
     return false
   }
   return ['openai', 'deepseek', 'openrouter'].includes(props.provider)

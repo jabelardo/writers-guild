@@ -152,3 +152,7 @@ server/public/
 
 # Claude Code configuration
 .claude/
+
+# macOS
+.DS_Store
+**/.DS_Store

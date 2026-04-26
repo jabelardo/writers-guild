@@ -3,8 +3,8 @@
     :config="config"
     @update:config="$emit('update:config', $event)"
     :show-max-context="true"
-    :context-range="{ min: 32000, max: 128000 }"
-    :context-help-text="`Context window varies by model (64k-128k tokens). Check model details for accurate limits.`"
+    :context-range="{ min: 32000, max: 1000000 }"
+    :context-help-text="`Context window up to 1M tokens on V4 models. Larger = more story content but higher costs.`"
     provider="deepseek"
     :model="config.apiConfig?.model || ''"
   >
@@ -25,11 +25,44 @@
         :loading="loadingModels"
         :error="modelsError"
         :can-fetch="!!localApiConfig.apiKey"
-        description="Select which DeepSeek model to use. Choose 'reasoner' for advanced reasoning tasks or 'chat' for general conversation."
+        description="Choose a DeepSeek V4 model. Both v4-flash (cheaper) and v4-pro (higher quality) support optional thinking mode — toggle it below independently of the model."
         empty-state-text="Enter your API key and click 'Fetch Available Models' to see available DeepSeek models."
         @fetch="fetchModels"
         @select="selectModel"
       />
+
+      <!-- Thinking Mode Section -->
+      <div class="thinking-mode-section">
+        <div class="form-group checkbox-group">
+          <label>
+            <input
+              type="checkbox"
+              :checked="localGenerationSettings.thinking === true"
+              @change="updateThinking($event.target.checked)"
+            />
+            Enable thinking mode
+          </label>
+          <small class="help-text">
+            When enabled, the model produces a chain-of-thought before its answer. Reasoning consumes output tokens — if responses come back empty, raise Max Tokens. Sampling parameters (temperature, top_p, etc.) are ignored while thinking is on.
+          </small>
+        </div>
+
+        <div v-if="localGenerationSettings.thinking === true" class="form-group">
+          <label for="reasoningEffort">Reasoning Effort</label>
+          <select
+            id="reasoningEffort"
+            :value="localGenerationSettings.reasoningEffort || 'high'"
+            @change="updateReasoningEffort($event.target.value)"
+            class="select-input"
+          >
+            <option value="high">High (default)</option>
+            <option value="max">Max (longer reasoning, slower, more expensive)</option>
+          </select>
+          <small class="help-text">
+            Controls how much the model reasons before answering.
+          </small>
+        </div>
+      </div>
     </template>
   </BaseProviderConfig>
 </template>
@@ -60,6 +93,28 @@ const localApiConfig = computed({
     emit('update:config', { ...props.config, apiConfig: value })
   }
 })
+
+const localGenerationSettings = computed(() => props.config.generationSettings || {})
+
+function updateThinking(enabled) {
+  emit('update:config', {
+    ...props.config,
+    generationSettings: {
+      ...localGenerationSettings.value,
+      thinking: enabled
+    }
+  })
+}
+
+function updateReasoningEffort(value) {
+  emit('update:config', {
+    ...props.config,
+    generationSettings: {
+      ...localGenerationSettings.value,
+      reasoningEffort: value
+    }
+  })
+}
 
 // Use the shared model selector composable
 const {
@@ -116,5 +171,53 @@ watch(() => localApiConfig.value.apiKey, (newKey) => {
 </script>
 
 <style scoped>
-/* All styles are now in the shared components */
+.thinking-mode-section {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: normal;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.select-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.help-text {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
 </style>

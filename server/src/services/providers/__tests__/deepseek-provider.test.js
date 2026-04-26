@@ -12,7 +12,7 @@ describe('DeepSeekProvider', () => {
 
     provider = new DeepSeekProvider({
       apiKey: 'test-api-key',
-      model: 'deepseek-chat'
+      model: 'deepseek-v4-flash'
     });
   });
 
@@ -23,7 +23,7 @@ describe('DeepSeekProvider', () => {
       });
 
       expect(defaultProvider.baseURL).toBe('https://api.deepseek.com/v1');
-      expect(defaultProvider.model).toBe('deepseek-reasoner');
+      expect(defaultProvider.model).toBe('deepseek-v4-flash');
     });
 
     it('should allow custom base URL', () => {
@@ -38,10 +38,10 @@ describe('DeepSeekProvider', () => {
     it('should allow custom model', () => {
       const customProvider = new DeepSeekProvider({
         apiKey: 'test-key',
-        model: 'deepseek-chat'
+        model: 'deepseek-v4-pro'
       });
 
-      expect(customProvider.model).toBe('deepseek-chat');
+      expect(customProvider.model).toBe('deepseek-v4-pro');
     });
   });
 
@@ -52,7 +52,7 @@ describe('DeepSeekProvider', () => {
       expect(capabilities.streaming).toBe(true);
       expect(capabilities.reasoning).toBe(true);
       expect(capabilities.visionAPI).toBe(false);
-      expect(capabilities.maxContextWindow).toBe(128000);
+      expect(capabilities.maxContextWindow).toBe(1000000);
     });
   });
 
@@ -78,23 +78,71 @@ describe('DeepSeekProvider', () => {
     });
   });
 
-  describe('isReasonerModel', () => {
-    it('should return true for deepseek-reasoner', () => {
-      const reasonerProvider = new DeepSeekProvider({
-        apiKey: 'test-key',
-        model: 'deepseek-reasoner'
+  describe('Thinking mode request body', () => {
+    beforeEach(() => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: 'r' } }] })
       });
-
-      expect(reasonerProvider.isReasonerModel()).toBe(true);
     });
 
-    it('should return false for deepseek-chat', () => {
-      const chatProvider = new DeepSeekProvider({
-        apiKey: 'test-key',
-        model: 'deepseek-chat'
+    it('sends thinking: disabled by default', async () => {
+      await provider.generate('System', 'User');
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.thinking).toEqual({ type: 'disabled' });
+    });
+
+    it('sends thinking: enabled with high effort by default when thinking=true', async () => {
+      await provider.generate('System', 'User', { thinking: true });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.thinking).toEqual({ type: 'enabled', reasoning_effort: 'high' });
+    });
+
+    it('honors reasoningEffort=max', async () => {
+      await provider.generate('System', 'User', { thinking: true, reasoningEffort: 'max' });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.thinking).toEqual({ type: 'enabled', reasoning_effort: 'max' });
+    });
+
+    it('coerces unknown reasoningEffort values to high', async () => {
+      await provider.generate('System', 'User', { thinking: true, reasoningEffort: 'low' });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.thinking.reasoning_effort).toBe('high');
+    });
+
+    it('omits sampling params when thinking is enabled', async () => {
+      await provider.generate('System', 'User', {
+        thinking: true,
+        temperature: 0.7,
+        top_p: 0.9,
+        frequency_penalty: 0.5,
+        presence_penalty: 0.3
       });
 
-      expect(chatProvider.isReasonerModel()).toBe(false);
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.temperature).toBeUndefined();
+      expect(body.top_p).toBeUndefined();
+      expect(body.frequency_penalty).toBeUndefined();
+      expect(body.presence_penalty).toBeUndefined();
+    });
+
+    it('includes sampling params when thinking is disabled', async () => {
+      await provider.generate('System', 'User', {
+        temperature: 0.7,
+        top_p: 0.9,
+        frequency_penalty: 0.5,
+        presence_penalty: 0.3
+      });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.temperature).toBe(0.7);
+      expect(body.top_p).toBe(0.9);
+      expect(body.frequency_penalty).toBe(0.5);
+      expect(body.presence_penalty).toBe(0.3);
     });
   });
 
@@ -150,7 +198,7 @@ describe('DeepSeekProvider', () => {
 
       const requestBody = JSON.parse(callArgs[1].body);
       expect(requestBody.stream).toBe(false);
-      expect(requestBody.model).toBe('deepseek-chat');
+      expect(requestBody.model).toBe('deepseek-v4-flash');
       expect(requestBody.max_tokens).toBe(2000);
       expect(requestBody.temperature).toBe(0.7);
     });
@@ -189,7 +237,7 @@ describe('DeepSeekProvider', () => {
       ).rejects.toThrow('API request failed: Internal Server Error');
     });
 
-    it('should include optional parameters for non-reasoner model', async () => {
+    it('should include optional sampling params when thinking is off', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -266,6 +314,19 @@ describe('DeepSeekProvider', () => {
         provider.generateStreaming('System', 'User')
       ).rejects.toThrow('Server error');
     });
+
+    it('forwards thinking flag through streaming path', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        body: { getReader: () => ({ read: async () => ({ done: true }) }) }
+      });
+
+      await provider.generateStreaming('System', 'User', { thinking: true, reasoningEffort: 'max' });
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.stream).toBe(true);
+      expect(body.thinking).toEqual({ type: 'enabled', reasoning_effort: 'max' });
+    });
   });
 
   describe('Error Parsing', () => {
@@ -299,8 +360,8 @@ describe('DeepSeekProvider', () => {
         ok: true,
         json: async () => ({
           data: [
-            { id: 'deepseek-chat', created: 1234567890, owned_by: 'deepseek' },
-            { id: 'deepseek-reasoner', created: 1234567891, owned_by: 'deepseek' }
+            { id: 'deepseek-v4-flash', created: 1234567890, owned_by: 'deepseek' },
+            { id: 'deepseek-v4-pro', created: 1234567891, owned_by: 'deepseek' }
           ]
         })
       });
@@ -308,8 +369,8 @@ describe('DeepSeekProvider', () => {
       const models = await provider.getAvailableModels();
 
       expect(models).toHaveLength(2);
-      expect(models[0].id).toBe('deepseek-chat');
-      expect(models[0].contextLength).toBe(64000);
+      expect(models[0].id).toBe('deepseek-v4-flash');
+      expect(models[0].contextLength).toBe(1000000);
     });
 
     it('should return empty array on error', async () => {
@@ -324,14 +385,24 @@ describe('DeepSeekProvider', () => {
   });
 
   describe('getModelDescription', () => {
-    it('should return description for deepseek-chat', () => {
-      const description = provider.getModelDescription('deepseek-chat');
-      expect(description).toContain('conversation');
+    it('should return description for deepseek-v4-flash', () => {
+      const description = provider.getModelDescription('deepseek-v4-flash');
+      expect(description).toContain('Flash');
     });
 
-    it('should return description for deepseek-reasoner', () => {
+    it('should return description for deepseek-v4-pro', () => {
+      const description = provider.getModelDescription('deepseek-v4-pro');
+      expect(description).toContain('Pro');
+    });
+
+    it('should mark deepseek-chat as deprecated', () => {
+      const description = provider.getModelDescription('deepseek-chat');
+      expect(description.toLowerCase()).toContain('deprecated');
+    });
+
+    it('should mark deepseek-reasoner as deprecated', () => {
       const description = provider.getModelDescription('deepseek-reasoner');
-      expect(description).toContain('reasoning');
+      expect(description.toLowerCase()).toContain('deprecated');
     });
 
     it('should return empty string for unknown model', () => {

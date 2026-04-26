@@ -21,14 +21,16 @@ export const PROVIDERS = {
       apiConfig: {
         apiKey: '',
         baseURL: 'https://api.deepseek.com/v1',
-        model: 'deepseek-reasoner',
+        model: 'deepseek-v4-flash',
         models: []
       },
       generationSettings: {
         maxTokens: 4000,
-        temperature: 1.5,
+        temperature: 1.0,
         maxContextTokens: 8000,
-        includeDialogueExamples: false
+        includeDialogueExamples: false,
+        thinking: false,
+        reasoningEffort: 'high'
       },
       lorebookSettings: {
         scanDepth: 2000,

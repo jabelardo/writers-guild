@@ -85,13 +85,7 @@ const actionInProgress = ref(null)
 // Use loading state from cache
 const loading = loadingCharacters
 
-// Map cached characters with image URLs
-const allCharacters = computed(() => {
-  return cachedCharacters.value.map(char => ({
-    ...char,
-    imageUrl: `/api/characters/${char.id}/image`
-  }))
-})
+const allCharacters = computed(() => cachedCharacters.value)
 
 onMounted(async () => {
   // Load characters from cache (will skip if already loaded)

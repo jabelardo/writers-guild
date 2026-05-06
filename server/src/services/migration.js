@@ -212,48 +212,46 @@ async function needsMigration(storage) {
 }
 
 /**
- * Generate thumbnails for all existing character images that don't have them
+ * Backfill missing thumbnails (96x96 and/or 256x384) for any character with an image
+ * but missing one or both thumbnail sizes. Runs on every server start; no-op if up to date.
  * @param {StorageService} storage - Storage service instance
- * @returns {Promise<number>} Number of thumbnails generated
+ * @returns {Promise<number>} Number of characters updated
  */
 async function generateMissingThumbnails(storage) {
   try {
-    console.log('Checking for missing character thumbnails...');
     const characters = await storage.listAllCharacters();
-    let generated = 0;
+    let updated = 0;
 
     for (const char of characters) {
       const hasImage = await storage.hasCharacterImage(char.id);
-      const hasThumbnail = await storage.hasCharacterThumbnail(char.id);
+      if (!hasImage) continue;
 
-      // If character has an image but no thumbnail, generate it
-      if (hasImage && !hasThumbnail) {
-        try {
-          const imageBuffer = await storage.getCharacterImage(char.id);
-          const thumbnailBuffer = await storage.generateThumbnail(imageBuffer);
+      const hasSmall = await storage.hasCharacterThumbnail(char.id);
+      const hasMedium = await storage.hasCharacterThumbnailMedium(char.id);
+      if (hasSmall && hasMedium) continue;
 
-          if (thumbnailBuffer) {
-            const thumbnailPath = storage.getCharacterThumbnailPath(char.id);
-            const fs = await import('fs/promises');
-            await fs.writeFile(thumbnailPath, thumbnailBuffer);
-            generated++;
-            console.log(`✓ Generated thumbnail for character: ${char.id}`);
-          }
-        } catch (error) {
-          console.error(`Failed to generate thumbnail for ${char.id}:`, error.message);
-        }
+      try {
+        const imageBuffer = await storage.getCharacterImage(char.id);
+        const [small, medium] = await Promise.all([
+          hasSmall ? storage.getCharacterThumbnail(char.id) : storage.generateThumbnail(imageBuffer),
+          hasMedium ? storage.getCharacterThumbnailMedium(char.id) : storage.generateMediumThumbnail(imageBuffer)
+        ]);
+
+        await storage.setCharacterThumbnails(char.id, small, medium);
+        updated++;
+        console.log(`✓ Backfilled thumbnails for character: ${char.id}`);
+      } catch (error) {
+        console.error(`Failed to backfill thumbnails for ${char.id}:`, error.message);
       }
     }
 
-    if (generated > 0) {
-      console.log(`✓ Generated ${generated} missing thumbnails`);
-    } else {
-      console.log('All character thumbnails are up to date');
+    if (updated > 0) {
+      console.log(`✓ Backfilled thumbnails for ${updated} characters`);
     }
 
-    return generated;
+    return updated;
   } catch (error) {
-    console.error('Failed to generate missing thumbnails:', error);
+    console.error('Failed to backfill thumbnails:', error);
     return 0;
   }
 }
@@ -352,9 +350,6 @@ export async function migrate(storage) {
     let importedCharacters = [];
     let defaultStories = [];
 
-    // Generate thumbnails for any existing characters that don't have them
-    const thumbnailsGenerated = await generateMissingThumbnails(storage);
-
     console.log('=== Migration Complete ===');
     console.log(`Created ${createdPresets.length} presets`);
     console.log(`Default preset ID: ${defaultPresetId}`);
@@ -367,7 +362,6 @@ export async function migrate(storage) {
       presets: createdPresets,
       importedCharacters,
       defaultStories,
-      thumbnailsGenerated,
       message: hasExistingConfig
         ? 'Migrated existing configuration to preset system'
         : 'Created default presets for fresh installation'
@@ -409,6 +403,13 @@ export async function runMigration(dataRoot) {
   // Now use SQLite storage for preset migration
   const storage = new SqliteStorageService(dataRoot);
   const migrationResult = await migrate(storage);
+
+  // Backfill any missing character thumbnails (runs every startup; no-op when up to date)
+  try {
+    await generateMissingThumbnails(storage);
+  } catch (error) {
+    console.error('Thumbnail backfill error:', error);
+  }
 
   return migrationResult;
 }

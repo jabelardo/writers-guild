@@ -62,18 +62,21 @@ router.get('/', asyncHandler(async (req, res) => {
         );
         const totalWords = characterStories.reduce((sum, story) => sum + (story.wordCount || 0), 0);
 
-        // Provide both full image and thumbnail URLs
+        // Provide full image, small thumbnail, and medium thumbnail URLs
         const hasThumbnail = await storage.hasCharacterThumbnail(char.id);
+        const hasThumbnailMedium = await storage.hasCharacterThumbnailMedium(char.id);
         const imageUrl = hasImage ? `/api/characters/${char.id}/image` : null;
         const thumbnailUrl = hasThumbnail ? `/api/characters/${char.id}/thumbnail` : imageUrl;
+        const thumbnailMediumUrl = hasThumbnailMedium ? `/api/characters/${char.id}/thumbnail-medium` : imageUrl;
 
         return {
           id: char.id,
           name: cardData.data?.name || 'Unknown',
           description: cardData.data?.description || '',
           tags: cardData.data?.tags || cardData.tags || [],
-          imageUrl, // Full resolution for CharacterCard
-          thumbnailUrl, // Optimized thumbnail for CharacterAvatar
+          imageUrl, // Full resolution
+          thumbnailUrl, // 96x96 — table rows / recent bar
+          thumbnailMediumUrl, // 256x384 — picker cards / floating avatar
           created: cardData.metadata?.created || null,
           totalWords,
         };
@@ -85,6 +88,8 @@ router.get('/', asyncHandler(async (req, res) => {
           description: 'Failed to load character data',
           tags: [],
           imageUrl: null,
+          thumbnailUrl: null,
+          thumbnailMediumUrl: null,
           created: null,
           totalWords: 0,
         };
@@ -358,6 +363,20 @@ router.get('/:characterId/thumbnail', asyncHandler(async (req, res) => {
 
   if (!thumbnailBuffer) {
     throw new AppError('Character has no thumbnail', 404);
+  }
+
+  res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+  res.send(thumbnailBuffer);
+}));
+
+// Get character medium thumbnail (256x384, 2:3 — for picker cards / floating avatar)
+router.get('/:characterId/thumbnail-medium', asyncHandler(async (req, res) => {
+  const { characterId } = req.params;
+  const thumbnailBuffer = await storage.getCharacterThumbnailMedium(characterId);
+
+  if (!thumbnailBuffer) {
+    throw new AppError('Character has no medium thumbnail', 404);
   }
 
   res.setHeader('Content-Type', 'image/png');

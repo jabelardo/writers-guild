@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { calculateWordCount } from '../database.js';
+import { calculateWordCount, SCHEMA_VERSION } from '../database.js';
 import { SqliteStorageService } from '../sqliteStorage.js';
 import Database from 'better-sqlite3';
 import fs from 'fs';
@@ -387,7 +387,7 @@ describe('Schema Migration (v1 to v3)', () => {
 
     // Check schema version was updated (v6 includes story_history tables)
     const version = storage.db.prepare('SELECT version FROM schema_version').get();
-    expect(version.version).toBe(6);
+    expect(version.version).toBe(SCHEMA_VERSION);
 
     storage.close();
   });
@@ -442,7 +442,7 @@ describe('Schema Migration (v1 to v3)', () => {
 
     // Verify schema version was updated (v6 includes story_history tables)
     const version = storage.db.prepare('SELECT version FROM schema_version').get();
-    expect(version.version).toBe(6);
+    expect(version.version).toBe(SCHEMA_VERSION);
 
     // Verify we can create stories with word_count
     const story = storage.db.prepare(`
@@ -477,7 +477,7 @@ describe('Schema Migration (v1 to v3)', () => {
 
     // Both should be updated together (atomic) - v6 includes story_history tables
     expect(story.word_count).toBe(2);
-    expect(version.version).toBe(6);
+    expect(version.version).toBe(SCHEMA_VERSION);
 
     storage.close();
   });

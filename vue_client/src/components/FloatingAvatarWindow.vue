@@ -16,8 +16,8 @@
     </button>
 
     <img
-      v-if="currentCharacter?.imageUrl"
-      :src="currentCharacter.imageUrl"
+      v-if="currentCharacterImageUrl"
+      :src="currentCharacterImageUrl"
       :alt="currentCharacter.name"
       class="avatar-image"
       draggable="false"
@@ -103,6 +103,12 @@ const currentIndex = computed(() => {
 
 const currentCharacter = computed(() => {
   return props.characters[currentIndex.value] || props.characters[0] || null
+})
+
+const currentCharacterImageUrl = computed(() => {
+  const char = currentCharacter.value
+  if (!char) return null
+  return char.thumbnailMediumUrl || char.imageUrl || null
 })
 
 // Cycle to next character

@@ -67,15 +67,19 @@ export class SqliteStorageService {
       getCharacter: this.db.prepare('SELECT id, name, data, created, modified FROM characters WHERE id = ?'),
       getCharacterImage: this.db.prepare('SELECT image FROM characters WHERE id = ?'),
       getCharacterThumbnail: this.db.prepare('SELECT thumbnail FROM characters WHERE id = ?'),
+      getCharacterThumbnailMedium: this.db.prepare('SELECT thumbnail_medium FROM characters WHERE id = ?'),
+      updateCharacterThumbnails: this.db.prepare(`
+        UPDATE characters SET thumbnail = @thumbnail, thumbnail_medium = @thumbnailMedium WHERE id = @id
+      `),
       insertCharacter: this.db.prepare(`
-        INSERT INTO characters (id, name, data, image, thumbnail, created, modified)
-        VALUES (@id, @name, @data, @image, @thumbnail, @created, @modified)
+        INSERT INTO characters (id, name, data, image, thumbnail, thumbnail_medium, created, modified)
+        VALUES (@id, @name, @data, @image, @thumbnail, @thumbnailMedium, @created, @modified)
       `),
       updateCharacter: this.db.prepare(`
         UPDATE characters SET name = @name, data = @data, modified = @modified WHERE id = @id
       `),
       updateCharacterWithImage: this.db.prepare(`
-        UPDATE characters SET name = @name, data = @data, image = @image, thumbnail = @thumbnail, modified = @modified WHERE id = @id
+        UPDATE characters SET name = @name, data = @data, image = @image, thumbnail = @thumbnail, thumbnail_medium = @thumbnailMedium, modified = @modified WHERE id = @id
       `),
       deleteCharacter: this.db.prepare('DELETE FROM characters WHERE id = ?'),
       characterExists: this.db.prepare('SELECT 1 FROM characters WHERE id = ?'),
@@ -230,7 +234,7 @@ export class SqliteStorageService {
   }
 
   /**
-   * Generate thumbnail from image buffer
+   * Generate thumbnail from image buffer (96x96, square — for table rows / recent bar)
    */
   async generateThumbnail(imageBuffer) {
     try {
@@ -244,6 +248,25 @@ export class SqliteStorageService {
         .toBuffer();
     } catch (error) {
       console.error('Failed to generate thumbnail:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Generate medium thumbnail from image buffer (256x384, 2:3 — for picker cards / floating avatar)
+   */
+  async generateMediumThumbnail(imageBuffer) {
+    try {
+      return await sharp(imageBuffer)
+        .resize(256, 384, {
+          fit: 'cover',
+          position: 'top',
+          withoutEnlargement: false
+        })
+        .png({ quality: 90 })
+        .toBuffer();
+    } catch (error) {
+      console.error('Failed to generate medium thumbnail:', error);
       return null;
     }
   }
@@ -565,13 +588,17 @@ export class SqliteStorageService {
     if (existing) {
       // Update existing character
       if (imageBuffer) {
-        const thumbnail = await this.generateThumbnail(imageBuffer);
+        const [thumbnail, thumbnailMedium] = await Promise.all([
+          this.generateThumbnail(imageBuffer),
+          this.generateMediumThumbnail(imageBuffer)
+        ]);
         this.stmts.updateCharacterWithImage.run({
           id: characterId,
           name,
           data: dataJson,
           image: imageBuffer,
           thumbnail,
+          thumbnailMedium,
           modified: now
         });
       } else {
@@ -585,8 +612,12 @@ export class SqliteStorageService {
     } else {
       // Insert new character
       let thumbnail = null;
+      let thumbnailMedium = null;
       if (imageBuffer) {
-        thumbnail = await this.generateThumbnail(imageBuffer);
+        [thumbnail, thumbnailMedium] = await Promise.all([
+          this.generateThumbnail(imageBuffer),
+          this.generateMediumThumbnail(imageBuffer)
+        ]);
       }
 
       this.stmts.insertCharacter.run({
@@ -595,6 +626,7 @@ export class SqliteStorageService {
         data: dataJson,
         image: imageBuffer,
         thumbnail,
+        thumbnailMedium,
         created: now,
         modified: now
       });
@@ -621,6 +653,24 @@ export class SqliteStorageService {
   async hasCharacterThumbnail(characterId) {
     const row = this.stmts.getCharacterThumbnail.get(characterId);
     return !!row?.thumbnail;
+  }
+
+  async getCharacterThumbnailMedium(characterId) {
+    const row = this.stmts.getCharacterThumbnailMedium.get(characterId);
+    return row?.thumbnail_medium || null;
+  }
+
+  async hasCharacterThumbnailMedium(characterId) {
+    const row = this.stmts.getCharacterThumbnailMedium.get(characterId);
+    return !!row?.thumbnail_medium;
+  }
+
+  async setCharacterThumbnails(characterId, thumbnail, thumbnailMedium) {
+    this.stmts.updateCharacterThumbnails.run({
+      id: characterId,
+      thumbnail,
+      thumbnailMedium
+    });
   }
 
   async deleteCharacter(characterId) {

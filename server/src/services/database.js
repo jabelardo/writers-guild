@@ -7,7 +7,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 
 /**
  * Initialize the SQLite database with schema
@@ -110,6 +110,7 @@ function createAllTables(db) {
       data TEXT NOT NULL,
       image BLOB,
       thumbnail BLOB,
+      thumbnail_medium BLOB,
       created TEXT NOT NULL,
       modified TEXT NOT NULL
     );
@@ -332,6 +333,15 @@ function migrateSchema(db, fromVersion) {
       db.exec("ALTER TABLE stories ADD COLUMN scenario TEXT DEFAULT ''");
 
       console.log('Added scenario column');
+    }
+
+    // Migration to version 8: Add thumbnail_medium column to characters
+    if (fromVersion < 8) {
+      console.log('Adding thumbnail_medium column to characters table...');
+
+      db.exec('ALTER TABLE characters ADD COLUMN thumbnail_medium BLOB');
+
+      console.log('Added thumbnail_medium column (backfill runs on startup)');
     }
 
     db.prepare('UPDATE schema_version SET version = ?').run(SCHEMA_VERSION);

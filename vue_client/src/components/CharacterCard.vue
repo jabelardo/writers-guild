@@ -8,7 +8,7 @@
       class="character-avatar"
       :style="avatarStyle"
     >
-      <div v-if="!character.imageUrl" class="character-initial">
+      <div v-if="!hasImage" class="character-initial">
         {{ characterInitial }}
       </div>
       <div class="character-name-overlay">
@@ -40,15 +40,20 @@ const characterInitial = computed(() => {
 })
 
 const avatarStyle = computed(() => {
-  if (props.character.imageUrl) {
+  const url = props.character.thumbnailMediumUrl || props.character.imageUrl
+  if (url) {
     return {
-      backgroundImage: `url(${props.character.imageUrl})`,
+      backgroundImage: `url(${url})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center top'
     }
   }
   return {}
 })
+
+const hasImage = computed(() =>
+  !!(props.character.thumbnailMediumUrl || props.character.imageUrl)
+)
 
 function handleClick() {
   if (props.clickable) {

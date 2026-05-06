@@ -9,9 +9,11 @@ services:
       - ./server/config.yaml:/app/config.yaml
     environment:
       - NODE_ENV=production
-      # Optional: Uncomment to enable HTTP Basic Authentication
-      # - BASIC_AUTH_USERNAME=admin
-      # - BASIC_AUTH_PASSWORD=changeme
+      # HTTP Basic Authentication: set BASIC_AUTH_USERNAME and BASIC_AUTH_PASSWORD
+      # in a .env file next to this compose file (see .env.example). Auth is
+      # disabled when either is empty.
+      - BASIC_AUTH_USERNAME=${BASIC_AUTH_USERNAME:-}
+      - BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD:-}
     restart: unless-stopped
     networks:
       - proxy-network

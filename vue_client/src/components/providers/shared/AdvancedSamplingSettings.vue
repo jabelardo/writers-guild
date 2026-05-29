@@ -116,9 +116,9 @@
       </small>
     </div>
 
-    <!-- AI Horde Specific Parameters -->
-    <template v-if="provider === 'aihorde'">
-      <h4 class="subsection-title">AI Horde Samplers</h4>
+    <!-- Llama.cpp-style samplers (AI Horde + KoboldCpp) -->
+    <template v-if="['aihorde', 'koboldcpp'].includes(provider)">
+      <h4 class="subsection-title">Sampler Settings</h4>
 
       <div class="form-group">
         <label for="rep_pen">
@@ -235,6 +235,72 @@
         </small>
       </div>
     </template>
+
+    <!-- KoboldCpp-only: Mirostat -->
+    <template v-if="provider === 'koboldcpp'">
+      <h4 class="subsection-title">Mirostat</h4>
+
+      <div class="form-group">
+        <label for="mirostat">Mirostat Mode</label>
+        <div class="input-with-clear">
+          <select
+            id="mirostat"
+            v-model.number="localSettings.mirostat"
+            class="text-input"
+          >
+            <option :value="null">Default (off)</option>
+            <option :value="0">0 — Disabled</option>
+            <option :value="1">1 — Mirostat v1</option>
+            <option :value="2">2 — Mirostat v2</option>
+          </select>
+        </div>
+        <small class="help-text">
+          Adaptive sampling that targets a fixed perplexity. Replaces top_k/top_p when enabled.
+        </small>
+      </div>
+
+      <div v-if="localSettings.mirostat" class="form-group">
+        <label for="mirostat_tau">
+          Mirostat Tau: {{ localSettings.mirostat_tau != null ? localSettings.mirostat_tau.toFixed(2) : 'Default (5.0)' }}
+        </label>
+        <div class="input-with-clear">
+          <input
+            id="mirostat_tau"
+            v-model.number="localSettings.mirostat_tau"
+            type="range"
+            min="0"
+            max="10"
+            step="0.1"
+            class="range-input"
+          />
+          <button v-if="localSettings.mirostat_tau != null" @click="localSettings.mirostat_tau = null" class="clear-btn">
+            Clear
+          </button>
+        </div>
+        <small class="help-text">Target entropy (0-10). Lower = more focused output.</small>
+      </div>
+
+      <div v-if="localSettings.mirostat" class="form-group">
+        <label for="mirostat_eta">
+          Mirostat Eta: {{ localSettings.mirostat_eta != null ? localSettings.mirostat_eta.toFixed(2) : 'Default (0.1)' }}
+        </label>
+        <div class="input-with-clear">
+          <input
+            id="mirostat_eta"
+            v-model.number="localSettings.mirostat_eta"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            class="range-input"
+          />
+          <button v-if="localSettings.mirostat_eta != null" @click="localSettings.mirostat_eta = null" class="clear-btn">
+            Clear
+          </button>
+        </div>
+        <small class="help-text">Learning rate (0-1). How fast Mirostat adjusts to hit Tau.</small>
+      </div>
+    </template>
   </section>
 </template>
 
@@ -260,11 +326,11 @@ const emit = defineEmits(['update:modelValue'])
 
 // Provider capability checks
 const supportsTopP = computed(() => {
-  return ['anthropic', 'openai', 'deepseek', 'openrouter', 'aihorde'].includes(props.provider)
+  return ['anthropic', 'openai', 'deepseek', 'openrouter', 'aihorde', 'koboldcpp'].includes(props.provider)
 })
 
 const supportsTopK = computed(() => {
-  return ['anthropic', 'deepseek', 'aihorde'].includes(props.provider)
+  return ['anthropic', 'deepseek', 'aihorde', 'koboldcpp'].includes(props.provider)
 })
 
 const supportsFrequencyPenalty = computed(() => {

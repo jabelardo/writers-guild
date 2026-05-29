@@ -12,6 +12,7 @@ import { OpenRouterProvider } from '../services/providers/openrouter-provider.js
 import { OpenAIProvider } from '../services/providers/openai-provider.js';
 import { AnthropicProvider } from '../services/providers/anthropic-provider.js';
 import { DeepSeekProvider } from '../services/providers/deepseek-provider.js';
+import { KoboldCppProvider } from '../services/providers/koboldcpp-provider.js';
 
 const router = express.Router();
 
@@ -415,6 +416,32 @@ router.get('/deepseek/models', asyncHandler(async (req, res) => {
     res.status(500).json({
       error: 'Failed to fetch models from DeepSeek',
       message: error.message
+    });
+  }
+}));
+
+// Inspect a KoboldCpp endpoint: returns loaded model + configured max context length.
+// No caching — local endpoint, can change anytime a user hot-swaps a model.
+router.get('/koboldcpp/info', asyncHandler(async (req, res) => {
+  const baseURL = req.query.baseURL;
+  const password = req.query.password || '';
+
+  if (!baseURL) {
+    return res.status(400).json({
+      error: 'baseURL query parameter is required'
+    });
+  }
+
+  try {
+    const provider = new KoboldCppProvider({ baseURL, password });
+    const info = await provider.getEndpointInfo();
+    res.json(info);
+  } catch (error) {
+    console.error('Failed to inspect KoboldCpp endpoint:', error);
+    res.status(502).json({
+      error: 'Could not reach KoboldCpp',
+      message: `Could not reach KoboldCpp at ${baseURL}. Is it running?`,
+      detail: error.message
     });
   }
 }));

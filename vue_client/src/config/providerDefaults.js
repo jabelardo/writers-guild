@@ -182,6 +182,58 @@ export const PROVIDERS = {
     }
   },
 
+  koboldcpp: {
+    // Display information
+    name: 'KoboldCpp',
+    description: 'Local KoboldCpp endpoint (native API)',
+    icon: 'fa-server',
+    // Capabilities
+    supportsReasoning: false,
+    supportsStreaming: true,
+    // Default configuration
+    defaults: {
+      provider: 'koboldcpp',
+      apiConfig: {
+        baseURL: 'http://localhost:5001/api',
+        password: '',
+        model: ''
+      },
+      generationSettings: {
+        maxTokens: 200,
+        temperature: 0.7,
+        maxContextTokens: 4096,
+        includeDialogueExamples: false,
+        // KoboldCpp-tunable samplers (null = use Kobold defaults)
+        top_p: null,
+        top_k: null,
+        top_a: null,
+        typical: null,
+        tfs: null,
+        min_p: null,
+        rep_pen: null,
+        rep_pen_range: null,
+        rep_pen_slope: null,
+        // Mirostat (KoboldCpp-specific)
+        mirostat: null,
+        mirostat_tau: null,
+        mirostat_eta: null
+      },
+      lorebookSettings: {
+        scanDepth: 2000,
+        tokenBudget: 1800,
+        recursionDepth: 3,
+        enableRecursion: true
+      },
+      promptTemplates: {
+        systemPrompt: null,
+        continue: null,
+        character: null,
+        instruction: null,
+        rewriteThirdPerson: null
+      }
+    }
+  },
+
   openrouter: {
     // Display information
     name: 'OpenRouter',

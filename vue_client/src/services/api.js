@@ -655,6 +655,13 @@ export const presetsAPI = {
     return request(`/presets/deepseek/models?apiKey=${encodeURIComponent(apiKey)}`)
   },
 
+  // KoboldCpp specific methods
+  getKoboldCppInfo(baseURL, password = '') {
+    const params = new URLSearchParams({ baseURL })
+    if (password) params.set('password', password)
+    return request(`/presets/koboldcpp/info?${params.toString()}`)
+  },
+
   // Get default prompt templates (single source of truth from server)
   getDefaultTemplates() {
     return request('/presets/defaults/templates')
@@ -674,10 +681,10 @@ export const onboardingAPI = {
     })
   },
 
-  createPreset(provider, apiKey) {
+  createPreset(provider, apiKey, extraConfig = {}) {
     return request('/onboarding/preset', {
       method: 'POST',
-      body: JSON.stringify({ provider, apiKey }),
+      body: JSON.stringify({ provider, apiKey, ...extraConfig }),
     })
   },
 

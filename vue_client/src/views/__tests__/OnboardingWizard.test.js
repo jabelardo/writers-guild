@@ -182,9 +182,9 @@ describe('OnboardingWizard', () => {
       await flushPromises()
     })
 
-    it('should show all 5 provider options', () => {
+    it('should show all provider options', () => {
       const providers = wrapper.findAll('.provider-option')
-      expect(providers).toHaveLength(5)
+      expect(providers).toHaveLength(6)
     })
 
     it('should have DeepSeek selected by default', () => {
@@ -233,7 +233,7 @@ describe('OnboardingWizard', () => {
       await wrapper.findAll('.button-group button')[1].trigger('click')
       await flushPromises()
 
-      expect(mockOnboardingAPI.createPreset).toHaveBeenCalledWith('deepseek', 'sk-test-key')
+      expect(mockOnboardingAPI.createPreset).toHaveBeenCalledWith('deepseek', 'sk-test-key', {})
     })
 
     it('should advance to step 4 after successful preset creation', async () => {

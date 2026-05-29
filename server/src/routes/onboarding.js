@@ -93,20 +93,26 @@ router.post('/persona', asyncHandler(async (req, res) => {
 
 // Create preset during onboarding
 router.post('/preset', asyncHandler(async (req, res) => {
-  const { provider, apiKey } = req.body;
+  const { provider, apiKey, baseURL, password } = req.body;
 
   if (!provider) {
     throw new AppError('Provider is required', 400);
   }
 
-  const validProviders = ['deepseek', 'openai', 'anthropic', 'openrouter', 'aihorde'];
+  const validProviders = ['deepseek', 'openai', 'anthropic', 'openrouter', 'aihorde', 'koboldcpp'];
   if (!validProviders.includes(provider)) {
     throw new AppError(`Invalid provider. Must be one of: ${validProviders.join(', ')}`, 400);
   }
 
-  // AI Horde doesn't require an API key
-  if (provider !== 'aihorde' && (!apiKey || !apiKey.trim())) {
+  // AI Horde and KoboldCpp don't require an API key
+  const providersWithoutApiKey = ['aihorde', 'koboldcpp'];
+  if (!providersWithoutApiKey.includes(provider) && (!apiKey || !apiKey.trim())) {
     throw new AppError('API key is required for this provider', 400);
+  }
+
+  // KoboldCpp requires a base URL
+  if (provider === 'koboldcpp' && (!baseURL || !baseURL.trim())) {
+    throw new AppError('Base URL is required for KoboldCpp', 400);
   }
 
   // Basic API key validation
@@ -131,7 +137,7 @@ router.post('/preset', asyncHandler(async (req, res) => {
   const presetId = uuidv4();
 
   // Get provider-specific configuration
-  const presetConfig = getProviderPresetConfig(provider, apiKey);
+  const presetConfig = getProviderPresetConfig(provider, apiKey, { baseURL, password });
 
   await storage.savePreset(presetId, {
     ...presetConfig,
@@ -218,7 +224,7 @@ router.post('/skip', asyncHandler(async (req, res) => {
 /**
  * Get provider-specific preset configuration
  */
-function getProviderPresetConfig(provider, apiKey) {
+function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
   const baseConfig = {
     generationSettings: {
       maxTokens: 4000,
@@ -324,6 +330,26 @@ function getProviderPresetConfig(provider, apiKey) {
           rep_pen: 1.1,
           rep_pen_range: 320,
           sampler_order: [6, 0, 1, 3, 4, 2, 5],
+        },
+        lorebookSettings: baseConfig.lorebookSettings,
+        promptTemplates: baseConfig.promptTemplates
+      };
+
+    case 'koboldcpp':
+      return {
+        name: 'KoboldCpp',
+        provider: 'koboldcpp',
+        apiConfig: {
+          baseURL: (extraConfig.baseURL || 'http://localhost:5001/api').trim(),
+          password: (extraConfig.password || '').trim(),
+          model: ''
+        },
+        generationSettings: {
+          maxTokens: 200,
+          maxContextTokens: 4096,
+          temperature: 0.7,
+          includeDialogueExamples: false,
+          stop_sequences: []
         },
         lorebookSettings: baseConfig.lorebookSettings,
         promptTemplates: baseConfig.promptTemplates

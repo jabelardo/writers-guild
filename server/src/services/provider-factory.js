@@ -8,6 +8,7 @@ import { AIHordeProvider } from './providers/aihorde-provider.js';
 import { OpenRouterProvider } from './providers/openrouter-provider.js';
 import { OpenAIProvider } from './providers/openai-provider.js';
 import { AnthropicProvider } from './providers/anthropic-provider.js';
+import { KoboldCppProvider } from './providers/koboldcpp-provider.js';
 
 // Provider registry
 const PROVIDERS = {
@@ -16,6 +17,7 @@ const PROVIDERS = {
   openrouter: OpenRouterProvider,
   openai: OpenAIProvider,
   anthropic: AnthropicProvider,
+  koboldcpp: KoboldCppProvider,
 };
 
 /**

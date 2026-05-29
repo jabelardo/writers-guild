@@ -176,8 +176,13 @@ onMounted(async () => {
 })
 
 const canSave = computed(() => {
+  const apiConfig = formData.value.apiConfig || {}
+  // KoboldCpp authenticates with a URL (and optional password), not an API key
+  if (formData.value.provider === 'koboldcpp') {
+    return formData.value.name.trim() && (apiConfig.baseURL || '').trim() !== ''
+  }
   // AI Horde uses "0000000000" as default anonymous key, so it's always valid
-  const hasValidApiKey = formData.value.apiConfig.apiKey.trim() !== ''
+  const hasValidApiKey = (apiConfig.apiKey || '').trim() !== ''
   return formData.value.name.trim() && hasValidApiKey
 })
 

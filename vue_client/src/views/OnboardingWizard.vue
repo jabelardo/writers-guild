@@ -109,7 +109,7 @@
           </div>
         </div>
 
-        <div v-if="selectedProvider && selectedProvider !== 'aihorde'" class="form-group">
+        <div v-if="selectedProvider && selectedProvider !== 'aihorde' && selectedProvider !== 'koboldcpp'" class="form-group">
           <label :for="'apiKey-' + selectedProvider">
             {{ getProviderName(selectedProvider) }} API Key
           </label>
@@ -142,6 +142,31 @@
             but generation may be slower during peak times.
           </p>
         </div>
+
+        <template v-if="selectedProvider === 'koboldcpp'">
+          <div class="form-group">
+            <label for="koboldcpp-baseURL">KoboldCpp URL</label>
+            <input
+              id="koboldcpp-baseURL"
+              v-model="koboldBaseURL"
+              type="text"
+              placeholder="http://localhost:5001/api"
+            />
+            <p class="help-text">
+              URL of your running KoboldCpp instance. If Writer's Guild is running in Docker
+              and KoboldCpp is on the host or another machine, use that host's IP.
+            </p>
+          </div>
+          <div class="form-group">
+            <label for="koboldcpp-password">Password <span class="optional-label">(optional)</span></label>
+            <input
+              id="koboldcpp-password"
+              v-model="koboldPassword"
+              type="password"
+              placeholder="Only if KoboldCpp was started with --password"
+            />
+          </div>
+        </template>
 
         <div class="button-group">
           <button class="btn btn-secondary" @click="prevStep">Back</button>
@@ -278,6 +303,8 @@ const persona = ref({
 // Step 3: Provider
 const selectedProvider = ref('deepseek')
 const apiKey = ref('')
+const koboldBaseURL = ref('http://localhost:5001/api')
+const koboldPassword = ref('')
 
 const providers = [
   {
@@ -305,6 +332,11 @@ const providers = [
     id: 'aihorde',
     name: 'AI Horde',
     description: 'Free, community-powered AI. No API key required.'
+  },
+  {
+    id: 'koboldcpp',
+    name: 'KoboldCpp',
+    description: 'Connect to a local KoboldCpp endpoint you\'re already running.'
   }
 ]
 
@@ -317,6 +349,7 @@ const setupSummary = ref(null)
 const canProceedFromProvider = computed(() => {
   if (!selectedProvider.value) return false
   if (selectedProvider.value === 'aihorde') return true
+  if (selectedProvider.value === 'koboldcpp') return koboldBaseURL.value.trim().length > 0
   return apiKey.value.trim().length > 0
 })
 
@@ -391,7 +424,12 @@ async function createPreset() {
     return
   }
 
-  if (selectedProvider.value !== 'aihorde' && !apiKey.value.trim()) {
+  if (selectedProvider.value === 'koboldcpp') {
+    if (!koboldBaseURL.value.trim()) {
+      toast.error('Please enter a URL for your KoboldCpp endpoint')
+      return
+    }
+  } else if (selectedProvider.value !== 'aihorde' && !apiKey.value.trim()) {
     toast.error('Please enter your API key')
     return
   }
@@ -400,9 +438,13 @@ async function createPreset() {
   loadingMessage.value = 'Configuring AI provider...'
 
   try {
+    const extraConfig = selectedProvider.value === 'koboldcpp'
+      ? { baseURL: koboldBaseURL.value.trim(), password: koboldPassword.value.trim() }
+      : {}
     const result = await onboardingAPI.createPreset(
       selectedProvider.value,
-      apiKey.value.trim()
+      apiKey.value.trim(),
+      extraConfig
     )
     setupSummary.value = {
       ...setupSummary.value,

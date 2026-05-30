@@ -116,8 +116,8 @@
       </small>
     </div>
 
-    <!-- Llama.cpp-style samplers (AI Horde + KoboldCpp) -->
-    <template v-if="['aihorde', 'koboldcpp'].includes(provider)">
+    <!-- Llama.cpp-style samplers (AI Horde, KoboldCpp, Ollama) -->
+    <template v-if="['aihorde', 'koboldcpp', 'ollama'].includes(provider)">
       <h4 class="subsection-title">Sampler Settings</h4>
 
       <div class="form-group">
@@ -236,8 +236,8 @@
       </div>
     </template>
 
-    <!-- KoboldCpp-only: Mirostat -->
-    <template v-if="provider === 'koboldcpp'">
+    <!-- Mirostat (KoboldCpp + Ollama) -->
+    <template v-if="['koboldcpp', 'ollama'].includes(provider)">
       <h4 class="subsection-title">Mirostat</h4>
 
       <div class="form-group">
@@ -326,11 +326,11 @@ const emit = defineEmits(['update:modelValue'])
 
 // Provider capability checks
 const supportsTopP = computed(() => {
-  return ['anthropic', 'openai', 'deepseek', 'openrouter', 'aihorde', 'koboldcpp'].includes(props.provider)
+  return ['anthropic', 'openai', 'deepseek', 'openrouter', 'aihorde', 'koboldcpp', 'ollama'].includes(props.provider)
 })
 
 const supportsTopK = computed(() => {
-  return ['anthropic', 'deepseek', 'aihorde', 'koboldcpp'].includes(props.provider)
+  return ['anthropic', 'deepseek', 'aihorde', 'koboldcpp', 'ollama'].includes(props.provider)
 })
 
 const supportsFrequencyPenalty = computed(() => {

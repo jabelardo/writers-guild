@@ -9,6 +9,7 @@ import { OpenRouterProvider } from './providers/openrouter-provider.js';
 import { OpenAIProvider } from './providers/openai-provider.js';
 import { AnthropicProvider } from './providers/anthropic-provider.js';
 import { KoboldCppProvider } from './providers/koboldcpp-provider.js';
+import { OllamaProvider } from './providers/ollama-provider.js';
 
 // Provider registry
 const PROVIDERS = {
@@ -18,6 +19,7 @@ const PROVIDERS = {
   openai: OpenAIProvider,
   anthropic: AnthropicProvider,
   koboldcpp: KoboldCppProvider,
+  ollama: OllamaProvider,
 };
 
 /**

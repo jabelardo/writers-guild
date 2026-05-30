@@ -299,6 +299,16 @@ function getProviderDisplayName(provider) {
   color: #c2185b;
 }
 
+.provider-koboldcpp {
+  background-color: #e0f7fa;
+  color: #00838f;
+}
+
+.provider-ollama {
+  background-color: #e8eaf6;
+  color: #3949ab;
+}
+
 .action-buttons {
   padding-top: 0.5rem;
   border-top: 1px solid var(--border-color);

@@ -99,20 +99,20 @@ router.post('/preset', asyncHandler(async (req, res) => {
     throw new AppError('Provider is required', 400);
   }
 
-  const validProviders = ['deepseek', 'openai', 'anthropic', 'openrouter', 'aihorde', 'koboldcpp'];
+  const validProviders = ['deepseek', 'openai', 'anthropic', 'openrouter', 'aihorde', 'koboldcpp', 'ollama'];
   if (!validProviders.includes(provider)) {
     throw new AppError(`Invalid provider. Must be one of: ${validProviders.join(', ')}`, 400);
   }
 
-  // AI Horde and KoboldCpp don't require an API key
-  const providersWithoutApiKey = ['aihorde', 'koboldcpp'];
+  // AI Horde, KoboldCpp, and Ollama don't require an API key
+  const providersWithoutApiKey = ['aihorde', 'koboldcpp', 'ollama'];
   if (!providersWithoutApiKey.includes(provider) && (!apiKey || !apiKey.trim())) {
     throw new AppError('API key is required for this provider', 400);
   }
 
-  // KoboldCpp requires a base URL
-  if (provider === 'koboldcpp' && (!baseURL || !baseURL.trim())) {
-    throw new AppError('Base URL is required for KoboldCpp', 400);
+  // KoboldCpp and Ollama require a base URL
+  if (['koboldcpp', 'ollama'].includes(provider) && (!baseURL || !baseURL.trim())) {
+    throw new AppError(`Base URL is required for ${provider === 'koboldcpp' ? 'KoboldCpp' : 'Ollama'}`, 400);
   }
 
   // Basic API key validation
@@ -341,6 +341,26 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
         provider: 'koboldcpp',
         apiConfig: {
           baseURL: (extraConfig.baseURL || 'http://localhost:5001/api').trim(),
+          password: (extraConfig.password || '').trim(),
+          model: ''
+        },
+        generationSettings: {
+          maxTokens: 200,
+          maxContextTokens: 4096,
+          temperature: 0.7,
+          includeDialogueExamples: false,
+          stop_sequences: []
+        },
+        lorebookSettings: baseConfig.lorebookSettings,
+        promptTemplates: baseConfig.promptTemplates
+      };
+
+    case 'ollama':
+      return {
+        name: 'Ollama',
+        provider: 'ollama',
+        apiConfig: {
+          baseURL: (extraConfig.baseURL || 'http://localhost:11434').trim(),
           password: (extraConfig.password || '').trim(),
           model: ''
         },

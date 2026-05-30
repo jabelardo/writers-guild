@@ -9,6 +9,7 @@ import OpenAIConfig from './OpenAIConfig.vue'
 import AnthropicConfig from './AnthropicConfig.vue'
 import OpenRouterConfig from './OpenRouterConfig.vue'
 import KoboldCppConfig from './KoboldCppConfig.vue'
+import OllamaConfig from './OllamaConfig.vue'
 
 // Re-export consolidated provider metadata from config
 export { PROVIDERS } from '../../config/providerDefaults'
@@ -19,7 +20,8 @@ export const PROVIDER_COMPONENTS = {
   openai: OpenAIConfig,
   anthropic: AnthropicConfig,
   openrouter: OpenRouterConfig,
-  koboldcpp: KoboldCppConfig
+  koboldcpp: KoboldCppConfig,
+  ollama: OllamaConfig
 }
 
 /**

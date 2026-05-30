@@ -177,8 +177,8 @@ onMounted(async () => {
 
 const canSave = computed(() => {
   const apiConfig = formData.value.apiConfig || {}
-  // KoboldCpp and Ollama authenticate with a URL (+ optional password), not an API key
-  if (['koboldcpp', 'ollama'].includes(formData.value.provider)) {
+  // Local providers authenticate with a URL (+ optional token), not a required API key
+  if (['koboldcpp', 'ollama', 'openaicompatible'].includes(formData.value.provider)) {
     return formData.value.name.trim() && (apiConfig.baseURL || '').trim() !== ''
   }
   // AI Horde uses "0000000000" as default anonymous key, so it's always valid

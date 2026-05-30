@@ -99,20 +99,22 @@ router.post('/preset', asyncHandler(async (req, res) => {
     throw new AppError('Provider is required', 400);
   }
 
-  const validProviders = ['deepseek', 'openai', 'anthropic', 'openrouter', 'aihorde', 'koboldcpp', 'ollama'];
+  const validProviders = ['deepseek', 'openai', 'anthropic', 'openrouter', 'aihorde', 'koboldcpp', 'ollama', 'openaicompatible'];
   if (!validProviders.includes(provider)) {
     throw new AppError(`Invalid provider. Must be one of: ${validProviders.join(', ')}`, 400);
   }
 
-  // AI Horde, KoboldCpp, and Ollama don't require an API key
-  const providersWithoutApiKey = ['aihorde', 'koboldcpp', 'ollama'];
+  // AI Horde, KoboldCpp, Ollama, and OpenAI Compatible don't require an API key
+  const providersWithoutApiKey = ['aihorde', 'koboldcpp', 'ollama', 'openaicompatible'];
   if (!providersWithoutApiKey.includes(provider) && (!apiKey || !apiKey.trim())) {
     throw new AppError('API key is required for this provider', 400);
   }
 
-  // KoboldCpp and Ollama require a base URL
-  if (['koboldcpp', 'ollama'].includes(provider) && (!baseURL || !baseURL.trim())) {
-    throw new AppError(`Base URL is required for ${provider === 'koboldcpp' ? 'KoboldCpp' : 'Ollama'}`, 400);
+  // KoboldCpp, Ollama, and OpenAI Compatible require a base URL
+  const providersRequiringBaseURL = ['koboldcpp', 'ollama', 'openaicompatible'];
+  if (providersRequiringBaseURL.includes(provider) && (!baseURL || !baseURL.trim())) {
+    const labels = { koboldcpp: 'KoboldCpp', ollama: 'Ollama', openaicompatible: 'OpenAI Compatible' };
+    throw new AppError(`Base URL is required for ${labels[provider]}`, 400);
   }
 
   // Basic API key validation
@@ -367,6 +369,26 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
         generationSettings: {
           maxTokens: 200,
           maxContextTokens: 4096,
+          temperature: 0.7,
+          includeDialogueExamples: false,
+          stop_sequences: []
+        },
+        lorebookSettings: baseConfig.lorebookSettings,
+        promptTemplates: baseConfig.promptTemplates
+      };
+
+    case 'openaicompatible':
+      return {
+        name: 'OpenAI Compatible',
+        provider: 'openaicompatible',
+        apiConfig: {
+          baseURL: (extraConfig.baseURL || 'http://localhost:1234/v1').trim(),
+          apiKey: (extraConfig.apiKey || '').trim(),
+          model: ''
+        },
+        generationSettings: {
+          maxTokens: 4000,
+          maxContextTokens: 8192,
           temperature: 0.7,
           includeDialogueExamples: false,
           stop_sequences: []

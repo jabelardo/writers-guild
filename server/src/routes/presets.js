@@ -14,6 +14,7 @@ import { AnthropicProvider } from '../services/providers/anthropic-provider.js';
 import { DeepSeekProvider } from '../services/providers/deepseek-provider.js';
 import { KoboldCppProvider } from '../services/providers/koboldcpp-provider.js';
 import { OllamaProvider } from '../services/providers/ollama-provider.js';
+import { OpenAICompatibleProvider } from '../services/providers/openai-compatible-provider.js';
 
 const router = express.Router();
 
@@ -495,6 +496,32 @@ router.get('/ollama/models', asyncHandler(async (req, res) => {
     res.status(502).json({
       error: 'Could not reach Ollama',
       message: `Could not reach Ollama at ${baseURL}. Is it running?`,
+      detail: error.message
+    });
+  }
+}));
+
+// List models advertised by an OpenAI-compatible endpoint. Unlike /openai/models,
+// this does NOT require an apiKey query param — local servers (LM Studio,
+// llama.cpp, vLLM) typically accept any/no Bearer token. Optional token is
+// forwarded if provided.
+router.get('/openaicompatible/models', asyncHandler(async (req, res) => {
+  const baseURL = req.query.baseURL;
+  const apiKey = req.query.apiKey || '';
+
+  if (!baseURL) {
+    return res.status(400).json({ error: 'baseURL query parameter is required' });
+  }
+
+  try {
+    const provider = new OpenAICompatibleProvider({ baseURL, apiKey });
+    const models = await provider.getAvailableModels();
+    res.json({ models });
+  } catch (error) {
+    console.error('Failed to fetch OpenAI-compatible models:', error);
+    res.status(502).json({
+      error: 'Could not reach endpoint',
+      message: `Could not reach OpenAI-compatible endpoint at ${baseURL}. Is it running?`,
       detail: error.message
     });
   }

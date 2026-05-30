@@ -182,6 +182,58 @@ export const PROVIDERS = {
     }
   },
 
+  ollama: {
+    // Display information
+    name: 'Ollama',
+    description: 'Local Ollama endpoint (native API)',
+    icon: 'fa-cube',
+    // Capabilities
+    supportsReasoning: false,
+    supportsStreaming: true,
+    requiresModelSelection: true,
+    // Default configuration
+    defaults: {
+      provider: 'ollama',
+      apiConfig: {
+        baseURL: 'http://localhost:11434',
+        password: '',
+        model: ''
+      },
+      generationSettings: {
+        maxTokens: 200,
+        temperature: 0.7,
+        maxContextTokens: 4096,
+        includeDialogueExamples: false,
+        // Ollama-tunable samplers (null = use Ollama defaults). UI uses preset
+        // names; provider maps them to Ollama's `options` keys.
+        top_p: null,
+        top_k: null,
+        min_p: null,
+        typical: null,
+        tfs: null,
+        rep_pen: null,
+        rep_pen_range: null,
+        // Mirostat
+        mirostat: null,
+        mirostat_tau: null,
+        mirostat_eta: null
+      },
+      lorebookSettings: {
+        scanDepth: 2000,
+        tokenBudget: 1800,
+        recursionDepth: 3,
+        enableRecursion: true
+      },
+      promptTemplates: {
+        systemPrompt: null,
+        continue: null,
+        character: null,
+        instruction: null,
+        rewriteThirdPerson: null
+      }
+    }
+  },
+
   koboldcpp: {
     // Display information
     name: 'KoboldCpp',

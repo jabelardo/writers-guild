@@ -662,6 +662,19 @@ export const presetsAPI = {
     return request(`/presets/koboldcpp/info?${params.toString()}`)
   },
 
+  // Ollama specific methods
+  getOllamaModels(baseURL, password = '') {
+    const params = new URLSearchParams({ baseURL })
+    if (password) params.set('password', password)
+    return request(`/presets/ollama/models?${params.toString()}`)
+  },
+
+  getOllamaModelInfo(baseURL, name, password = '') {
+    const params = new URLSearchParams({ baseURL, name })
+    if (password) params.set('password', password)
+    return request(`/presets/ollama/show?${params.toString()}`)
+  },
+
   // Get default prompt templates (single source of truth from server)
   getDefaultTemplates() {
     return request('/presets/defaults/templates')

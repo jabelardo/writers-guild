@@ -109,7 +109,7 @@
           </div>
         </div>
 
-        <div v-if="selectedProvider && selectedProvider !== 'aihorde' && selectedProvider !== 'koboldcpp'" class="form-group">
+        <div v-if="selectedProvider && !['aihorde', 'koboldcpp', 'ollama'].includes(selectedProvider)" class="form-group">
           <label :for="'apiKey-' + selectedProvider">
             {{ getProviderName(selectedProvider) }} API Key
           </label>
@@ -164,6 +164,31 @@
               v-model="koboldPassword"
               type="password"
               placeholder="Only if KoboldCpp was started with --password"
+            />
+          </div>
+        </template>
+
+        <template v-if="selectedProvider === 'ollama'">
+          <div class="form-group">
+            <label for="ollama-baseURL">Ollama URL</label>
+            <input
+              id="ollama-baseURL"
+              v-model="ollamaBaseURL"
+              type="text"
+              placeholder="http://localhost:11434"
+            />
+            <p class="help-text">
+              URL of your running Ollama instance. You'll pick a specific model in preset
+              settings after onboarding (or run <code>ollama pull &lt;name&gt;</code> first).
+            </p>
+          </div>
+          <div class="form-group">
+            <label for="ollama-password">Bearer Token <span class="optional-label">(optional)</span></label>
+            <input
+              id="ollama-password"
+              v-model="ollamaPassword"
+              type="password"
+              placeholder="Only if you've put Ollama behind a reverse proxy with auth"
             />
           </div>
         </template>
@@ -305,6 +330,8 @@ const selectedProvider = ref('deepseek')
 const apiKey = ref('')
 const koboldBaseURL = ref('http://localhost:5001/api')
 const koboldPassword = ref('')
+const ollamaBaseURL = ref('http://localhost:11434')
+const ollamaPassword = ref('')
 
 const providers = [
   {
@@ -337,6 +364,11 @@ const providers = [
     id: 'koboldcpp',
     name: 'KoboldCpp',
     description: 'Connect to a local KoboldCpp endpoint you\'re already running.'
+  },
+  {
+    id: 'ollama',
+    name: 'Ollama',
+    description: 'Connect to a local Ollama endpoint you\'re already running.'
   }
 ]
 
@@ -350,6 +382,7 @@ const canProceedFromProvider = computed(() => {
   if (!selectedProvider.value) return false
   if (selectedProvider.value === 'aihorde') return true
   if (selectedProvider.value === 'koboldcpp') return koboldBaseURL.value.trim().length > 0
+  if (selectedProvider.value === 'ollama') return ollamaBaseURL.value.trim().length > 0
   return apiKey.value.trim().length > 0
 })
 
@@ -429,6 +462,11 @@ async function createPreset() {
       toast.error('Please enter a URL for your KoboldCpp endpoint')
       return
     }
+  } else if (selectedProvider.value === 'ollama') {
+    if (!ollamaBaseURL.value.trim()) {
+      toast.error('Please enter a URL for your Ollama endpoint')
+      return
+    }
   } else if (selectedProvider.value !== 'aihorde' && !apiKey.value.trim()) {
     toast.error('Please enter your API key')
     return
@@ -438,9 +476,12 @@ async function createPreset() {
   loadingMessage.value = 'Configuring AI provider...'
 
   try {
-    const extraConfig = selectedProvider.value === 'koboldcpp'
-      ? { baseURL: koboldBaseURL.value.trim(), password: koboldPassword.value.trim() }
-      : {}
+    let extraConfig = {}
+    if (selectedProvider.value === 'koboldcpp') {
+      extraConfig = { baseURL: koboldBaseURL.value.trim(), password: koboldPassword.value.trim() }
+    } else if (selectedProvider.value === 'ollama') {
+      extraConfig = { baseURL: ollamaBaseURL.value.trim(), password: ollamaPassword.value.trim() }
+    }
     const result = await onboardingAPI.createPreset(
       selectedProvider.value,
       apiKey.value.trim(),

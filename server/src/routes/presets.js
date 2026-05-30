@@ -13,6 +13,7 @@ import { OpenAIProvider } from '../services/providers/openai-provider.js';
 import { AnthropicProvider } from '../services/providers/anthropic-provider.js';
 import { DeepSeekProvider } from '../services/providers/deepseek-provider.js';
 import { KoboldCppProvider } from '../services/providers/koboldcpp-provider.js';
+import { OllamaProvider } from '../services/providers/ollama-provider.js';
 
 const router = express.Router();
 
@@ -441,6 +442,59 @@ router.get('/koboldcpp/info', asyncHandler(async (req, res) => {
     res.status(502).json({
       error: 'Could not reach KoboldCpp',
       message: `Could not reach KoboldCpp at ${baseURL}. Is it running?`,
+      detail: error.message
+    });
+  }
+}));
+
+// Inspect a specific Ollama model: pulls architectural max context + the
+// Modelfile's recommended parameter defaults so the client can auto-configure
+// preset settings when the user picks a model.
+router.get('/ollama/show', asyncHandler(async (req, res) => {
+  const { baseURL, password = '', name } = req.query;
+
+  if (!baseURL) {
+    return res.status(400).json({ error: 'baseURL query parameter is required' });
+  }
+  if (!name) {
+    return res.status(400).json({ error: 'name query parameter is required' });
+  }
+
+  try {
+    const provider = new OllamaProvider({ baseURL, password, model: name });
+    const info = await provider.getModelInfo(name);
+    res.json(info);
+  } catch (error) {
+    console.error('Failed to fetch Ollama model info:', error);
+    res.status(502).json({
+      error: 'Could not fetch model info',
+      message: `Could not fetch info for "${name}" from Ollama at ${baseURL}.`,
+      detail: error.message
+    });
+  }
+}));
+
+// List models installed on a user-provided Ollama instance. No caching — local
+// endpoint, the list can change anytime the user runs `ollama pull`.
+router.get('/ollama/models', asyncHandler(async (req, res) => {
+  const baseURL = req.query.baseURL;
+  const password = req.query.password || '';
+
+  if (!baseURL) {
+    return res.status(400).json({
+      error: 'baseURL query parameter is required'
+    });
+  }
+
+  try {
+    const provider = new OllamaProvider({ baseURL, password });
+    const models = await provider.getAvailableModels();
+    res.json({ models });
+  } catch (error) {
+    console.error('Failed to fetch Ollama models:', error);
+    res.status(502).json({
+      error: 'Could not reach Ollama',
+      message: `Could not reach Ollama at ${baseURL}. Is it running?`,
       detail: error.message
     });
   }

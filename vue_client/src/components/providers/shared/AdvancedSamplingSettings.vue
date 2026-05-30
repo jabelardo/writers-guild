@@ -326,7 +326,7 @@ const emit = defineEmits(['update:modelValue'])
 
 // Provider capability checks
 const supportsTopP = computed(() => {
-  return ['anthropic', 'openai', 'deepseek', 'openrouter', 'aihorde', 'koboldcpp', 'ollama'].includes(props.provider)
+  return ['anthropic', 'openai', 'deepseek', 'openrouter', 'aihorde', 'koboldcpp', 'ollama', 'openaicompatible'].includes(props.provider)
 })
 
 const supportsTopK = computed(() => {
@@ -338,7 +338,7 @@ const supportsFrequencyPenalty = computed(() => {
   if (props.provider === 'deepseek' && props.modelValue?.thinking) {
     return false
   }
-  return ['openai', 'deepseek', 'openrouter'].includes(props.provider)
+  return ['openai', 'deepseek', 'openrouter', 'openaicompatible'].includes(props.provider)
 })
 
 const supportsPresencePenalty = computed(() => {
@@ -346,7 +346,7 @@ const supportsPresencePenalty = computed(() => {
   if (props.provider === 'deepseek' && props.modelValue?.thinking) {
     return false
   }
-  return ['openai', 'deepseek', 'openrouter'].includes(props.provider)
+  return ['openai', 'deepseek', 'openrouter', 'openaicompatible'].includes(props.provider)
 })
 
 const localSettings = computed({

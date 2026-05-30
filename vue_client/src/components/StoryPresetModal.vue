@@ -309,6 +309,11 @@ function getProviderDisplayName(provider) {
   color: #3949ab;
 }
 
+.provider-openaicompatible {
+  background-color: #f1f8e9;
+  color: #558b2f;
+}
+
 .action-buttons {
   padding-top: 0.5rem;
   border-top: 1px solid var(--border-color);

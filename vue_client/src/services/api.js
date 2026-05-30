@@ -675,6 +675,13 @@ export const presetsAPI = {
     return request(`/presets/ollama/show?${params.toString()}`)
   },
 
+  // OpenAI-Compatible (LM Studio / llama.cpp / vLLM) specific methods
+  getOpenAICompatibleModels(baseURL, apiKey = '') {
+    const params = new URLSearchParams({ baseURL })
+    if (apiKey) params.set('apiKey', apiKey)
+    return request(`/presets/openaicompatible/models?${params.toString()}`)
+  },
+
   // Get default prompt templates (single source of truth from server)
   getDefaultTemplates() {
     return request('/presets/defaults/templates')

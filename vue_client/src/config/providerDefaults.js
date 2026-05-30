@@ -182,6 +182,49 @@ export const PROVIDERS = {
     }
   },
 
+  openaicompatible: {
+    // Display information
+    name: 'OpenAI Compatible',
+    description: 'Local server with an OpenAI-shaped API (LM Studio, llama.cpp, vLLM)',
+    icon: 'fa-plug',
+    // Capabilities
+    supportsReasoning: false,
+    supportsStreaming: true,
+    requiresModelSelection: true,
+    // Default configuration
+    defaults: {
+      provider: 'openaicompatible',
+      apiConfig: {
+        baseURL: 'http://localhost:1234/v1',
+        apiKey: '',
+        model: ''
+      },
+      generationSettings: {
+        maxTokens: 4000,
+        temperature: 0.7,
+        maxContextTokens: 8192,
+        includeDialogueExamples: false,
+        // Standard OpenAI-shape samplers (null = use server defaults)
+        top_p: null,
+        frequency_penalty: null,
+        presence_penalty: null
+      },
+      lorebookSettings: {
+        scanDepth: 2000,
+        tokenBudget: 1800,
+        recursionDepth: 3,
+        enableRecursion: true
+      },
+      promptTemplates: {
+        systemPrompt: null,
+        continue: null,
+        character: null,
+        instruction: null,
+        rewriteThirdPerson: null
+      }
+    }
+  },
+
   ollama: {
     // Display information
     name: 'Ollama',

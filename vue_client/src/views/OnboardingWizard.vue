@@ -109,7 +109,7 @@
           </div>
         </div>
 
-        <div v-if="selectedProvider && !['aihorde', 'koboldcpp', 'ollama'].includes(selectedProvider)" class="form-group">
+        <div v-if="selectedProvider && !['aihorde', 'koboldcpp', 'ollama', 'openaicompatible'].includes(selectedProvider)" class="form-group">
           <label :for="'apiKey-' + selectedProvider">
             {{ getProviderName(selectedProvider) }} API Key
           </label>
@@ -189,6 +189,32 @@
               v-model="ollamaPassword"
               type="password"
               placeholder="Only if you've put Ollama behind a reverse proxy with auth"
+            />
+          </div>
+        </template>
+
+        <template v-if="selectedProvider === 'openaicompatible'">
+          <div class="form-group">
+            <label for="oaicompat-baseURL">Endpoint URL</label>
+            <input
+              id="oaicompat-baseURL"
+              v-model="oaiCompatBaseURL"
+              type="text"
+              placeholder="http://localhost:1234/v1"
+            />
+            <p class="help-text">
+              Any server speaking OpenAI's API shape: LM Studio (port 1234), llama.cpp
+              <code>--api</code> mode (port 8080), vLLM, etc. The URL should end in
+              <code>/v1</code>. You'll pick a model in preset settings after onboarding.
+            </p>
+          </div>
+          <div class="form-group">
+            <label for="oaicompat-apiKey">Bearer Token <span class="optional-label">(optional)</span></label>
+            <input
+              id="oaicompat-apiKey"
+              v-model="oaiCompatApiKey"
+              type="password"
+              placeholder="Only if your endpoint requires auth"
             />
           </div>
         </template>
@@ -332,6 +358,8 @@ const koboldBaseURL = ref('http://localhost:5001/api')
 const koboldPassword = ref('')
 const ollamaBaseURL = ref('http://localhost:11434')
 const ollamaPassword = ref('')
+const oaiCompatBaseURL = ref('http://localhost:1234/v1')
+const oaiCompatApiKey = ref('')
 
 const providers = [
   {
@@ -369,6 +397,11 @@ const providers = [
     id: 'ollama',
     name: 'Ollama',
     description: 'Connect to a local Ollama endpoint you\'re already running.'
+  },
+  {
+    id: 'openaicompatible',
+    name: 'OpenAI Compatible',
+    description: 'Any local server that speaks OpenAI\'s API (LM Studio, llama.cpp, vLLM).'
   }
 ]
 
@@ -383,6 +416,7 @@ const canProceedFromProvider = computed(() => {
   if (selectedProvider.value === 'aihorde') return true
   if (selectedProvider.value === 'koboldcpp') return koboldBaseURL.value.trim().length > 0
   if (selectedProvider.value === 'ollama') return ollamaBaseURL.value.trim().length > 0
+  if (selectedProvider.value === 'openaicompatible') return oaiCompatBaseURL.value.trim().length > 0
   return apiKey.value.trim().length > 0
 })
 
@@ -467,6 +501,11 @@ async function createPreset() {
       toast.error('Please enter a URL for your Ollama endpoint')
       return
     }
+  } else if (selectedProvider.value === 'openaicompatible') {
+    if (!oaiCompatBaseURL.value.trim()) {
+      toast.error('Please enter a URL for your OpenAI-compatible endpoint')
+      return
+    }
   } else if (selectedProvider.value !== 'aihorde' && !apiKey.value.trim()) {
     toast.error('Please enter your API key')
     return
@@ -481,6 +520,8 @@ async function createPreset() {
       extraConfig = { baseURL: koboldBaseURL.value.trim(), password: koboldPassword.value.trim() }
     } else if (selectedProvider.value === 'ollama') {
       extraConfig = { baseURL: ollamaBaseURL.value.trim(), password: ollamaPassword.value.trim() }
+    } else if (selectedProvider.value === 'openaicompatible') {
+      extraConfig = { baseURL: oaiCompatBaseURL.value.trim(), apiKey: oaiCompatApiKey.value.trim() }
     }
     const result = await onboardingAPI.createPreset(
       selectedProvider.value,

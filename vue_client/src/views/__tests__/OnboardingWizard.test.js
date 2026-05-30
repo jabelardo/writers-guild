@@ -184,7 +184,7 @@ describe('OnboardingWizard', () => {
 
     it('should show all provider options', () => {
       const providers = wrapper.findAll('.provider-option')
-      expect(providers).toHaveLength(7)
+      expect(providers).toHaveLength(8)
     })
 
     it('should have DeepSeek selected by default', () => {

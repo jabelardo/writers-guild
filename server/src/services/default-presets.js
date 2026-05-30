@@ -101,6 +101,40 @@ export const DEFAULT_PROMPT_TEMPLATES = {
 
 export function getDefaultPresets() {
   return {
+    openaicompatible: {
+      name: "OpenAI Compatible",
+      provider: "openaicompatible",
+      apiConfig: {
+        baseURL: "http://localhost:1234/v1",
+        apiKey: "",
+        model: ""
+      },
+      generationSettings: {
+        maxTokens: 4000,
+        maxContextTokens: 8192,
+        temperature: 0.7,
+        includeDialogueExamples: false,
+        top_p: null,
+        frequency_penalty: null,
+        presence_penalty: null,
+        stop_sequences: []
+      },
+      lorebookSettings: {
+        scanDepth: 2000,
+        tokenBudget: 1800,
+        recursionDepth: 3,
+        enableRecursion: true
+      },
+      promptTemplates: {
+        systemPrompt: null,
+        continue: null,
+        character: null,
+        instruction: null,
+        rewriteThirdPerson: null,
+        ideate: null,
+        storyStarter: null
+      }
+    },
     ollama: {
       name: "Ollama",
       provider: "ollama",

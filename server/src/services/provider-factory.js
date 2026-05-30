@@ -10,6 +10,7 @@ import { OpenAIProvider } from './providers/openai-provider.js';
 import { AnthropicProvider } from './providers/anthropic-provider.js';
 import { KoboldCppProvider } from './providers/koboldcpp-provider.js';
 import { OllamaProvider } from './providers/ollama-provider.js';
+import { OpenAICompatibleProvider } from './providers/openai-compatible-provider.js';
 
 // Provider registry
 const PROVIDERS = {
@@ -20,6 +21,7 @@ const PROVIDERS = {
   anthropic: AnthropicProvider,
   koboldcpp: KoboldCppProvider,
   ollama: OllamaProvider,
+  openaicompatible: OpenAICompatibleProvider,
 };
 
 /**

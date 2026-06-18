@@ -83,6 +83,25 @@
           @input="handleInput"
         ></textarea>
         <div v-else class="story-preview" v-html="renderedContent"></div>
+        
+        <!-- Bottom input bar for preview mode -->
+        <div v-if="showPreview" class="preview-input-bar">
+          <input
+            ref="bottomInputRef"
+            v-model="bottomInput"
+            type="text"
+            class="preview-input"
+            placeholder="Type a message..."
+            @keydown.enter="handleBottomInputSend"
+          />
+          <button
+            class="btn btn-primary btn-send"
+            :disabled="!bottomInput.trim()"
+            @click="handleBottomInputSend"
+          >
+            <i class="fas fa-paper-plane"></i> Send
+          </button>
+        </div>
       </div>
 
       <!-- Bottom Toolbar -->
@@ -365,6 +384,16 @@ const showThirdPersonPrompt = ref(false)
 const showPreview = ref(false)
 let abortController = null
 
+// Bottom input for preview mode
+const bottomInput = ref('')
+const bottomInputRef = ref(null)
+
+// Check if story has images
+const hasImages = computed(() => {
+  if (!content.value) return false
+  return /!\[[^\]]*\]\s*\([^)]+\)/.test(content.value) || /<img[^>]*>/i.test(content.value)
+})
+
 // Avatar windows (stored on server per-story)
 const avatarWindows = ref([])
 
@@ -464,6 +493,11 @@ onMounted(async () => {
   // Load avatar windows from story
   if (story.value?.avatarWindows) {
     avatarWindows.value = story.value.avatarWindows
+  }
+
+  // Set preview mode as default if story has images
+  if (hasImages.value) {
+    showPreview.value = true
   }
 
   // Add keyboard shortcut listener
@@ -712,6 +746,26 @@ async function handleRedo() {
     await nextTick()
     isUndoRedoOperation = false
     undoRedoInProgress.value = false
+  }
+}
+
+async function handleBottomInputSend() {
+  if (!bottomInput.value.trim() || generating.value) return
+
+  try {
+    // Add user message to content
+    const userMessage = bottomInput.value.trim()
+    content.value = content.value + '\n\n' + userMessage
+    bottomInput.value = ''
+
+    // Save the story
+    await saveStory(true)
+
+    // Trigger character response
+    await handleCharacterResponse()
+  } catch (error) {
+    console.error('Failed to send message:', error)
+    toast.error('Failed to send message: ' + error.message)
   }
 }
 
@@ -1420,6 +1474,8 @@ function saveAvatarWindows() {
   flex: 1;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
 .story-editor {
@@ -1545,7 +1601,8 @@ function saveAvatarWindows() {
 
 .story-preview {
   width: 100%;
-  height: 100%;
+  flex: 1;
+  overflow-y: auto;
   padding-top: 2rem;
   padding-bottom: 2rem;
   padding-left: max(2rem, calc((100% - 700px) / 2));
@@ -1555,7 +1612,6 @@ function saveAvatarWindows() {
   line-height: 1.8;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  overflow-y: auto;
   box-shadow: var(--shadow);
 }
 
@@ -1595,5 +1651,41 @@ function saveAvatarWindows() {
     max-width: min(100%, calc(100vw - 8rem), 800px);
     max-height: calc(100vh - 10rem);
   }
+}
+
+/* Preview input bar at bottom of editor when in preview mode */
+.editor-container {
+  position: relative;
+}
+
+.preview-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.preview-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.preview-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(139, 90, 43, 0.1);
+}
+
+.btn-send {
+  padding: 0.75rem 1.5rem;
+  white-space: nowrap;
 }
 </style>

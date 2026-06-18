@@ -68,6 +68,8 @@ Write in a narrative, novel-style format with proper paragraphs and dialogue.
 Maintain consistency with established characters and plot.
 Focus on showing rather than telling, with vivid descriptions and natural dialogue.
 
+LANGUAGE REQUIREMENT: You MUST write in the exact same language as the existing story content. Do NOT switch to English. If the story is in Spanish, write in Spanish. If in French, write in French. Match the language of the provided text exactly.
+
 === PERSPECTIVE ===
 Write only in third-person past tense perspective.
 Use he/she/they pronouns and past tense verbs (said, walked, thought, etc.).

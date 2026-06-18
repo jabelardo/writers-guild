@@ -753,9 +753,9 @@ async function handleBottomInputSend() {
   if (!bottomInput.value.trim() || generating.value) return
 
   try {
-    // Add user message to content
+    // Add user message to content with newline before and after
     const userMessage = bottomInput.value.trim()
-    content.value = content.value + '\n\n' + userMessage
+    content.value = content.value + '\n\n' + userMessage + '\n'
     bottomInput.value = ''
 
     // Save the story
@@ -919,8 +919,8 @@ async function generate(isCustom, instruction, characterId) {
     reasoning.value = ''
     showReasoningPanel.value = false  // Only open when reasoning is actually received
 
-    // Track cursor position
-    const cursorPos = editorRef.value.selectionStart
+    // Track cursor position (only if editor is visible)
+    const cursorPos = editorRef.value ? editorRef.value.selectionStart : content.value.length
     const textBefore = content.value.substring(0, cursorPos)
     const textAfter = content.value.substring(cursorPos)
 

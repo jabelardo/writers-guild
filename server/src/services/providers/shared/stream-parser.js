@@ -18,6 +18,7 @@ export async function* parseSSEStream(body, transformDelta, providerName = 'Prov
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let emittedFinished = false;
 
   try {
     while (true) {
@@ -34,7 +35,18 @@ export async function* parseSSEStream(body, transformDelta, providerName = 'Prov
       for (const line of lines) {
         const trimmed = line.trim();
 
-        if (trimmed === "" || trimmed === "data: [DONE]") {
+        if (trimmed === "") {
+          continue;
+        }
+
+        // Some providers only signal completion with [DONE] and never send
+        // a final chunk containing finish_reason. Emit a synthetic final chunk
+        // so downstream code can run finalization (e.g. image restoration).
+        if (trimmed === "data: [DONE]") {
+          if (!emittedFinished) {
+            emittedFinished = true;
+            yield { reasoning: null, content: null, finished: true };
+          }
           continue;
         }
 
@@ -46,13 +58,16 @@ export async function* parseSSEStream(body, transformDelta, providerName = 'Prov
             if (data.choices && data.choices[0]) {
               const delta = data.choices[0].delta;
               const finishReason = data.choices[0].finish_reason;
+              const finished = finishReason !== null;
 
               // Use the transform function to extract provider-specific fields
               const result = transformDelta(delta, data);
 
+              if (finished) emittedFinished = true;
+
               yield {
                 ...result,
-                finished: finishReason !== null,
+                finished,
               };
             }
           } catch (e) {
@@ -60,6 +75,11 @@ export async function* parseSSEStream(body, transformDelta, providerName = 'Prov
           }
         }
       }
+    }
+
+    // If stream ended without an explicit finished chunk, emit one.
+    if (!emittedFinished) {
+      yield { reasoning: null, content: null, finished: true };
     }
   } catch (error) {
     if (error.name === 'AbortError') {

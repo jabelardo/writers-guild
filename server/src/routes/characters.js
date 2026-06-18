@@ -20,14 +20,17 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/avif'];
     if (!allowedTypes.includes(file.mimetype)) {
-      cb(new AppError('Only PNG and JPEG images are allowed', 400));
+      cb(new AppError('Only PNG, JPEG, WebP, and AVIF images are allowed', 400));
     } else {
       cb(null, true);
     }
   },
 });
+
+// Configure multer for JSON uploads (import-json route)
+const jsonUpload = multer({ storage: multer.memoryStorage() });
 
 // Initialize storage service
 let storage;
@@ -273,6 +276,86 @@ router.post('/create', upload.single('image'), asyncHandler(async (req, res) => 
     imageUrl: hasImage ? `/api/characters/${characterId}/image` : null,
     firstMessage: characterData.data.first_mes,
   });
+}));
+
+/**
+ * Import character from JSON file (standalone .json character card)
+ */
+router.post('/import-json', jsonUpload.single('character'), asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new AppError('No character file provided', 400);
+  }
+
+  try {
+    // Parse JSON from buffer
+    const jsonString = req.file.buffer.toString('utf8');
+    let cardData;
+    try {
+      cardData = JSON.parse(jsonString);
+    } catch (e) {
+      throw new AppError('Invalid JSON file: ' + e.message, 400);
+    }
+
+    // Support both V2 format (with data wrapper) and flat format
+    if (!cardData.data) {
+      // Try treating the whole JSON as the data field
+      cardData = {
+        spec: 'chara_card_v2',
+        spec_version: '2.0',
+        data: cardData
+      };
+    }
+
+    if (!cardData.data || !cardData.data.name) {
+      throw new AppError('Invalid character card: missing name or data field', 400);
+    }
+
+    const characterId = uuidv4();
+
+    // Check for embedded lorebook
+    let embeddedLorebook = null;
+    let lorebookId = null;
+    if (cardData.data?.character_book && cardData.data.character_book.entries && cardData.data.character_book.entries.length > 0) {
+      try {
+        const lorebookData = LorebookParser.parseEmbeddedLorebook(cardData.data.character_book);
+        lorebookData.name = `${cardData.data.name}'s Lorebook`;
+        lorebookData.description = lorebookData.description || `Lorebook for ${cardData.data.name}`;
+
+        lorebookId = uuidv4();
+        await storage.saveLorebook(lorebookId, lorebookData);
+
+        embeddedLorebook = {
+          id: lorebookId,
+          name: lorebookData.name,
+          entryCount: lorebookData.entries.length
+        };
+
+        console.log(`Extracted embedded lorebook from ${cardData.data.name}: ${lorebookData.entries.length} entries`);
+      } catch (error) {
+        console.error('Failed to parse embedded lorebook:', error);
+      }
+    }
+
+    // Add lorebook association to character data
+    if (!cardData.data.extensions) {
+      cardData.data.extensions = {};
+    }
+    cardData.data.extensions.ursceal_lorebook_id = lorebookId;
+
+    // Save character data (no image for JSON import)
+    await storage.saveCharacter(characterId, cardData, null);
+
+    res.status(201).json({
+      id: characterId,
+      name: cardData.data.name,
+      description: cardData.data.description || '',
+      imageUrl: null,
+      firstMessage: cardData.data.first_mes || '',
+      embeddedLorebook: embeddedLorebook
+    });
+  } catch (error) {
+    throw new AppError(`Failed to import character: ${error.message}`, 400);
+  }
 }));
 
 // Import character from URL (CHUB, etc.)

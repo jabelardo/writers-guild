@@ -1,24 +1,48 @@
 <template>
   <Modal title="Import Character" @close="$emit('close')">
     <div class="import-content">
-      <!-- Import from PNG -->
+      <!-- Import from Photos -->
       <section class="import-section">
-        <h3><i class="fas fa-image"></i> Import from PNG</h3>
-        <p class="help-text">Upload a character card image (PNG format)</p>
+        <h3><i class="fas fa-images"></i> Import from Photos</h3>
+        <p class="help-text">Pick a character card image from your photo gallery</p>
         <input
           ref="fileInput"
           type="file"
-          accept="image/png"
+          accept="image/png,image/jpeg"
           @change="handleFileSelect"
           class="file-input"
         />
         <button
           class="btn btn-primary full-width"
           :disabled="!selectedFile || importing"
-          @click="importFromPNG"
+          @click="importFromPhoto"
         >
           <i class="fas fa-upload"></i>
-          {{ importing ? 'Importing...' : 'Import PNG' }}
+          {{ importing ? 'Importing...' : 'Import from Photos' }}
+        </button>
+      </section>
+
+      <div class="divider">
+        <span>OR</span>
+      </div>
+
+      <!-- Import from Storage -->
+      <section class="import-section">
+        <h3><i class="fas fa-folder-open"></i> Import from Storage</h3>
+        <p class="help-text">Browse local files for character card JSON or images</p>
+        <input
+          ref="storageFileInput"
+          type="file"
+          @change="handleStorageFileSelect"
+          class="file-input"
+        />
+        <button
+          class="btn btn-primary full-width"
+          :disabled="!selectedStorageFile || importing"
+          @click="importFromStorage"
+        >
+          <i class="fas fa-upload"></i>
+          {{ importing ? 'Importing...' : 'Import from Storage' }}
         </button>
       </section>
 
@@ -62,6 +86,8 @@ const toast = useToast()
 
 const selectedFile = ref(null)
 const fileInput = ref(null)
+const selectedStorageFile = ref(null)
+const storageFileInput = ref(null)
 const characterUrl = ref('')
 const importing = ref(false)
 
@@ -72,7 +98,14 @@ function handleFileSelect(event) {
   }
 }
 
-async function importFromPNG() {
+function handleStorageFileSelect(event) {
+  const file = event.target.files[0]
+  if (file) {
+    selectedStorageFile.value = file
+  }
+}
+
+async function importFromPhoto() {
   if (!selectedFile.value || importing.value) return
 
   try {
@@ -83,7 +116,7 @@ async function importFromPNG() {
     emit('imported', result)
     emit('close')
   } catch (error) {
-    console.error('Failed to import PNG:', error)
+    console.error('Failed to import photo:', error)
     toast.error('Failed to import character: ' + error.message)
   } finally {
     importing.value = false
@@ -102,6 +135,35 @@ async function importFromURL() {
     emit('close')
   } catch (error) {
     console.error('Failed to import from URL:', error)
+    toast.error('Failed to import character: ' + error.message)
+  } finally {
+    importing.value = false
+  }
+}
+
+async function importFromStorage() {
+  if (!selectedStorageFile.value || importing.value) return
+
+  try {
+    importing.value = true
+
+    // Detect if it's an image file (PNG/JPEG) and route accordingly
+    const file = selectedStorageFile.value
+    const isImage = file.type === 'image/png' || file.type === 'image/jpeg' ||
+      file.name.match(/\.(png|jpg|jpeg|webp)$/i)
+
+    let result
+    if (isImage) {
+      result = await charactersAPI.importPNG(file)
+    } else {
+      result = await charactersAPI.importJSON(file)
+    }
+
+    toast.success(`Successfully imported "${result.name}"!`)
+    emit('imported', result)
+    emit('close')
+  } catch (error) {
+    console.error('Failed to import character from storage:', error)
     toast.error('Failed to import character: ' + error.message)
   } finally {
     importing.value = false

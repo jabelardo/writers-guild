@@ -476,6 +476,24 @@ export const charactersAPI = {
     return response.json()
   },
 
+  async importJSON(file) {
+    const formData = new FormData()
+    formData.append('character', file)
+
+    const url = `${baseURL}/characters/import-json`
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }))
+      throw new Error(error.error || `Request failed: ${response.statusText}`)
+    }
+
+    return response.json()
+  },
+
   async importFromURL(url) {
     return request('/characters/import-url', {
       method: 'POST',

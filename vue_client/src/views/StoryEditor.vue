@@ -11,6 +11,14 @@
       <div class="header-right">
         <button
           class="icon-btn"
+          :class="{ 'icon-btn-active': showPreview }"
+          @click="showPreview = !showPreview"
+          :title="showPreview ? 'Switch to editor' : 'Preview rendered content'"
+        >
+          <i class="fas fa-eye"></i>
+        </button>
+        <button
+          class="icon-btn"
           @click="showManageCharacters = true"
           title="Manage Characters"
         >
@@ -63,9 +71,10 @@
         @close="showReasoningPanel = false"
       />
 
-      <!-- Text Editor -->
+      <!-- Text Editor / Preview -->
       <div class="editor-container">
         <textarea
+          v-if="!showPreview"
           ref="editorRef"
           v-model="content"
           class="story-editor"
@@ -73,6 +82,7 @@
           spellcheck="true"
           @input="handleInput"
         ></textarea>
+        <div v-else class="story-preview" v-html="renderedContent"></div>
       </div>
 
       <!-- Bottom Toolbar -->
@@ -352,6 +362,7 @@ const ideateResponse = ref('')
 const ideateLoading = ref(false)
 const ideateStatus = ref('Thinking...')
 const showThirdPersonPrompt = ref(false)
+const showPreview = ref(false)
 let abortController = null
 
 // Avatar windows (stored on server per-story)
@@ -363,6 +374,25 @@ const shouldShowReasoning = ref(false) // Setting from server
 // Computed: is story content empty?
 const isStoryEmpty = computed(() => {
   return !content.value || content.value.trim().length === 0
+})
+
+// Computed: rendered content with markdown images converted to HTML
+const renderedContent = computed(() => {
+  if (!content.value) return ''
+  // Escape HTML special chars first
+  let html = content.value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+  // Convert markdown images: ![alt](url) and ![alt] (url)
+  html = html.replace(/!\[([^\]]*)\]\s*\(([^)]+)\)/g, '<img src="$2" alt="$1" class="story-image" loading="lazy">')
+  // Convert double newlines to paragraphs
+  html = '<p>' + html.replace(/\n\n/g, '</p><p>') + '</p>'
+  // Convert single newlines to <br>
+  html = html.replace(/\n/g, '<br>')
+  // Remove empty paragraphs
+  html = html.replace(/<p><\/p>/g, '')
+  return html
 })
 
 // Auto-save
@@ -378,6 +408,12 @@ const undoRedoInProgress = ref(false) // Prevents rapid concurrent undo/redo ope
 function normalizeTrailingLineBreaks() {
   const trimmed = content.value.replace(/\n+$/, '')
   content.value = trimmed + '\n\n'
+}
+
+// Normalize markdown image syntax spacing: ![alt] (url) -> ![alt](url)
+function normalizeMarkdownImageSpacing(text) {
+  if (!text) return text
+  return text.replace(/!\[([^\]]*)\]\s+\(([^)]+)\)/g, '![$1]($2)')
 }
 
 // Keyboard shortcut handler for quick paragraph generation, modal opening, and undo/redo
@@ -433,7 +469,21 @@ onMounted(async () => {
   // Add keyboard shortcut listener
   window.addEventListener('keydown', handleKeyboardShortcut)
 
-  // Check if we should prompt for third-person rewrite (from story creation with first message)
+  // Check if we should show greeting selector first (for newly created stories with characters)
+  if (story.value?.needsRewritePrompt && story.value?.characterIds?.length > 0) {
+    // Clear the flag on the server
+    try {
+      await storiesAPI.setRewritePrompt(props.storyId, false)
+    } catch (error) {
+      console.error('Failed to clear rewrite prompt flag:', error)
+    }
+    
+    // Show greeting selector FIRST before rewrite dialog
+    showGreetingSelector.value = true
+    return
+  }
+  
+  // If we don't need to show greeting selector, check if we should show rewrite dialog
   if (story.value?.needsRewritePrompt) {
     // Clear the flag on the server
     try {
@@ -546,13 +596,21 @@ async function loadSettings() {
 }
 
 async function saveStory(silent = false) {
-  if (content.value === originalContent.value) {
+  const normalizedContent = normalizeMarkdownImageSpacing(content.value)
+  const normalizedOriginal = normalizeMarkdownImageSpacing(originalContent.value)
+
+  // Keep editor content canonical when save is triggered
+  if (normalizedContent !== content.value) {
+    content.value = normalizedContent
+  }
+
+  if (normalizedContent === normalizedOriginal) {
     return // No changes
   }
 
   try {
-    const result = await storiesAPI.updateContent(props.storyId, content.value)
-    originalContent.value = content.value
+    const result = await storiesAPI.updateContent(props.storyId, normalizedContent)
+    originalContent.value = normalizedContent
 
     // Update history status from response
     if (result.canUndo !== undefined) {
@@ -956,7 +1014,8 @@ async function rewriteToThirdPerson(skipConfirm = false) {
     if (!confirmed) return
   }
 
-  // Save before rewriting
+  // Save the current content (with any embedded images) before rewriting
+  // The server-side ImagePreserver handles image extraction/restoration
   await saveStory(true)
 
   // Create abort controller for cancellation
@@ -1020,6 +1079,17 @@ async function rewriteToThirdPerson(skipConfirm = false) {
         content.value = rewrittenContent
 
         // Auto-scroll editor
+        await nextTick()
+        if (editorRef.value) {
+          editorRef.value.scrollTop = editorRef.value.scrollHeight
+        }
+      }
+
+      // Handle server-side image restoration event
+      if (chunk.imagesRestored && chunk.finalContent) {
+        // Server already restored images; use its final content directly
+        rewrittenContent = chunk.finalContent
+        content.value = rewrittenContent
         await nextTick()
         if (editorRef.value) {
           editorRef.value.scrollTop = editorRef.value.scrollHeight
@@ -1294,6 +1364,7 @@ function saveAvatarWindows() {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   background-color: var(--bg-secondary);
 }
 
@@ -1462,5 +1533,67 @@ function saveAvatarWindows() {
 .stop-button {
   margin-left: auto;
   white-space: nowrap;
+}
+
+.icon-btn-active {
+  color: var(--accent-primary) !important;
+}
+
+.icon-btn-active i {
+  color: var(--accent-primary) !important;
+}
+
+.story-preview {
+  width: 100%;
+  height: 100%;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  padding-left: max(2rem, calc((100% - 700px) / 2));
+  padding-right: max(2rem, calc((100% - 700px) / 2));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.8;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+
+.story-preview p {
+  margin: 0 0 1em 0;
+}
+
+:deep(.story-preview .story-image) {
+  /* Responsive: scale image to viewport with adaptive margins */
+  width: auto;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+/* Small screens (phones) — keep some edge padding */
+@media (max-width: 480px) {
+  :deep(.story-preview .story-image) {
+    max-width: calc(100vw - 2rem);
+    max-height: 70vh;
+  }
+}
+
+/* Medium screens (tablets) */
+@media (min-width: 481px) and (max-width: 1024px) {
+  :deep(.story-preview .story-image) {
+    max-width: calc(100vw - 4rem);
+    max-height: 70vh;
+  }
+}
+
+/* Large screens (desktop) — cap width so images don't span edge-to-edge */
+@media (min-width: 1025px) {
+  :deep(.story-preview .story-image) {
+    max-width: min(100%, calc(100vw - 8rem), 800px);
+    max-height: calc(100vh - 10rem);
+  }
 }
 </style>

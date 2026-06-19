@@ -91,7 +91,7 @@
             v-model="bottomInput"
             type="text"
             class="preview-input"
-            placeholder="Type a message..."
+            placeholder="Write more here..."
             @keydown.enter="handleBottomInputSend"
           />
           <button
@@ -330,7 +330,8 @@ import { useToast } from '../composables/useToast'
 import { useNavigation } from '../composables/useNavigation'
 import { useConfirm } from '../composables/useConfirm'
 import { setPageTitle } from '../router'
-import { MARKDOWN_IMAGE_RE, MARKDOWN_IMAGE_NORMALIZE_RE } from '../../../shared/regex-patterns.js'
+import { MARKDOWN_IMAGE_RE, MARKDOWN_IMAGE_NORMALIZE_RE, HTML_IMAGE_RE } from '../../../shared/regex-patterns.js'
+import DOMPurify from 'dompurify'
 import ReasoningPanel from '../components/ReasoningPanel.vue'
 import CharacterResponseModal from '../components/CharacterResponseModal.vue'
 import GreetingSelectorModal from '../components/GreetingSelectorModal.vue'
@@ -406,25 +407,64 @@ const isStoryEmpty = computed(() => {
   return !content.value || content.value.trim().length === 0
 })
 
-// Computed: rendered content with markdown images converted to HTML
-const renderedContent = computed(() => {
-  if (!content.value) return ''
-  // Escape HTML special chars first
-  let html = content.value
+// Throttled rendered content — updated at most once per animation frame
+// to avoid tearing down/recreating <img> elements on every streaming token.
+function renderContent(text) {
+  if (!text) return ''
+  let html = text
+
+  // 1. Extract HTML <img> tags before escaping so they survive the pipeline
+  const savedImgs = []
+  HTML_IMAGE_RE.lastIndex = 0
+  html = html.replace(HTML_IMAGE_RE, (match) => {
+    const marker = `\x00IMG_MARKER_${savedImgs.length}\x00`
+    savedImgs.push({ marker, original: match })
+    // Inject loading=lazy and class=story-image into the saved tag
+    const enhanced = match.replace('<img', '<img loading="lazy" class="story-image"')
+    savedImgs[savedImgs.length - 1].original = enhanced
+    return marker
+  })
+
+  // 2. Escape HTML special chars including quotes (defense before markdown img injection)
+  html = html
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-  // Convert markdown images: ![alt](url) and ![alt] (url)
-  MARKDOWN_IMAGE_RE.lastIndex = 0;
+    .replace(/"/g, '&quot;')
+
+  // 3. Convert markdown images: ![alt](url) and ![alt] (url)
+  MARKDOWN_IMAGE_RE.lastIndex = 0
   html = html.replace(MARKDOWN_IMAGE_RE, '<img src="$2" alt="$1" class="story-image" loading="lazy">')
-  // Convert double newlines to paragraphs
+
+  // 4. Convert double newlines to paragraphs
   html = '<p>' + html.replace(/\n\n/g, '</p><p>') + '</p>'
   // Convert single newlines to <br>
   html = html.replace(/\n/g, '<br>')
   // Remove empty paragraphs
   html = html.replace(/<p><\/p>/g, '')
+
+  // 5. Restore saved HTML <img> tags (reinserted after all transformations)
+  for (const { marker, original } of savedImgs) {
+    html = html.replace(marker, original)
+  }
+
+  // 6. Sanitize final HTML against any remaining XSS vectors (event handlers, javascript: URLs, etc.)
+  html = DOMPurify.sanitize(html)
   return html
-})
+}
+
+const renderedContent = ref('')
+let renderRAF = null
+
+function scheduleRender() {
+  if (renderRAF) return
+  renderRAF = requestAnimationFrame(() => {
+    renderRAF = null
+    renderedContent.value = renderContent(content.value)
+  })
+}
+
+watch(content, scheduleRender, { immediate: true })
 
 // Auto-save
 let autoSaveTimeout = null
@@ -546,6 +586,11 @@ onUnmounted(() => {
   }
   // Remove keyboard shortcut listener
   window.removeEventListener('keydown', handleKeyboardShortcut)
+  // Cancel pending render to prevent updating after unmount
+  if (renderRAF) {
+    cancelAnimationFrame(renderRAF)
+    renderRAF = null
+  }
 })
 
 // Watch content changes for auto-save

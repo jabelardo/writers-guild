@@ -587,7 +587,8 @@ function finishOnboarding() {
   max-width: 600px;
   width: 100%;
   position: relative;
-  overflow: hidden;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .progress-bar {

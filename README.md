@@ -83,6 +83,11 @@ writers-guild/
 - **Client**: Vue 3 with Vue Router and Vite
 - **Hot Reload**: Both server and client support hot-reload in dev mode
 
+## Android Build
+
+- To build natively in Android you need `node-addon-api` and `node-gyp`
+
+
 ## API
 
 The server runs on port 8000 and provides:

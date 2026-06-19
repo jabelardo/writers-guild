@@ -102,6 +102,8 @@ export class LLMProvider {
       maxGenerationTokens,
       generationType,
       systemPromptTemplate,
+      // Pass imagePreserver if provided (for preserving images after truncation)
+      imagePreserver: customParams.imagePreserver || null,
       ...customParams
     });
   }

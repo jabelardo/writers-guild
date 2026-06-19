@@ -82,7 +82,7 @@
           spellcheck="true"
           @input="handleInput"
         ></textarea>
-        <div v-else class="story-preview" v-html="renderedContent"></div>
+        <div v-else ref="previewRef" class="story-preview" v-html="renderedContent"></div>
         
         <!-- Bottom input bar for preview mode -->
         <div v-if="showPreview" class="preview-input-bar">
@@ -91,7 +91,7 @@
             v-model="bottomInput"
             type="text"
             class="preview-input"
-            placeholder="Type a message..."
+            placeholder="Write more here..."
             @keydown.enter="handleBottomInputSend"
           />
           <button
@@ -245,7 +245,7 @@
     <GreetingSelectorModal
       v-if="showGreetingSelector"
       :story="story"
-      @close="showGreetingSelector = false"
+      @close="handleCloseGreeting"
       @select="selectGreeting"
     />
 
@@ -330,6 +330,8 @@ import { useToast } from '../composables/useToast'
 import { useNavigation } from '../composables/useNavigation'
 import { useConfirm } from '../composables/useConfirm'
 import { setPageTitle } from '../router'
+import { MARKDOWN_IMAGE_RE, MARKDOWN_IMAGE_NORMALIZE_RE, HTML_IMAGE_RE } from '../../../shared/regex-patterns.js'
+import DOMPurify from 'dompurify'
 import ReasoningPanel from '../components/ReasoningPanel.vue'
 import CharacterResponseModal from '../components/CharacterResponseModal.vue'
 import GreetingSelectorModal from '../components/GreetingSelectorModal.vue'
@@ -362,6 +364,7 @@ const story = ref(null)
 const content = ref('')
 const originalContent = ref('')
 const editorRef = ref(null)
+const previewRef = ref(null)
 const generating = ref(false)
 const generationStatus = ref('Thinking...')
 const reasoning = ref('')
@@ -405,24 +408,64 @@ const isStoryEmpty = computed(() => {
   return !content.value || content.value.trim().length === 0
 })
 
-// Computed: rendered content with markdown images converted to HTML
-const renderedContent = computed(() => {
-  if (!content.value) return ''
-  // Escape HTML special chars first
-  let html = content.value
+// Throttled rendered content — updated at most once per animation frame
+// to avoid tearing down/recreating <img> elements on every streaming token.
+function renderContent(text) {
+  if (!text) return ''
+  let html = text
+
+  // 1. Extract HTML <img> tags before escaping so they survive the pipeline
+  const savedImgs = []
+  HTML_IMAGE_RE.lastIndex = 0
+  html = html.replace(HTML_IMAGE_RE, (match) => {
+    const marker = `\x00IMG_MARKER_${savedImgs.length}\x00`
+    savedImgs.push({ marker, original: match })
+    // Inject loading=lazy and class=story-image into the saved tag
+    const enhanced = match.replace('<img', '<img loading="lazy" class="story-image"')
+    savedImgs[savedImgs.length - 1].original = enhanced
+    return marker
+  })
+
+  // 2. Escape HTML special chars including quotes (defense before markdown img injection)
+  html = html
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-  // Convert markdown images: ![alt](url) and ![alt] (url)
-  html = html.replace(/!\[([^\]]*)\]\s*\(([^)]+)\)/g, '<img src="$2" alt="$1" class="story-image" loading="lazy">')
-  // Convert double newlines to paragraphs
+    .replace(/"/g, '&quot;')
+
+  // 3. Convert markdown images: ![alt](url) and ![alt] (url)
+  MARKDOWN_IMAGE_RE.lastIndex = 0
+  html = html.replace(MARKDOWN_IMAGE_RE, '<img src="$2" alt="$1" class="story-image" loading="lazy">')
+
+  // 4. Convert double newlines to paragraphs
   html = '<p>' + html.replace(/\n\n/g, '</p><p>') + '</p>'
   // Convert single newlines to <br>
   html = html.replace(/\n/g, '<br>')
   // Remove empty paragraphs
   html = html.replace(/<p><\/p>/g, '')
+
+  // 5. Restore saved HTML <img> tags (reinserted after all transformations)
+  for (const { marker, original } of savedImgs) {
+    html = html.replace(marker, original)
+  }
+
+  // 6. Sanitize final HTML against any remaining XSS vectors (event handlers, javascript: URLs, etc.)
+  html = DOMPurify.sanitize(html)
   return html
-})
+}
+
+const renderedContent = ref('')
+let renderRAF = null
+
+function scheduleRender() {
+  if (renderRAF) return
+  renderRAF = requestAnimationFrame(() => {
+    renderRAF = null
+    renderedContent.value = renderContent(content.value)
+  })
+}
+
+watch(content, scheduleRender, { immediate: true })
 
 // Auto-save
 let autoSaveTimeout = null
@@ -442,7 +485,8 @@ function normalizeTrailingLineBreaks() {
 // Normalize markdown image syntax spacing: ![alt] (url) -> ![alt](url)
 function normalizeMarkdownImageSpacing(text) {
   if (!text) return text
-  return text.replace(/!\[([^\]]*)\]\s+\(([^)]+)\)/g, '![$1]($2)')
+  MARKDOWN_IMAGE_NORMALIZE_RE.lastIndex = 0;
+  return text.replace(MARKDOWN_IMAGE_NORMALIZE_RE, '![$1]($2)')
 }
 
 // Keyboard shortcut handler for quick paragraph generation, modal opening, and undo/redo
@@ -543,6 +587,11 @@ onUnmounted(() => {
   }
   // Remove keyboard shortcut listener
   window.removeEventListener('keydown', handleKeyboardShortcut)
+  // Cancel pending render to prevent updating after unmount
+  if (renderRAF) {
+    cancelAnimationFrame(renderRAF)
+    renderRAF = null
+  }
 })
 
 // Watch content changes for auto-save
@@ -568,6 +617,17 @@ watch(showReasoningPanel, async (isOpen) => {
       editorRef.value.scrollTop = editorRef.value.scrollHeight
       editorRef.value.focus()
     }
+  }
+})
+
+// Scroll to end when toggling preview or back to editor
+watch(showPreview, async (isPreview) => {
+  await nextTick()
+  if (isPreview && previewRef.value) {
+    previewRef.value.scrollTop = previewRef.value.scrollHeight
+  } else if (!isPreview && editorRef.value) {
+    editorRef.value.scrollTop = editorRef.value.scrollHeight
+    editorRef.value.focus()
   }
 })
 
@@ -633,12 +693,16 @@ async function saveStory(silent = false) {
   const normalizedContent = normalizeMarkdownImageSpacing(content.value)
   const normalizedOriginal = normalizeMarkdownImageSpacing(originalContent.value)
 
+  // Check if normalization changed the editor content (e.g., image spacing)
+  const wasNormalized = normalizedContent !== content.value
+
   // Keep editor content canonical when save is triggered
-  if (normalizedContent !== content.value) {
+  if (wasNormalized) {
     content.value = normalizedContent
   }
 
-  if (normalizedContent === normalizedOriginal) {
+  // Only skip save if there are no semantic changes AND no formatting normalization
+  if (!wasNormalized && normalizedContent === normalizedOriginal) {
     return // No changes
   }
 
@@ -755,7 +819,9 @@ async function handleBottomInputSend() {
   try {
     // Add user message to content with newline before and after
     const userMessage = bottomInput.value.trim()
-    content.value = content.value + '\n\n' + userMessage + '\n'
+    const trimmed = content.value.replace(/\n+$/, '')
+    content.value = trimmed + '\n\n' + userMessage + '\n\n'
+
     bottomInput.value = ''
 
     // Save the story
@@ -1051,6 +1117,19 @@ async function selectGreeting(greeting) {
   }
 }
 
+/**
+ * Called when the greeting selector is dismissed without selecting a greeting.
+ * Still shows the third-person rewrite prompt so it isn't silently skipped.
+ */
+function handleCloseGreeting() {
+  showGreetingSelector.value = false
+  nextTick().then(() => {
+    if (shouldShowThirdPersonPrompt()) {
+      showThirdPersonPrompt.value = true
+    }
+  })
+}
+
 // Handler for when user accepts the third-person prompt
 function handleThirdPersonRewrite() {
   // Call with skipConfirm=true since user already confirmed via the prompt modal
@@ -1177,6 +1256,13 @@ async function rewriteToThirdPerson(skipConfirm = false) {
     // Save
     await saveStory(true)
     toast.success('Rewrite complete')
+
+    // Scroll preview to end now that renderedContent has updated via RAF
+    await nextTick()
+    await new Promise(resolve => requestAnimationFrame(resolve))
+    if (previewRef.value) {
+      previewRef.value.scrollTop = previewRef.value.scrollHeight
+    }
   } catch (error) {
     // Check if it was a cancellation
     if (error.name === 'AbortError' || error.message === 'Generation cancelled') {

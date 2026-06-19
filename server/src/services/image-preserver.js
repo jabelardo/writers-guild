@@ -9,21 +9,10 @@
  * rewrites (third-person, continue, instruction, etc.).
  */
 
-// Regex patterns for both image formats
-// Support both standard markdown image syntax and variants with spaces:
-// ![alt](url) and ![alt] (url)
-const MARKDOWN_IMAGE_RE = /!\[([^\]]*)\]\s*\(([^)]+)\)/g;
-const HTML_IMAGE_RE = /<img[^>]+>/gi;
+// Import shared regex patterns
+import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE, WG_PLACEHOLDER_RE } from '../../../shared/regex-patterns.js';
 
-// Also catch stale [IMAGE_X] placeholders left over from previous client-side
-// extraction attempts (before the server-side preserver existed).
-const STALE_PLACEHOLDER_RE = /\[IMAGE_(\d+)\]/g;
-
-// Dedicated WG placeholders we use during the current request
-const WG_PLACEHOLDER_RE = /\[WG_IMAGE_(\d+)\]/g;
-
-// Placeholder template — uses a dedicated marker that won't collide with
-// stale client-side placeholders like [IMAGE_X].
+// Placeholder template — uses a dedicated marker.
 // HTML comments (<!-- -->) get stripped by LLMs, so use plain text markers.
 const PLACEHOLDER_TEMPLATE = (idx) => `[WG_IMAGE_${idx}]`;
 
@@ -36,7 +25,6 @@ export class ImagePreserver {
   /**
    * Scan `text` for all embedded images (markdown + HTML <img>),
    * replace each with a unique placeholder, and store the originals.
-   * Also handles stale [IMAGE_X] placeholders from previous client-side attempts.
    *
    * @param {string} text  The full story content
    * @returns {string}     Text with images replaced by placeholders
@@ -64,16 +52,6 @@ export class ImagePreserver {
       return placeholder;
     });
 
-    // --- Fallback: catch stale [IMAGE_X] placeholders from old client-side logic ---
-    // These are preserved as-is (they'll be restored by the client's fallback).
-    // Do NOT remap placeholders we generated in this request (WG_IMAGE_*)
-    result = result.replace(STALE_PLACEHOLDER_RE, (match) => {
-      const placeholder = PLACEHOLDER_TEMPLATE(idx);
-      this.saved.push({ original: match, placeholder, type: 'stale' });
-      idx++;
-      return placeholder;
-    });
-
     return result;
   }
 
@@ -83,6 +61,10 @@ export class ImagePreserver {
    * and returned separately so the caller can decide how to handle them
    * (e.g. append at the end of the document).
    *
+   * Uses a single regex pass with a placeholder→original map for O(n) performance.
+   * Only the first occurrence of each placeholder is replaced; subsequent
+   * duplicates are removed to prevent image duplication.
+   *
    * @param {string} response  The raw LLM response text
    * @returns {{ text: string, missing: { original: string, placeholder: string }[] }}
    *   - text:    response with placeholders restored
@@ -91,43 +73,81 @@ export class ImagePreserver {
   restore(response) {
     if (!response) return { text: response || '', missing: [...this.saved] };
 
-    let text = response;
-    const missing = [];
-
+    const placeholderMap = new Map();
     for (const item of this.saved) {
-      if (text.includes(item.placeholder)) {
-        text = text.split(item.placeholder).join(item.original);
-      } else {
-        missing.push(item);
-      }
+      placeholderMap.set(item.placeholder, item.original);
     }
 
-    return { text, missing };
+    // Track which placeholders have been replaced (to handle duplicates)
+    const replacedPlaceholders = new Set();
+
+    // Track which placeholders were found
+    const foundPlaceholders = new Set();
+
+    // Reset lastIndex to avoid issues from previous calls
+    WG_PLACEHOLDER_RE.lastIndex = 0;
+
+    // Single regex pass to replace all placeholders
+    const result = response.replace(WG_PLACEHOLDER_RE, (match) => {
+      if (!placeholderMap.has(match)) {
+        return match; // Not one of ours, leave unchanged
+      }
+
+      foundPlaceholders.add(match);
+
+      if (replacedPlaceholders.has(match)) {
+        // This placeholder appeared more than once - only replace the first occurrence
+        // Return empty string for subsequent occurrences to avoid duplication
+        return '';
+      }
+
+      replacedPlaceholders.add(match);
+      return placeholderMap.get(match);
+    });
+
+    // Detect missing: placeholders that were saved but not found in response
+    const missing = this.saved.filter(item => !foundPlaceholders.has(item.placeholder));
+
+    return { text: result, missing };
   }
 
   /**
-   * Convenience: run preserve → (prompt-building happens) → restore.
-   * `missing` images are appended to the end of the restored text.
+   * Restore preserved images back into the LLM response.
    *
-   * @param {string} rawContent    Original story content with embedded images
-   * @param {string} llmResponse   Response from the LLM
-   * @returns {string}             Final content with images restored (missing ones appended)
+   * Surviving placeholders are replaced with the original image markup.
+   * Placeholders the LLM removed (missing images) are appended at the end.
+   * If the LLM returned empty or whitespace-only content, the original
+   * response is returned as-is and nothing is restored.
+   *
+   * @param {string} llmResponse  Raw text returned by the LLM
+   * @returns {{ finalContent: string, imagesRestored: boolean, imagesPreserved: number, imagesMissing: number }}
    */
-  process(rawContent, llmResponse) {
-    this.preserve(rawContent);
-    const { text, missing } = this.restore(llmResponse);
-
-    // Append any images the LLM removed at the end
-    if (missing.length > 0) {
-      const appended = missing.map((m) => m.original).join('\n');
-      return text ? `${text}\n\n${appended}` : appended;
+  restoreImages(llmResponse) {
+    // Guard against empty/failed LLM response
+    const hasContent = llmResponse && llmResponse.trim().length > 0;
+    if (!hasContent || this.saved.length === 0) {
+      return {
+        finalContent: llmResponse || '',
+        imagesRestored: false,
+        imagesPreserved: 0,
+        imagesMissing: 0
+      };
     }
 
-    return text;
-  }
+    const { text: restoredContent, missing } = this.restore(llmResponse);
 
-  /** Reset saved images (e.g. between generations) */
-  reset() {
-    this.saved = [];
+    // Build final content with missing images appended at the end
+    let finalContent = restoredContent;
+    if (missing.length > 0) {
+      finalContent += '\n\n' + missing.map(m => m.original).join('\n');
+    }
+
+    console.log(`[ImagePreserver] Restored ${this.saved.length} image(s), ${missing.length} missing`);
+    return {
+      finalContent,
+      imagesRestored: true,
+      imagesPreserved: this.saved.length,
+      imagesMissing: missing.length
+    };
   }
 }

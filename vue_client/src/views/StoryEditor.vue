@@ -245,7 +245,7 @@
     <GreetingSelectorModal
       v-if="showGreetingSelector"
       :story="story"
-      @close="showGreetingSelector = false"
+      @close="handleCloseGreeting"
       @select="selectGreeting"
     />
 
@@ -1115,6 +1115,19 @@ async function selectGreeting(greeting) {
     await nextTick()
     showThirdPersonPrompt.value = true
   }
+}
+
+/**
+ * Called when the greeting selector is dismissed without selecting a greeting.
+ * Still shows the third-person rewrite prompt so it isn't silently skipped.
+ */
+function handleCloseGreeting() {
+  showGreetingSelector.value = false
+  nextTick().then(() => {
+    if (shouldShowThirdPersonPrompt()) {
+      showThirdPersonPrompt.value = true
+    }
+  })
 }
 
 // Handler for when user accepts the third-person prompt

@@ -82,7 +82,7 @@
           spellcheck="true"
           @input="handleInput"
         ></textarea>
-        <div v-else class="story-preview" v-html="renderedContent"></div>
+        <div v-else ref="previewRef" class="story-preview" v-html="renderedContent"></div>
         
         <!-- Bottom input bar for preview mode -->
         <div v-if="showPreview" class="preview-input-bar">
@@ -364,6 +364,7 @@ const story = ref(null)
 const content = ref('')
 const originalContent = ref('')
 const editorRef = ref(null)
+const previewRef = ref(null)
 const generating = ref(false)
 const generationStatus = ref('Thinking...')
 const reasoning = ref('')
@@ -616,6 +617,17 @@ watch(showReasoningPanel, async (isOpen) => {
       editorRef.value.scrollTop = editorRef.value.scrollHeight
       editorRef.value.focus()
     }
+  }
+})
+
+// Scroll to end when toggling preview or back to editor
+watch(showPreview, async (isPreview) => {
+  await nextTick()
+  if (isPreview && previewRef.value) {
+    previewRef.value.scrollTop = previewRef.value.scrollHeight
+  } else if (!isPreview && editorRef.value) {
+    editorRef.value.scrollTop = editorRef.value.scrollHeight
+    editorRef.value.focus()
   }
 })
 

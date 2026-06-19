@@ -547,7 +547,21 @@ onMounted(async () => {
   // Add keyboard shortcut listener
   window.addEventListener('keydown', handleKeyboardShortcut)
 
-  // If the story is newly created and needs a rewrite prompt, check if we should show it
+  // Check if we should show greeting selector first (for newly created stories with characters)
+  if (story.value?.needsRewritePrompt && story.value?.characterIds?.length > 0) {
+    // Clear the flag on the server
+    try {
+      await storiesAPI.setRewritePrompt(props.storyId, false)
+    } catch (error) {
+      console.error('Failed to clear rewrite prompt flag:', error)
+    }
+    
+    // Show greeting selector FIRST before rewrite dialog
+    showGreetingSelector.value = true
+    return
+  }
+  
+  // If we don't need to show greeting selector, check if we should show rewrite dialog
   if (story.value?.needsRewritePrompt) {
     // Clear the flag on the server
     try {
@@ -555,10 +569,7 @@ onMounted(async () => {
     } catch (error) {
       console.error('Failed to clear rewrite prompt flag:', error)
     }
-    // Only show rewrite prompt for stories without characters
-    // Stories with characters start with an empty canvas — the user can pick
-    // a greeting manually or write from scratch, then the prompt appears there
-    if (!story.value?.characterIds?.length && shouldShowThirdPersonPrompt()) {
+    if (shouldShowThirdPersonPrompt()) {
       // Show the prompt after a short delay to let the UI settle
       await nextTick()
       showThirdPersonPrompt.value = true
@@ -1108,10 +1119,15 @@ async function selectGreeting(greeting) {
 
 /**
  * Called when the greeting selector is dismissed without selecting a greeting.
- * Canvas stays empty — no rewrite prompt needed.
+ * Still shows the third-person rewrite prompt so it isn't silently skipped.
  */
 function handleCloseGreeting() {
   showGreetingSelector.value = false
+  nextTick().then(() => {
+    if (shouldShowThirdPersonPrompt()) {
+      showThirdPersonPrompt.value = true
+    }
+  })
 }
 
 // Handler for when user accepts the third-person prompt

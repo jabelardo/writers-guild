@@ -35,7 +35,7 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.9",
     "node-addon-api": "^8.8.0",
-    "node-gyp": "^12.4.0",
+    "node-gyp": "^12.4.0", 
     "supertest": "^7.1.4",
     "vitest": "^4.0.9"
   }

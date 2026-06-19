@@ -674,16 +674,8 @@ function setupSSE(res) {
 async function streamGeneration(res, provider, preset, context, generationType, params, abortSignal = null) {
   console.log(`[streamGeneration] Starting ${generationType}, signal present: ${!!abortSignal}, aborted: ${abortSignal?.aborted}`);
 
-  // --- Image preservation: extract embedded images before sending to the LLM ---
-  const imagePreserver = new ImagePreserver();
-  if (context.story?.content) {
-    const preserved = imagePreserver.preserve(context.story.content);
-    if (preserved !== context.story.content) {
-      console.log(`[ImagePreserver] Extracted ${imagePreserver.saved.length} image(s) from story content`);
-      // Temporarily replace story content with placeholders for the LLM
-      context.story.content = preserved;
-    }
-  }
+  // --- Image preservation: will be done after truncation inside buildPrompts ---
+  const imagePreserver = generationType === 'rewriteThirdPerson' ? new ImagePreserver() : null;
 
   // Build both system and user prompts with proper context management
   const prompts = await provider.buildPrompts(
@@ -698,25 +690,19 @@ async function streamGeneration(res, provider, preset, context, generationType, 
     {
       characterName: params.characterName,
       customInstruction: params.customInstruction,
-      templateText: preset.promptTemplates?.[generationType]
+      templateText: preset.promptTemplates?.[generationType],
+      imagePreserver
     },
     preset
   );
 
   const { system: systemPrompt, user: userPrompt } = prompts;
 
-  // For rewriteThirdPerson: append image preservation note so the prompt-aware placeholders survive
-  let effectiveUserPrompt = userPrompt;
-  if (generationType === 'rewriteThirdPerson' && imagePreserver.saved.length > 0) {
-    effectiveUserPrompt = userPrompt + '\n\nIMPORTANT: Preserve any markers like [WG_IMAGE_0], [WG_IMAGE_1] etc. (image references) exactly as they appear in the text above. Do not remove or modify them.';
-    console.log(`[ImagePreserver] Appended image-preservation note for ${generationType}`);
-  }
-
   // Send prompts for debugging
   res.write(`data: ${JSON.stringify({
     prompts: {
       system: systemPrompt,
-      user: effectiveUserPrompt
+      user: userPrompt
     }
   })}\n\n`);
 
@@ -728,7 +714,7 @@ async function streamGeneration(res, provider, preset, context, generationType, 
   if (capabilities.streaming) {
     console.log(`[streamGeneration] Using streaming provider, signal: ${!!abortSignal}`);
     // Start streaming generation
-    const { stream, metadata } = await provider.generateStreaming(systemPrompt, effectiveUserPrompt, {
+    const { stream, metadata } = await provider.generateStreaming(systemPrompt, userPrompt, {
       // Pass all advanced sampling parameters
       ...preset.generationSettings,
       maxContextLength: preset.generationSettings.maxContextTokens,
@@ -755,17 +741,13 @@ async function streamGeneration(res, provider, preset, context, generationType, 
           finished: chunk.finished || false,
         };
 
-        if (chunk.finished && imagePreserver.saved.length > 0) {
+        if (chunk.finished && imagePreserver) {
           // Restore images directly into the finished chunk
-          const { text: restoredContent, missing } = imagePreserver.restore(fullContent);
-          data.finalContent = restoredContent
-            ? missing.length > 0
-              ? restoredContent + '\n\n' + missing.map(m => m.original).join('\n')
-              : restoredContent
-            : missing.map(m => m.original).join('\n');
-          data.imagesRestored = true;
-          data.imagesPreserved = imagePreserver.saved.length;
-          data.imagesMissing = missing.length;
+          const { finalContent, imagesRestored, imagesPreserved, imagesMissing } = imagePreserver.restoreImages(fullContent);
+          data.finalContent = finalContent;
+          data.imagesRestored = imagesRestored;
+          data.imagesPreserved = imagesPreserved;
+          data.imagesMissing = imagesMissing;
         }
 
         res.write(`data: ${JSON.stringify(data)}\n\n`);
@@ -779,7 +761,7 @@ async function streamGeneration(res, provider, preset, context, generationType, 
     }
   } else if (capabilities.requiresPolling) {
     // Handle queue-based providers (AI Horde)
-    const streamWithStatus = provider.generateStreamingWithStatus(systemPrompt, effectiveUserPrompt, {
+    const streamWithStatus = provider.generateStreamingWithStatus(systemPrompt, userPrompt, {
       // Pass all advanced sampling parameters
       ...preset.generationSettings,
       maxContextLength: preset.generationSettings.maxContextTokens,
@@ -799,27 +781,18 @@ async function streamGeneration(res, provider, preset, context, generationType, 
           }
         })}\n\n`);
       } else if (update.type === 'complete') {
-        // Send final content
-        let processedContent = update.content || '';
-        processedContent = processedContent.replace(/\*/g, '');
+
+        const processedContent = update.content?.replace(/\*/g, '') || '';
 
         // Restore images in the final content
-        let finalContent = processedContent;
-        if (imagePreserver.saved.length > 0) {
-          const { text: restoredContent, missing } = imagePreserver.restore(processedContent);
-          finalContent = restoredContent;
-          if (missing.length > 0) {
-            finalContent = restoredContent
-              ? restoredContent + '\n\n' + missing.map(m => m.original).join('\n')
-              : missing.map(m => m.original).join('\n');
-          }
-          console.log(`[ImagePreserver] Restored ${imagePreserver.saved.length} image(s), ${missing.length} missing`);
-        }
+        const finalContent = !imagePreserver 
+          ? processedContent 
+          : imagePreserver.restoreImages(processedContent)?.finalContent;
 
         res.write(`data: ${JSON.stringify({
           content: finalContent,
           finished: true,
-          imagesRestored: imagePreserver.saved.length > 0
+          imagesRestored: imagePreserver?.saved.length > 0
         })}\n\n`);
       }
 
@@ -827,43 +800,29 @@ async function streamGeneration(res, provider, preset, context, generationType, 
     }
   } else {
     // Fallback: non-streaming generation
-    const result = await provider.generate(systemPrompt, effectiveUserPrompt, {
+    const result = await provider.generate(systemPrompt, userPrompt, {
       // Pass all advanced sampling parameters
       ...preset.generationSettings,
       maxContextLength: preset.generationSettings.maxContextTokens
     });
 
-    let processedContent = result.content || '';
-    processedContent = processedContent.replace(/\*/g, '');
+    const processedContent = update.content?.replace(/\*/g, '') || '';
 
     // Restore images in the final content
-    let finalContent = processedContent;
-    if (imagePreserver.saved.length > 0) {
-      const { text: restoredContent, missing } = imagePreserver.restore(processedContent);
-      finalContent = restoredContent;
-      if (missing.length > 0) {
-        finalContent = restoredContent
-          ? restoredContent + '\n\n' + missing.map(m => m.original).join('\n')
-          : missing.map(m => m.original).join('\n');
-      }
-      console.log(`[ImagePreserver] Restored ${imagePreserver.saved.length} image(s), ${missing.length} missing`);
-    }
+    const finalContent = !imagePreserver 
+      ? processedContent 
+      : imagePreserver.restoreImages(processedContent)?.finalContent;
 
     res.write(`data: ${JSON.stringify({
       reasoning: result.reasoning || null,
       content: finalContent,
       finished: true,
-      imagesRestored: imagePreserver.saved.length > 0
+      imagesRestored: imagePreserver?.saved.length > 0
     })}\n\n`);
     if (res.flush) res.flush();
   }
 
-  // --- Image preservation: restore images in the final assembled content ---
-  if (imagePreserver.saved.length > 0) {
-    // The LLM response doesn't have images; we append them back.
-    // To do this properly for streaming, we buffer the full response
-    // and send a final SSE event with the restored content.
-    // For non-streaming this happens inline above.
+  if (imagePreserver?.saved.length > 0) {
     console.log(`[ImagePreserver] ${imagePreserver.saved.length} image(s) preserved`);
   }
 

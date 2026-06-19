@@ -330,6 +330,7 @@ import { useToast } from '../composables/useToast'
 import { useNavigation } from '../composables/useNavigation'
 import { useConfirm } from '../composables/useConfirm'
 import { setPageTitle } from '../router'
+import { MARKDOWN_IMAGE_RE, MARKDOWN_IMAGE_NORMALIZE_RE } from '../../../shared/regex-patterns.js'
 import ReasoningPanel from '../components/ReasoningPanel.vue'
 import CharacterResponseModal from '../components/CharacterResponseModal.vue'
 import GreetingSelectorModal from '../components/GreetingSelectorModal.vue'
@@ -414,7 +415,8 @@ const renderedContent = computed(() => {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
   // Convert markdown images: ![alt](url) and ![alt] (url)
-  html = html.replace(/!\[([^\]]*)\]\s*\(([^)]+)\)/g, '<img src="$2" alt="$1" class="story-image" loading="lazy">')
+  MARKDOWN_IMAGE_RE.lastIndex = 0;
+  html = html.replace(MARKDOWN_IMAGE_RE, '<img src="$2" alt="$1" class="story-image" loading="lazy">')
   // Convert double newlines to paragraphs
   html = '<p>' + html.replace(/\n\n/g, '</p><p>') + '</p>'
   // Convert single newlines to <br>
@@ -442,7 +444,8 @@ function normalizeTrailingLineBreaks() {
 // Normalize markdown image syntax spacing: ![alt] (url) -> ![alt](url)
 function normalizeMarkdownImageSpacing(text) {
   if (!text) return text
-  return text.replace(/!\[([^\]]*)\]\s+\(([^)]+)\)/g, '![$1]($2)')
+  MARKDOWN_IMAGE_NORMALIZE_RE.lastIndex = 0;
+  return text.replace(MARKDOWN_IMAGE_NORMALIZE_RE, '![$1]($2)')
 }
 
 // Keyboard shortcut handler for quick paragraph generation, modal opening, and undo/redo
@@ -633,12 +636,16 @@ async function saveStory(silent = false) {
   const normalizedContent = normalizeMarkdownImageSpacing(content.value)
   const normalizedOriginal = normalizeMarkdownImageSpacing(originalContent.value)
 
+  // Check if normalization changed the editor content (e.g., image spacing)
+  const wasNormalized = normalizedContent !== content.value
+
   // Keep editor content canonical when save is triggered
-  if (normalizedContent !== content.value) {
+  if (wasNormalized) {
     content.value = normalizedContent
   }
 
-  if (normalizedContent === normalizedOriginal) {
+  // Only skip save if there are no semantic changes AND no formatting normalization
+  if (!wasNormalized && normalizedContent === normalizedOriginal) {
     return // No changes
   }
 
@@ -755,7 +762,9 @@ async function handleBottomInputSend() {
   try {
     // Add user message to content with newline before and after
     const userMessage = bottomInput.value.trim()
-    content.value = content.value + '\n\n' + userMessage + '\n'
+    const trimmed = content.value.replace(/\n+$/, '')
+    content.value = trimmed + '\n\n' + userMessage + '\n\n'
+
     bottomInput.value = ''
 
     // Save the story

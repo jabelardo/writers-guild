@@ -114,6 +114,8 @@ export class AIHordeProvider extends LLMProvider {
       maxContextTokens,
       maxGenerationTokens,
       generationType,
+      // Pass imagePreserver if provided (for preserving images after truncation)
+      imagePreserver: customParams.imagePreserver || null,
       ...customParams
     });
   }

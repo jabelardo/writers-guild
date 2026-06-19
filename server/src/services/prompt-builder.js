@@ -321,7 +321,7 @@ export class PromptBuilder {
    * Build generation prompt based on type
    */
   buildGenerationPrompt(type, params) {
-    const { storyContent, characterName, customInstruction, templateText, maxChars, userName } = params;
+    const { storyContent, characterName, customInstruction, templateText, maxChars, userName, imagePreserver } = params;
 
     let storyContext = "";
     let instruction = "";
@@ -343,13 +343,17 @@ export class PromptBuilder {
         instruction = instruction.replace(/\{\{instruction\}\}/g, customInstruction);
       }
       if (storyContent) {
-        instruction = instruction.replace(/\{\{storyContent\}\}/g, storyContent);
+        // Preserve images before replacing into template
+        const preservedStoryContent = imagePreserver ? imagePreserver.preserve(storyContent) : storyContent;
+        instruction = instruction.replace(/\{\{storyContent\}\}/g, preservedStoryContent);
       }
       instruction = instruction.replace(/\{\{user\}\}/gi, userName || 'the user');
 
       // If template doesn't use {{storyContent}}, add story context separately
       if (storyContent && storyContent.trim() && !templateText.includes('{{storyContent}}')) {
-        storyContext = this.truncateStoryContent(storyContent, maxChars);
+        const truncated = this.truncateStoryContent(storyContent, maxChars);
+        // Preserve images in the truncated content (only content that survives truncation)
+        storyContext = imagePreserver ? imagePreserver.preserve(truncated) : truncated;
       }
     } else {
       // Use default templates
@@ -394,14 +398,24 @@ export class PromptBuilder {
         instruction = instruction.replace(/\{\{instruction\}\}/g, customInstruction);
       }
       if (storyContent) {
-        instruction = instruction.replace(/\{\{storyContent\}\}/g, storyContent);
+        // Preserve images before replacing into template
+        const preservedStoryContent = imagePreserver ? imagePreserver.preserve(storyContent) : storyContent;
+        instruction = instruction.replace(/\{\{storyContent\}\}/g, preservedStoryContent);
       }
       instruction = instruction.replace(/\{\{user\}\}/gi, userName || 'the user');
 
       // Only add story context separately if template doesn't use {{storyContent}}
       if (storyContent && storyContent.trim() && !defaultTemplate.includes('{{storyContent}}')) {
-        storyContext = this.truncateStoryContent(storyContent, maxChars);
+        const truncated = this.truncateStoryContent(storyContent, maxChars);
+        // Preserve images in the truncated content (only content that survives truncation)
+        storyContext = imagePreserver ? imagePreserver.preserve(truncated) : truncated;
       }
+    }
+
+      // For rewriteThirdPerson: append image preservation note so the prompt-aware placeholders survive
+    if (imagePreserver && imagePreserver.saved.length > 0) {
+      instruction += '\n\nIMPORTANT: Preserve any markers like [WG_IMAGE_0], [WG_IMAGE_1] etc. (image references) exactly as they appear in the text above. Do not remove or modify them.';
+      console.log(`[ImagePreserver] Appended image-preservation note for ${type}`);
     }
 
     return storyContext + instruction;
@@ -443,7 +457,8 @@ export class PromptBuilder {
       customInstruction,
       templateText,
       systemPromptTemplate = null,
-      userName
+      userName,
+      imagePreserver = null
     } = options;
 
     // Build system prompt first (with custom template if provided and not null)
@@ -470,7 +485,8 @@ export class PromptBuilder {
       customInstruction,
       templateText,
       maxChars: availableChars,
-      userName
+      userName,
+      imagePreserver
     });
 
     return {

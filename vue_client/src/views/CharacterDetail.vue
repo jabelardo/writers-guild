@@ -466,7 +466,6 @@ const { confirm } = useConfirm()
 const loading = ref(true)
 const character = ref(null)
 const availableLorebooks = ref([])
-const isDefaultPersona = ref(false)
 
 // Greeting selector state for new story flow
 const showGreetingSelector = ref(false)

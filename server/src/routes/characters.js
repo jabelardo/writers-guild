@@ -42,6 +42,49 @@ router.use((req, res, next) => {
   next();
 });
 
+/**
+ * Extract embedded lorebook from character data and save it to storage.
+ * Modifies cardData.data.extensions.ursceal_lorebook_id in place.
+ * @returns {{ embeddedLorebook: object|null, lorebookId: string|null }}
+ */
+async function extractAndSaveEmbeddedLorebook(storageInstance, cardData) {
+  let embeddedLorebook = null;
+  let lorebookId = null;
+
+  if (cardData.data?.character_book && cardData.data.character_book.entries && cardData.data.character_book.entries.length > 0) {
+    try {
+      // Parse embedded lorebook
+      const lorebookData = LorebookParser.parseEmbeddedLorebook(cardData.data.character_book);
+
+      // Give it a name based on the character
+      lorebookData.name = `${cardData.data.name}'s Lorebook`;
+      lorebookData.description = lorebookData.description || `Lorebook for ${cardData.data.name}`;
+
+      // Save to global lorebook library
+      lorebookId = uuidv4();
+      await storageInstance.saveLorebook(lorebookId, lorebookData);
+
+      embeddedLorebook = {
+        id: lorebookId,
+        name: lorebookData.name,
+        entryCount: lorebookData.entries.length
+      };
+
+      console.log(`Extracted embedded lorebook from ${cardData.data.name}: ${lorebookData.entries.length} entries`);
+    } catch (error) {
+      console.error('Failed to parse embedded lorebook:', error);
+    }
+  }
+
+  // Add lorebook association to character data
+  if (!cardData.data.extensions) {
+    cardData.data.extensions = {};
+  }
+  cardData.data.extensions.ursceal_lorebook_id = lorebookId;
+
+  return { embeddedLorebook, lorebookId };
+}
+
 // ==================== Global Character Library ====================
 
 // List all characters in global library
@@ -122,41 +165,10 @@ router.post('/import', upload.single('character'), asyncHandler(async (req, res)
   try {
     const cardData = await CharacterParser.parseCard(req.file.buffer);
 
-    // Check for embedded lorebook (V2 character cards)
-    let embeddedLorebook = null;
-    let lorebookId = null;
-    if (cardData.data?.character_book && cardData.data.character_book.entries && cardData.data.character_book.entries.length > 0) {
-      try {
-        // Parse embedded lorebook
-        const lorebookData = LorebookParser.parseEmbeddedLorebook(cardData.data.character_book);
+      // Extract embedded lorebook if present
+      const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
 
-        // Give it a name based on the character
-        lorebookData.name = `${cardData.data.name}'s Lorebook`;
-        lorebookData.description = lorebookData.description || `Lorebook for ${cardData.data.name}`;
-
-        // Save to global lorebook library
-        lorebookId = uuidv4();
-        await storage.saveLorebook(lorebookId, lorebookData);
-
-        embeddedLorebook = {
-          id: lorebookId,
-          name: lorebookData.name,
-          entryCount: lorebookData.entries.length
-        };
-
-        console.log(`Extracted embedded lorebook from ${cardData.data.name}: ${lorebookData.entries.length} entries`);
-      } catch (error) {
-        console.error('Failed to parse embedded lorebook:', error);
-      }
-    }
-
-    // Add lorebook association to character data
-    if (!cardData.data.extensions) {
-      cardData.data.extensions = {};
-    }
-    cardData.data.extensions.ursceal_lorebook_id = lorebookId;
-
-    // Save character data as JSON and image separately
+      // Save character data as JSON and image separately
     await storage.saveCharacter(characterId, cardData, req.file.buffer);
 
     res.status(201).json({
@@ -286,76 +298,38 @@ router.post('/import-json', jsonUpload.single('character'), asyncHandler(async (
     throw new AppError('No character file provided', 400);
   }
 
+  // Parse JSON from buffer
+  const jsonString = req.file.buffer.toString('utf8');
+  let cardData;
   try {
-    // Parse JSON from buffer
-    const jsonString = req.file.buffer.toString('utf8');
-    let cardData;
-    try {
-      cardData = JSON.parse(jsonString);
-    } catch (e) {
-      throw new AppError('Invalid JSON file: ' + e.message, 400);
-    }
-
-    // Support both V2 format (with data wrapper) and flat format
-    if (!cardData.data) {
-      // Try treating the whole JSON as the data field
-      cardData = {
-        spec: 'chara_card_v2',
-        spec_version: '2.0',
-        data: cardData
-      };
-    }
-
-    if (!cardData.data || !cardData.data.name) {
-      throw new AppError('Invalid character card: missing name or data field', 400);
-    }
-
-    const characterId = uuidv4();
-
-    // Check for embedded lorebook
-    let embeddedLorebook = null;
-    let lorebookId = null;
-    if (cardData.data?.character_book && cardData.data.character_book.entries && cardData.data.character_book.entries.length > 0) {
-      try {
-        const lorebookData = LorebookParser.parseEmbeddedLorebook(cardData.data.character_book);
-        lorebookData.name = `${cardData.data.name}'s Lorebook`;
-        lorebookData.description = lorebookData.description || `Lorebook for ${cardData.data.name}`;
-
-        lorebookId = uuidv4();
-        await storage.saveLorebook(lorebookId, lorebookData);
-
-        embeddedLorebook = {
-          id: lorebookId,
-          name: lorebookData.name,
-          entryCount: lorebookData.entries.length
-        };
-
-        console.log(`Extracted embedded lorebook from ${cardData.data.name}: ${lorebookData.entries.length} entries`);
-      } catch (error) {
-        console.error('Failed to parse embedded lorebook:', error);
-      }
-    }
-
-    // Add lorebook association to character data
-    if (!cardData.data.extensions) {
-      cardData.data.extensions = {};
-    }
-    cardData.data.extensions.ursceal_lorebook_id = lorebookId;
-
-    // Save character data (no image for JSON import)
-    await storage.saveCharacter(characterId, cardData, null);
-
-    res.status(201).json({
-      id: characterId,
-      name: cardData.data.name,
-      description: cardData.data.description || '',
-      imageUrl: null,
-      firstMessage: cardData.data.first_mes || '',
-      embeddedLorebook: embeddedLorebook
-    });
-  } catch (error) {
-    throw new AppError(`Failed to import character: ${error.message}`, 400);
+    cardData = JSON.parse(jsonString);
+  } catch (e) {
+    throw new AppError('Invalid JSON file: ' + e.message, 400);
   }
+
+  // Normalize card data (handles V2 vs flat format)
+  cardData = CharacterParser.normalizeCardData(cardData);
+
+  if (!cardData.data || !cardData.data.name) {
+    throw new AppError('Invalid character card: missing name or data field', 400);
+  }
+
+  const characterId = uuidv4();
+
+  // Extract embedded lorebook if present
+  const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
+
+  // Save character data (no image for JSON import)
+  await storage.saveCharacter(characterId, cardData, null);
+
+  res.status(201).json({
+    id: characterId,
+    name: cardData.data.name,
+    description: cardData.data.description || '',
+    imageUrl: null,
+    firstMessage: cardData.data.first_mes || '',
+    embeddedLorebook: embeddedLorebook
+  });
 }));
 
 // Import character from URL (CHUB, etc.)
@@ -377,35 +351,8 @@ router.post('/import-url', asyncHandler(async (req, res) => {
 
     const characterId = uuidv4();
 
-    // Check for embedded lorebook
-    let embeddedLorebook = null;
-    let lorebookId = null;
-    if (characterData.data?.character_book && characterData.data.character_book.entries && characterData.data.character_book.entries.length > 0) {
-      try {
-        const lorebookData = LorebookParser.parseEmbeddedLorebook(characterData.data.character_book);
-        lorebookData.name = `${characterData.data.name}'s Lorebook`;
-        lorebookData.description = lorebookData.description || `Lorebook for ${characterData.data.name}`;
-
-        lorebookId = uuidv4();
-        await storage.saveLorebook(lorebookId, lorebookData);
-
-        embeddedLorebook = {
-          id: lorebookId,
-          name: lorebookData.name,
-          entryCount: lorebookData.entries.length
-        };
-
-        console.log(`Extracted embedded lorebook from ${characterData.data.name}: ${lorebookData.entries.length} entries`);
-      } catch (error) {
-        console.error('Failed to parse embedded lorebook:', error);
-      }
-    }
-
-    // Add lorebook association to character data
-    if (!characterData.data.extensions) {
-      characterData.data.extensions = {};
-    }
-    characterData.data.extensions.ursceal_lorebook_id = lorebookId;
+    // Extract embedded lorebook if present
+    const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, characterData);
 
     // Save character with image
     await storage.saveCharacter(characterId, characterData, imageBuffer);

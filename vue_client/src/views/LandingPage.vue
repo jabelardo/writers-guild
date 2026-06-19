@@ -341,7 +341,10 @@ async function createStoryWithCharacter(characterId) {
     const { story } = await storiesAPI.create(`Story with ${characterName}`)
 
     // Add character to story
-    const response = await charactersAPI.addToStory(story.id, characterId)
+    await charactersAPI.addToStory(story.id, characterId)
+
+    // Set rewrite prompt flag so StoryEditor shows the greeting selector on load
+    await storiesAPI.setRewritePrompt(story.id, true)
 
     // Invalidate stories cache so it refreshes when returning to dashboard
     invalidateCache('stories')

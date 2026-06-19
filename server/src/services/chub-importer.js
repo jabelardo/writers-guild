@@ -70,29 +70,32 @@ export class ChubImporter {
   }
 
   /**
-   * Download character card PNG from CHUB avatar CDN
-   * CHUB V2/V3 cards embed full character JSON in PNG tEXt chunks,
-   * so the PNG serves as both the image and the data source.
-   * @param {string} fullPath - Character's full path on CHUB
-   * @returns {Promise<Buffer>} PNG buffer containing both image and embedded character data
+   * Fetch full character JSON from CHUB GitLab repository
+   * @param {number} projectId - Project ID from CHUB API
+   * @returns {Promise<Object>} Full character card data with lorebook
    */
-  static async downloadCardPng(fullPath) {
-    const url = `https://avatars.charhub.io/avatars/${fullPath}/chara_card_v2.png`;
+  static async fetchCharacterJson(projectId) {
+    try {
+      const url = `https://gateway.chub.ai/api/v4/projects/${projectId}/repository/files/card.json/raw?ref=main&response_type=blob`;
 
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': '*/*',
-        'Referer': 'https://chub.ai/',
-      },
-    });
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': '*/*',
+          'Origin': 'https://chub.ai',
+          'Referer': 'https://chub.ai/',
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error(`Failed to download character card: ${response.status} ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch character JSON: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      throw new Error(`Character JSON fetch failed: ${error.message}`);
     }
-
-    const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
   }
 
   /**
@@ -123,31 +126,26 @@ export class ChubImporter {
 
   /**
    * Import character from CHUB URL
-   *
-   * Uses the chara_card_v2.png download as both the data source and the image.
-   * CHUB V2/V3 character cards embed the full JSON metadata in PNG tEXt chunks,
-   * so we parse the PNG directly instead of hitting the now-deprecated GitLab gateway.
-   *
    * @param {string} url - CHUB character URL
    * @returns {Promise<Object>} Object with character data and image buffer
    */
   static async importFromUrl(url) {
-    // Fetch character metadata from API (gives us the fullPath)
+    // Fetch character metadata from API
     const chubData = await this.fetchCharacter(url);
 
+    const projectId = chubData.node?.id;
     const fullPath = chubData.node?.full_path || chubData.node?.fullPath;
+
+    if (!projectId) {
+      throw new Error('No project ID available in API response');
+    }
 
     if (!fullPath) {
       throw new Error('No character path available');
     }
 
-    // Download the character card PNG — it contains embedded JSON metadata
-    // (CHUB uses V2/V3 character cards where JSON is stored in PNG tEXt chunks)
-    const imageBuffer = await this.downloadCardPng(fullPath);
-
-    // Parse the embedded character data from the PNG
-    const rawData = await CharacterParser.parseCard(imageBuffer);
-    const characterData = CharacterParser.normalizeCardData(rawData);
+    // Fetch the full character JSON from GitLab repository (includes lorebook)
+    const characterData = await this.fetchCharacterJson(projectId);
 
     // Log lorebook status
     const hasLorebook = characterData.data?.character_book &&
@@ -155,6 +153,23 @@ export class ChubImporter {
                        characterData.data.character_book.entries.length > 0;
     if (hasLorebook) {
       console.log(`[CHUB Import] Imported character with ${characterData.data.character_book.entries.length} lorebook entries`);
+    }
+
+    // Download the character image separately
+    const charCardUrl = `https://avatars.charhub.io/avatars/${fullPath}/chara_card_v2.png`;
+
+    let imageBuffer;
+    try {
+      imageBuffer = await this.downloadImage(charCardUrl);
+    } catch (error) {
+      // If that fails (404), fall back to max_res_url from API response
+      const imageUrl = chubData.node?.max_res_url || chubData.node?.avatar_url;
+
+      if (!imageUrl) {
+        throw new Error('No character image available');
+      }
+
+      imageBuffer = await this.downloadImage(imageUrl);
     }
 
     return {

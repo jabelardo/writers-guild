@@ -343,12 +343,6 @@ async function createStoryWithCharacter(characterId) {
     // Add character to story
     const response = await charactersAPI.addToStory(story.id, characterId)
 
-    // If there's a first message, add it and set the rewrite prompt flag
-    if (response.processedFirstMessage) {
-      await storiesAPI.updateContent(story.id, response.processedFirstMessage + '\n\n')
-      await storiesAPI.setRewritePrompt(story.id, true)
-    }
-
     // Invalidate stories cache so it refreshes when returning to dashboard
     invalidateCache('stories')
 

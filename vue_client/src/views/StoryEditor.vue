@@ -1256,6 +1256,13 @@ async function rewriteToThirdPerson(skipConfirm = false) {
     // Save
     await saveStory(true)
     toast.success('Rewrite complete')
+
+    // Scroll preview to end now that renderedContent has updated via RAF
+    await nextTick()
+    await new Promise(resolve => requestAnimationFrame(resolve))
+    if (previewRef.value) {
+      previewRef.value.scrollTop = previewRef.value.scrollHeight
+    }
   } catch (error) {
     // Check if it was a cancellation
     if (error.name === 'AbortError' || error.message === 'Generation cancelled') {

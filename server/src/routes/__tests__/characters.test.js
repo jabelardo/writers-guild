@@ -4,13 +4,17 @@ import request from 'supertest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { createTestPng, PNG_SIGNATURE } from './test-helpers.js';
 
-// Import the router
+// Import the routers
 import charactersRouter from '../characters.js';
+import storiesRouter from '../stories.js';
+import { SqliteStorageService } from '../../services/sqliteStorage.js';
 
 describe('Characters API Routes', () => {
   let app;
   let tempDir;
+  let storage;
 
   beforeAll(() => {
     // Create temp directory for test database - shared across all tests
@@ -25,11 +29,15 @@ describe('Characters API Routes', () => {
   });
 
   beforeEach(() => {
-    // Create Express app with the router
+    // Create storage instance
+    storage = new SqliteStorageService(tempDir);
+
+    // Create Express app with the routers
     app = express();
     app.use(express.json());
     app.locals.dataRoot = tempDir;
     app.use('/api/characters', charactersRouter);
+    app.use('/api/stories', storiesRouter);
 
     // Add error handler
     app.use((err, req, res, next) => {
@@ -296,6 +304,31 @@ describe('Characters API Routes', () => {
 
       expect(response.body.stories).toEqual([]);
     });
+
+    it('should return stories that include the character', async () => {
+      // Create character
+      const charResponse = await request(app)
+        .post('/api/characters')
+        .send({ name: 'Multi Story Char', description: 'In multiple stories' })
+        .expect(201);
+
+      const charId = charResponse.body.id;
+
+      // Create stories and add character to them using storage directly
+      const story1 = await storage.createStory('Story One', 'First story');
+      await storage.addCharacterToStory(story1.id, charId);
+
+      const story2 = await storage.createStory('Story Two', 'Second story');
+      await storage.setStoryPersona(story2.id, charId);
+
+      const response = await request(app)
+        .get(`/api/characters/${charId}/stories`)
+        .expect(200);
+
+      expect(response.body.stories.length).toBe(2);
+      expect(response.body.stories.map(s => s.title)).toContain('Story One');
+      expect(response.body.stories.map(s => s.title)).toContain('Story Two');
+    });
   });
 
   describe('DELETE /:characterId - Delete Character', () => {
@@ -318,6 +351,28 @@ describe('Characters API Routes', () => {
         .get(`/api/characters/${charId}/data`)
         .expect(500);
     });
+
+    it('should return 409 when character is used in a story', async () => {
+      // Create character
+      const charResponse = await request(app)
+        .post('/api/characters')
+        .send({ name: 'Story Char', description: 'In a story' })
+        .expect(201);
+
+      const charId = charResponse.body.id;
+
+      // Create a story and add character to it using storage directly
+      const story = await storage.createStory('Test Story', 'A story');
+      await storage.addCharacterToStory(story.id, charId);
+
+      // Try to delete character
+      const response = await request(app)
+        .delete(`/api/characters/${charId}`)
+        .expect(409);
+
+      expect(response.body.error).toContain('Cannot delete character');
+      expect(response.body.error).toContain('Used in 1 story');
+    });
   });
 
   describe('GET /:characterId/image - Get Character Image', () => {
@@ -335,6 +390,34 @@ describe('Characters API Routes', () => {
 
       expect(response.body.error).toContain('no image');
     });
+
+    it('should return image with correct content type and cache headers', async () => {
+      // Create a character with image using /create endpoint
+      const testPng = createTestPng();
+      const characterData = {
+        name: 'Image Char',
+        description: 'Has image'
+      };
+
+      const createResponse = await request(app)
+        .post('/api/characters/create')
+        .field('characterData', JSON.stringify(characterData))
+        .attach('image', testPng, {
+          filename: 'test.png',
+          contentType: 'image/png'
+        })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+
+      const response = await request(app)
+        .get(`/api/characters/${charId}/image`)
+        .expect(200);
+
+      expect(response.headers['content-type']).toBe('image/png');
+      expect(response.headers['cache-control']).toBe('public, max-age=86400');
+      expect(response.body).toBeDefined();
+    });
   });
 
   describe('GET /:characterId/thumbnail - Get Character Thumbnail', () => {
@@ -351,6 +434,83 @@ describe('Characters API Routes', () => {
         .expect(404);
 
       expect(response.body.error).toContain('no thumbnail');
+    });
+
+    it('should return thumbnail with correct headers', async () => {
+      // Create character with image (should generate thumbnail)
+      const testPng = createTestPng();
+      const characterData = {
+        name: 'Thumb Char',
+        description: 'Has thumbnail'
+      };
+
+      const createResponse = await request(app)
+        .post('/api/characters/create')
+        .field('characterData', JSON.stringify(characterData))
+        .attach('image', testPng, {
+          filename: 'test.png',
+          contentType: 'image/png'
+        })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+      
+      // Wait a bit for thumbnail generation
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const response = await request(app)
+        .get(`/api/characters/${charId}/thumbnail`)
+        .expect(200);
+
+      expect(response.headers['content-type']).toBe('image/png');
+      expect(response.headers['cache-control']).toBe('public, max-age=86400');
+    });
+  });
+
+  describe('GET /:characterId/thumbnail-medium - Get Character Medium Thumbnail', () => {
+    it('should return 404 when character has no medium thumbnail', async () => {
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({ name: 'No Medium', description: 'Has no medium thumbnail' })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+
+      const response = await request(app)
+        .get(`/api/characters/${charId}/thumbnail-medium`)
+        .expect(404);
+
+      expect(response.body.error).toContain('no medium thumbnail');
+    });
+
+    it('should return medium thumbnail with correct headers', async () => {
+      // Create character with image
+      const testPng = createTestPng();
+      const characterData = {
+        name: 'Medium Thumb Char',
+        description: 'Has medium thumbnail'
+      };
+
+      const createResponse = await request(app)
+        .post('/api/characters/create')
+        .field('characterData', JSON.stringify(characterData))
+        .attach('image', testPng, {
+          filename: 'test.png',
+          contentType: 'image/png'
+        })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+      
+      // Wait a bit for thumbnail generation
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const response = await request(app)
+        .get(`/api/characters/${charId}/thumbnail-medium`)
+        .expect(200);
+
+      expect(response.headers['content-type']).toBe('image/png');
+      expect(response.headers['cache-control']).toBe('public, max-age=86400');
     });
   });
 
@@ -381,6 +541,142 @@ describe('Characters API Routes', () => {
         .expect(400);
 
       expect(response.body.error).toContain('No file uploaded');
+    });
+
+    it('should return 400 for invalid file type', async () => {
+      const response = await request(app)
+        .post('/api/characters/import')
+        .attach('character', Buffer.from('not an image'), {
+          filename: 'test.txt',
+          contentType: 'text/plain'
+        })
+        .expect(400);
+
+      expect(response.body.error).toContain('Only PNG, JPEG, WebP, and AVIF images are allowed');
+    });
+
+    it('should reject files larger than 10MB', async () => {
+      const largeBuffer = Buffer.alloc(11 * 1024 * 1024); // 11MB
+      
+      const response = await request(app)
+        .post('/api/characters/import')
+        .attach('character', largeBuffer, {
+          filename: 'large.png',
+          contentType: 'image/png'
+        })
+        .expect(500); // multer might throw 500 for size limits
+
+      expect(response.body.error).toBeDefined();
+    });
+  });
+
+  describe('POST /import-json - Import Character JSON', () => {
+    it('should import valid character JSON', async () => {
+      const characterJson = {
+        name: 'Imported Char',
+        description: 'From JSON',
+        personality: 'Friendly',
+        first_mes: 'Hello from JSON!'
+      };
+
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(characterJson)), {
+          filename: 'character.json',
+          contentType: 'application/json'
+        })
+        .expect(201);
+
+      expect(response.body.name).toBe('Imported Char');
+      expect(response.body.description).toBe('From JSON');
+      expect(response.body.firstMessage).toBe('Hello from JSON!');
+    });
+
+    it('should normalize flat character format to V2', async () => {
+      // Flat format (V1 style)
+      const flatCharacter = {
+        name: 'Flat Char',
+        description: 'Flat format',
+        first_mes: 'Hi'
+      };
+
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(flatCharacter)), {
+          filename: 'character.json'
+        })
+        .expect(201);
+
+      expect(response.body.name).toBe('Flat Char');
+
+      // Verify it was stored in V2 format
+      const dataResponse = await request(app)
+        .get(`/api/characters/${response.body.id}/data`)
+        .expect(200);
+
+      expect(dataResponse.body.character.spec).toBe('chara_card_v2');
+    });
+
+    it('should return 400 if no file provided', async () => {
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .expect(400);
+
+      expect(response.body.error).toContain('No character file provided');
+    });
+
+    it('should return 400 for invalid JSON', async () => {
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from('not valid json'), {
+          filename: 'bad.json'
+        })
+        .expect(400);
+
+      expect(response.body.error).toContain('Invalid JSON file');
+    });
+
+    it('should return 400 for missing name in character data', async () => {
+      const invalidChar = {
+        description: 'No name field'
+      };
+
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(invalidChar)), {
+          filename: 'bad.json'
+        })
+        .expect(400);
+
+      expect(response.body.error).toContain('missing name or data field');
+    });
+
+    it('should extract embedded lorebook if present', async () => {
+      const characterWithLorebook = {
+        name: 'Char With Lore',
+        description: 'Has lorebook',
+        character_book: {
+          name: 'Embedded Lore',
+          entries: [
+            {
+              uid: 1,
+              key: ['magic'],
+              content: 'Magic lore content',
+              comment: 'Magic entry'
+            }
+          ]
+        }
+      };
+
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(characterWithLorebook)), {
+          filename: 'char.json'
+        })
+        .expect(201);
+
+      expect(response.body.embeddedLorebook).toBeDefined();
+      expect(response.body.embeddedLorebook.entryCount).toBe(1);
     });
   });
 
@@ -429,6 +725,214 @@ describe('Characters API Routes', () => {
     });
   });
 
-  // Note: Tests for story-character associations (character used in stories,
-  // cannot delete character in story) are covered in sqliteStorage.test.js
+  describe('GET / - List Characters with Data', () => {
+    it('should list characters sorted alphabetically', async () => {
+      // Clean up any existing characters by using a fresh temp dir
+      // Create characters in non-alphabetical order
+      const char1 = await request(app)
+        .post('/api/characters')
+        .send({ name: 'Zebra Char', description: 'Z' })
+        .expect(201);
+
+      const char2 = await request(app)
+        .post('/api/characters')
+        .send({ name: 'Apple Char', description: 'A' })
+        .expect(201);
+
+      const char3 = await request(app)
+        .post('/api/characters')
+        .send({ name: 'Mango Char', description: 'M' })
+        .expect(201);
+
+      const response = await request(app)
+        .get('/api/characters')
+        .expect(200);
+
+      // Find our test characters in the list
+      const testChars = response.body.characters.filter(c => 
+        ['Zebra Char', 'Apple Char', 'Mango Char'].includes(c.name)
+      );
+      
+      const names = testChars.map(c => c.name);
+      expect(names[0]).toBe('Apple Char');
+      expect(names[1]).toBe('Mango Char');
+      expect(names[2]).toBe('Zebra Char');
+    });
+
+    it('should include image URLs when character has image', async () => {
+      // Create character with image
+      const testPng = createTestPng();
+      const characterData = {
+        name: 'Image List Char',
+        description: 'Has image'
+      };
+
+      const createResponse = await request(app)
+        .post('/api/characters/create')
+        .field('characterData', JSON.stringify(characterData))
+        .attach('image', testPng, {
+          filename: 'test.png',
+          contentType: 'image/png'
+        })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+
+      const response = await request(app)
+        .get('/api/characters')
+        .expect(200);
+
+      const char = response.body.characters.find(c => c.id === charId);
+      expect(char).toBeDefined();
+      expect(char.imageUrl).toBe(`/api/characters/${charId}/image`);
+      expect(char.thumbnailUrl).toBe(`/api/characters/${charId}/thumbnail`);
+    });
+
+    it('should calculate total words from stories', async () => {
+      // Create character
+      const charResponse = await request(app)
+        .post('/api/characters')
+        .send({ name: 'Wordy Char', description: 'Tracks words' })
+        .expect(201);
+
+      const charId = charResponse.body.id;
+
+      // Create stories and update word counts using storage directly
+      const story1 = await storage.createStory('Story 1', 'First');
+      await storage.addCharacterToStory(story1.id, charId);
+      // Update word count
+      const story1Data = await storage.getStory(story1.id);
+      await storage.stmts.updateStoryContent.run('', 1000, new Date().toISOString(), story1.id);
+
+      const story2 = await storage.createStory('Story 2', 'Second');
+      await storage.setStoryPersona(story2.id, charId);
+      await storage.stmts.updateStoryContent.run('', 500, new Date().toISOString(), story2.id);
+
+      const response = await request(app)
+        .get('/api/characters')
+        .expect(200);
+
+      const char = response.body.characters.find(c => c.id === charId);
+      expect(char.totalWords).toBe(1500);
+    });
+  });
+
+  describe('POST /create - Create Character with Image', () => {
+    it('should create character with image', async () => {
+      const testPng = createTestPng();
+      const characterData = {
+        name: 'Image Character',
+        description: 'Has an image',
+        personality: 'Cheerful',
+        scenario: 'Modern day',
+        first_mes: 'Hi!'
+      };
+
+      const response = await request(app)
+        .post('/api/characters/create')
+        .field('characterData', JSON.stringify(characterData))
+        .attach('image', testPng, {
+          filename: 'test.png',
+          contentType: 'image/png'
+        })
+        .expect(201);
+
+      expect(response.body.name).toBe('Image Character');
+      expect(response.body.imageUrl).toContain('/api/characters/');
+    });
+  });
+
+  describe('POST /import-url - Import from URL', () => {
+    it('should return 400 if URL is missing', async () => {
+      const response = await request(app)
+        .post('/api/characters/import-url')
+        .send({})
+        .expect(400);
+
+      expect(response.body.error).toContain('URL is required');
+    });
+
+    it('should return 400 for non-CHUB URLs', async () => {
+      const response = await request(app)
+        .post('/api/characters/import-url')
+        .send({ url: 'https://example.com/character' })
+        .expect(400);
+
+      expect(response.body.error).toContain('Only CHUB URLs');
+    });
+
+    it('should return 400 for non-string URL', async () => {
+      const response = await request(app)
+        .post('/api/characters/import-url')
+        .send({ url: 123 })
+        .expect(400);
+
+      expect(response.body.error).toContain('URL is required');
+    });
+
+    it('should handle import errors gracefully', async () => {
+      // Mock the ChubImporter to throw an error
+      const { ChubImporter } = await import('../../services/chub-importer.js');
+      const originalImport = ChubImporter.importFromUrl;
+      ChubImporter.importFromUrl = async () => {
+        throw new Error('Network error');
+      };
+
+      const response = await request(app)
+        .post('/api/characters/import-url')
+        .send({ url: 'https://chub.ai/characters/test' })
+        .expect(400);
+
+      expect(response.body.error).toContain('Failed to import character');
+
+      // Restore original method
+      ChubImporter.importFromUrl = originalImport;
+    });
+  });
+
+  describe('PUT /:characterId - Update Character', () => {
+    let charId;
+
+    beforeEach(async () => {
+      // Create character via API
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({
+          name: 'Original Name',
+          description: 'Original Desc',
+          personality: 'Original Personality'
+        })
+        .expect(201);
+
+      charId = createResponse.body.id;
+    });
+
+    it('should update system_prompt field', async () => {
+      const response = await request(app)
+        .put(`/api/characters/${charId}`)
+        .send({ system_prompt: 'New system prompt' })
+        .expect(200);
+
+      // Verify by fetching character data
+      const dataResponse = await request(app)
+        .get(`/api/characters/${charId}/data`)
+        .expect(200);
+
+      expect(dataResponse.body.character.data.system_prompt).toBe('New system prompt');
+    });
+
+    it('should update mes_example field', async () => {
+      const response = await request(app)
+        .put(`/api/characters/${charId}`)
+        .send({ mes_example: 'Example dialogue' })
+        .expect(200);
+
+      // Verify by fetching character data
+      const dataResponse = await request(app)
+        .get(`/api/characters/${charId}/data`)
+        .expect(200);
+
+      expect(dataResponse.body.character.data.mes_example).toBe('Example dialogue');
+    });
+  });
 });

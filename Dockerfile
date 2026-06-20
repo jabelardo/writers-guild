@@ -5,6 +5,7 @@ FROM node:lts-alpine AS builder
 WORKDIR /app/vue_client
 COPY vue_client/package*.json ./
 RUN npm install
+COPY shared/ /app/shared/
 COPY vue_client/ ./
 RUN npm run build
 
@@ -25,6 +26,7 @@ RUN npm install --omit=dev
 
 # Copy server code
 COPY server/ ./
+COPY shared/ /shared/
 
 # Copy built Vue client from builder
 COPY --from=builder /app/vue_client/dist ./public/

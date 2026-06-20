@@ -330,7 +330,11 @@ import { useToast } from '../composables/useToast'
 import { useNavigation } from '../composables/useNavigation'
 import { useConfirm } from '../composables/useConfirm'
 import { setPageTitle } from '../router'
-import { MARKDOWN_IMAGE_RE, MARKDOWN_IMAGE_NORMALIZE_RE, HTML_IMAGE_RE } from '../../../shared/regex-patterns.js'
+import {
+  MARKDOWN_IMAGE_RE,
+  MARKDOWN_IMAGE_NORMALIZE_RE,
+  HTML_IMAGE_RE,
+} from '../../../shared/regex-patterns.js'
 import DOMPurify from 'dompurify'
 import ReasoningPanel from '../components/ReasoningPanel.vue'
 import CharacterResponseModal from '../components/CharacterResponseModal.vue'
@@ -394,7 +398,7 @@ const bottomInputRef = ref(null)
 // Check if story has images
 const hasImages = computed(() => {
   if (!content.value) return false
-  return /!\[[^\]]*\]\s*\([^)]+\)/.test(content.value) || /<img[^>]*>/i.test(content.value)
+  return MARKDOWN_IMAGE_RE.test(content.value) || HTML_IMAGE_RE.test(content.value)
 })
 
 // Avatar windows (stored on server per-story)
@@ -1106,6 +1110,10 @@ function cancelGeneration() {
 
 async function selectGreeting(greeting) {
   content.value = greeting + '\n\n'
+  // Switch to preview mode if the greeting contains images
+  if (hasImages.value) {
+    showPreview.value = true
+  }
   await saveStory()
   showGreetingSelector.value = false
   toast.success('Greeting selected')

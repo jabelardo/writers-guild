@@ -18,6 +18,7 @@ export async function* parseSSEStream(body, transformDelta, providerName = 'Prov
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let emittedFinished = false;
 
   try {
     while (true) {
@@ -52,7 +53,7 @@ export async function* parseSSEStream(body, transformDelta, providerName = 'Prov
 
               yield {
                 ...result,
-                finished: finishReason !== null,
+                finished: finishReason !== null,              
               };
             }
           } catch (e) {

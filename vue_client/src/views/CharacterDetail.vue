@@ -429,6 +429,14 @@
       <p>Failed to load character</p>
     </div>
   </div>
+
+  <!-- Greeting Selector Modal -->
+  <GreetingSelectorModal
+    v-if="showGreetingSelector"
+    :story="createdStoryForModal"
+    @close="handleGreetingModalClose"
+    @select="handleGreetingSelect"
+  />
 </template>
 
 <script setup>
@@ -440,6 +448,7 @@ import { useNavigation } from '../composables/useNavigation'
 import { useConfirm } from '../composables/useConfirm'
 import { setPageTitle } from '../router'
 import CharacterCard from '../components/CharacterCard.vue'
+import GreetingSelectorModal from '../components/GreetingSelectorModal.vue'
 
 const props = defineProps({
   characterId: {
@@ -458,7 +467,10 @@ const loading = ref(true)
 const character = ref(null)
 const availableLorebooks = ref([])
 
-// Editing states
+// Greeting selector state for new story flow
+const showGreetingSelector = ref(false)
+const createdStoryId = ref(null)
+const createdStoryForModal = ref(null)
 const editingName = ref(false)
 const editingDescription = ref(false)
 const editingLorebook = ref(false)
@@ -880,18 +892,41 @@ async function createNewStory() {
     // Add character to story
     const response = await charactersAPI.addToStory(story.id, props.characterId)
 
-    // Add first message if available
-    if (response.processedFirstMessage) {
-      await storiesAPI.updateContent(story.id, response.processedFirstMessage + '\n\n')
+    // Store story info for greeting selector
+    createdStoryId.value = story.id
+    createdStoryForModal.value = {
+      id: story.id,
+      characterIds: [props.characterId]
     }
 
-    toast.success('Story created!')
-
-    // Navigate to the new story
-    router.push(`/story/${story.id}`)
+    // Show greeting selector instead of navigating immediately
+    showGreetingSelector.value = true
   } catch (error) {
     console.error('Failed to create story:', error)
     toast.error('Failed to create story: ' + error.message)
+  }
+}
+
+async function handleGreetingSelect(greeting) {
+  try {
+    // Add selected greeting to story
+    await storiesAPI.updateContent(createdStoryId.value, greeting + '\n\n')
+    toast.success('Story created with greeting!')
+  } catch (error) {
+    console.error('Failed to add greeting to story:', error)
+    // Continue anyway - story is created, just navigate
+  }
+
+  // Navigate to the new story
+  showGreetingSelector.value = false
+  router.push(`/story/${createdStoryId.value}`)
+}
+
+function handleGreetingModalClose() {
+  // User closed without selecting - navigate to story anyway
+  showGreetingSelector.value = false
+  if (createdStoryId.value) {
+    router.push(`/story/${createdStoryId.value}`)
   }
 }
 

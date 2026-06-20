@@ -234,4 +234,24 @@ export class CharacterParser {
   static base64Decode(str) {
     return Buffer.from(str, 'base64').toString('utf8');
   }
+
+  /**
+   * Normalize character card data to ensure V2 format
+   * Handles both V2 format (with data wrapper) and flat format
+   * @param {Object} rawData - The raw parsed JSON data
+   * @returns {Object} - Normalized card data in V2 format
+   */
+  static normalizeCardData(rawData) {
+    // Support both V2 format (with data wrapper) and flat format
+    if (!rawData.data) {
+      // Treat the whole JSON as the data field
+      return {
+        spec: 'chara_card_v2',
+        spec_version: '2.0',
+        data: rawData
+      };
+    }
+    
+    return rawData;
+  }
 }

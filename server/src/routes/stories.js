@@ -8,6 +8,7 @@ import { SqliteStorageService } from '../services/sqliteStorage.js';
 import { PromptBuilder } from '../services/prompt-builder.js';
 import { MacroProcessor } from '../services/macro-processor.js';
 import { LorebookActivator } from '../services/lorebook-activator.js';
+import { ImagePreserver } from '../services/image-preserver.js';
 import { getProvider } from '../services/provider-factory.js';
 import { createPresetFromSettings } from '../services/default-presets.js';
 
@@ -673,6 +674,9 @@ function setupSSE(res) {
 async function streamGeneration(res, provider, preset, context, generationType, params, abortSignal = null) {
   console.log(`[streamGeneration] Starting ${generationType}, signal present: ${!!abortSignal}, aborted: ${abortSignal?.aborted}`);
 
+  // --- Image preservation: will be done after truncation inside buildPrompts ---
+  const imagePreserver = generationType === 'rewriteThirdPerson' ? new ImagePreserver() : null;
+
   // Build both system and user prompts with proper context management
   const prompts = await provider.buildPrompts(
     {
@@ -686,7 +690,8 @@ async function streamGeneration(res, provider, preset, context, generationType, 
     {
       characterName: params.characterName,
       customInstruction: params.customInstruction,
-      templateText: preset.promptTemplates?.[generationType]
+      templateText: preset.promptTemplates?.[generationType],
+      imagePreserver
     },
     preset
   );
@@ -718,18 +723,32 @@ async function streamGeneration(res, provider, preset, context, generationType, 
 
     // Stream chunks
     try {
+      let fullContent = '';
+
       for await (const chunk of stream) {
         // Apply asterisk filtering server-side (core feature - always enabled)
         let processedContent = chunk.content || null;
         if (processedContent) {
           processedContent = processedContent.replace(/\*/g, '');
+          fullContent += processedContent;
         }
 
+        // Build the event data. If this is the final chunk and we have
+        // preserved images, restore them and send the final content inline.
         const data = {
           reasoning: chunk.reasoning || null,
           content: processedContent,
           finished: chunk.finished || false,
         };
+
+        if (chunk.finished && imagePreserver) {
+          // Restore images directly into the finished chunk
+          const { finalContent, imagesRestored, imagesPreserved, imagesMissing } = imagePreserver.restoreImages(fullContent);
+          data.finalContent = finalContent;
+          data.imagesRestored = imagesRestored;
+          data.imagesPreserved = imagesPreserved;
+          data.imagesMissing = imagesMissing;
+        }
 
         res.write(`data: ${JSON.stringify(data)}\n\n`);
         if (res.flush) res.flush();
@@ -762,13 +781,18 @@ async function streamGeneration(res, provider, preset, context, generationType, 
           }
         })}\n\n`);
       } else if (update.type === 'complete') {
-        // Send final content
-        let processedContent = update.content || '';
-        processedContent = processedContent.replace(/\*/g, '');
+
+        const processedContent = update.content?.replace(/\*/g, '') || '';
+
+        // Restore images in the final content
+        const finalContent = !imagePreserver 
+          ? processedContent 
+          : imagePreserver.restoreImages(processedContent)?.finalContent;
 
         res.write(`data: ${JSON.stringify({
-          content: processedContent,
-          finished: true
+          content: finalContent,
+          finished: true,
+          imagesRestored: imagePreserver?.saved.length > 0
         })}\n\n`);
       }
 
@@ -782,15 +806,24 @@ async function streamGeneration(res, provider, preset, context, generationType, 
       maxContextLength: preset.generationSettings.maxContextTokens
     });
 
-    let processedContent = result.content || '';
-    processedContent = processedContent.replace(/\*/g, '');
+    const processedContent = update.content?.replace(/\*/g, '') || '';
+
+    // Restore images in the final content
+    const finalContent = !imagePreserver 
+      ? processedContent 
+      : imagePreserver.restoreImages(processedContent)?.finalContent;
 
     res.write(`data: ${JSON.stringify({
       reasoning: result.reasoning || null,
-      content: processedContent,
-      finished: true
+      content: finalContent,
+      finished: true,
+      imagesRestored: imagePreserver?.saved.length > 0
     })}\n\n`);
     if (res.flush) res.flush();
+  }
+
+  if (imagePreserver?.saved.length > 0) {
+    console.log(`[ImagePreserver] ${imagePreserver.saved.length} image(s) preserved`);
   }
 
   // Send done

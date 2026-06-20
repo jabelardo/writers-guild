@@ -11,6 +11,14 @@
       <div class="header-right">
         <button
           class="icon-btn"
+          :class="{ 'icon-btn-active': showPreview }"
+          @click="showPreview = !showPreview"
+          :title="showPreview ? 'Switch to editor' : 'Preview rendered content'"
+        >
+          <i class="fas fa-eye"></i>
+        </button>
+        <button
+          class="icon-btn"
           @click="showManageCharacters = true"
           title="Manage Characters"
         >
@@ -63,9 +71,10 @@
         @close="showReasoningPanel = false"
       />
 
-      <!-- Text Editor -->
+      <!-- Text Editor / Preview -->
       <div class="editor-container">
         <textarea
+          v-if="!showPreview"
           ref="editorRef"
           v-model="content"
           class="story-editor"
@@ -73,6 +82,26 @@
           spellcheck="true"
           @input="handleInput"
         ></textarea>
+        <div v-else ref="previewRef" class="story-preview" v-html="renderedContent"></div>
+        
+        <!-- Bottom input bar for preview mode -->
+        <div v-if="showPreview" class="preview-input-bar">
+          <input
+            ref="bottomInputRef"
+            v-model="bottomInput"
+            type="text"
+            class="preview-input"
+            placeholder="Write more here..."
+            @keydown.enter="handleBottomInputSend"
+          />
+          <button
+            class="btn btn-primary btn-send"
+            :disabled="!bottomInput.trim()"
+            @click="handleBottomInputSend"
+          >
+            <i class="fas fa-paper-plane"></i> Send
+          </button>
+        </div>
       </div>
 
       <!-- Bottom Toolbar -->
@@ -216,7 +245,7 @@
     <GreetingSelectorModal
       v-if="showGreetingSelector"
       :story="story"
-      @close="showGreetingSelector = false"
+      @close="handleCloseGreeting"
       @select="selectGreeting"
     />
 
@@ -301,6 +330,12 @@ import { useToast } from '../composables/useToast'
 import { useNavigation } from '../composables/useNavigation'
 import { useConfirm } from '../composables/useConfirm'
 import { setPageTitle } from '../router'
+import {
+  MARKDOWN_IMAGE_RE,
+  MARKDOWN_IMAGE_NORMALIZE_RE,
+  HTML_IMAGE_RE,
+} from '../../../shared/regex-patterns.js'
+import DOMPurify from 'dompurify'
 import ReasoningPanel from '../components/ReasoningPanel.vue'
 import CharacterResponseModal from '../components/CharacterResponseModal.vue'
 import GreetingSelectorModal from '../components/GreetingSelectorModal.vue'
@@ -333,6 +368,7 @@ const story = ref(null)
 const content = ref('')
 const originalContent = ref('')
 const editorRef = ref(null)
+const previewRef = ref(null)
 const generating = ref(false)
 const generationStatus = ref('Thinking...')
 const reasoning = ref('')
@@ -352,7 +388,18 @@ const ideateResponse = ref('')
 const ideateLoading = ref(false)
 const ideateStatus = ref('Thinking...')
 const showThirdPersonPrompt = ref(false)
+const showPreview = ref(false)
 let abortController = null
+
+// Bottom input for preview mode
+const bottomInput = ref('')
+const bottomInputRef = ref(null)
+
+// Check if story has images
+const hasImages = computed(() => {
+  if (!content.value) return false
+  return MARKDOWN_IMAGE_RE.test(content.value) || HTML_IMAGE_RE.test(content.value)
+})
 
 // Avatar windows (stored on server per-story)
 const avatarWindows = ref([])
@@ -364,6 +411,65 @@ const shouldShowReasoning = ref(false) // Setting from server
 const isStoryEmpty = computed(() => {
   return !content.value || content.value.trim().length === 0
 })
+
+// Throttled rendered content — updated at most once per animation frame
+// to avoid tearing down/recreating <img> elements on every streaming token.
+function renderContent(text) {
+  if (!text) return ''
+  let html = text
+
+  // 1. Extract HTML <img> tags before escaping so they survive the pipeline
+  const savedImgs = []
+  HTML_IMAGE_RE.lastIndex = 0
+  html = html.replace(HTML_IMAGE_RE, (match) => {
+    const marker = `\x00IMG_MARKER_${savedImgs.length}\x00`
+    savedImgs.push({ marker, original: match })
+    // Inject loading=lazy and class=story-image into the saved tag
+    const enhanced = match.replace('<img', '<img loading="lazy" class="story-image"')
+    savedImgs[savedImgs.length - 1].original = enhanced
+    return marker
+  })
+
+  // 2. Escape HTML special chars including quotes (defense before markdown img injection)
+  html = html
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+
+  // 3. Convert markdown images: ![alt](url) and ![alt] (url)
+  MARKDOWN_IMAGE_RE.lastIndex = 0
+  html = html.replace(MARKDOWN_IMAGE_RE, '<img src="$2" alt="$1" class="story-image" loading="lazy">')
+
+  // 4. Convert double newlines to paragraphs
+  html = '<p>' + html.replace(/\n\n/g, '</p><p>') + '</p>'
+  // Convert single newlines to <br>
+  html = html.replace(/\n/g, '<br>')
+  // Remove empty paragraphs
+  html = html.replace(/<p><\/p>/g, '')
+
+  // 5. Restore saved HTML <img> tags (reinserted after all transformations)
+  for (const { marker, original } of savedImgs) {
+    html = html.replace(marker, original)
+  }
+
+  // 6. Sanitize final HTML against any remaining XSS vectors (event handlers, javascript: URLs, etc.)
+  html = DOMPurify.sanitize(html)
+  return html
+}
+
+const renderedContent = ref('')
+let renderRAF = null
+
+function scheduleRender() {
+  if (renderRAF) return
+  renderRAF = requestAnimationFrame(() => {
+    renderRAF = null
+    renderedContent.value = renderContent(content.value)
+  })
+}
+
+watch(content, scheduleRender, { immediate: true })
 
 // Auto-save
 let autoSaveTimeout = null
@@ -378,6 +484,13 @@ const undoRedoInProgress = ref(false) // Prevents rapid concurrent undo/redo ope
 function normalizeTrailingLineBreaks() {
   const trimmed = content.value.replace(/\n+$/, '')
   content.value = trimmed + '\n\n'
+}
+
+// Normalize markdown image syntax spacing: ![alt] (url) -> ![alt](url)
+function normalizeMarkdownImageSpacing(text) {
+  if (!text) return text
+  MARKDOWN_IMAGE_NORMALIZE_RE.lastIndex = 0;
+  return text.replace(MARKDOWN_IMAGE_NORMALIZE_RE, '![$1]($2)')
 }
 
 // Keyboard shortcut handler for quick paragraph generation, modal opening, and undo/redo
@@ -430,10 +543,29 @@ onMounted(async () => {
     avatarWindows.value = story.value.avatarWindows
   }
 
+  // Set preview mode as default if story has images
+  if (hasImages.value) {
+    showPreview.value = true
+  }
+
   // Add keyboard shortcut listener
   window.addEventListener('keydown', handleKeyboardShortcut)
 
-  // Check if we should prompt for third-person rewrite (from story creation with first message)
+  // Check if we should show greeting selector first (for newly created stories with characters)
+  if (story.value?.needsRewritePrompt && story.value?.characterIds?.length > 0) {
+    // Clear the flag on the server
+    try {
+      await storiesAPI.setRewritePrompt(props.storyId, false)
+    } catch (error) {
+      console.error('Failed to clear rewrite prompt flag:', error)
+    }
+    
+    // Show greeting selector FIRST before rewrite dialog
+    showGreetingSelector.value = true
+    return
+  }
+  
+  // If we don't need to show greeting selector, check if we should show rewrite dialog
   if (story.value?.needsRewritePrompt) {
     // Clear the flag on the server
     try {
@@ -459,6 +591,11 @@ onUnmounted(() => {
   }
   // Remove keyboard shortcut listener
   window.removeEventListener('keydown', handleKeyboardShortcut)
+  // Cancel pending render to prevent updating after unmount
+  if (renderRAF) {
+    cancelAnimationFrame(renderRAF)
+    renderRAF = null
+  }
 })
 
 // Watch content changes for auto-save
@@ -484,6 +621,17 @@ watch(showReasoningPanel, async (isOpen) => {
       editorRef.value.scrollTop = editorRef.value.scrollHeight
       editorRef.value.focus()
     }
+  }
+})
+
+// Scroll to end when toggling preview or back to editor
+watch(showPreview, async (isPreview) => {
+  await nextTick()
+  if (isPreview && previewRef.value) {
+    previewRef.value.scrollTop = previewRef.value.scrollHeight
+  } else if (!isPreview && editorRef.value) {
+    editorRef.value.scrollTop = editorRef.value.scrollHeight
+    editorRef.value.focus()
   }
 })
 
@@ -546,13 +694,25 @@ async function loadSettings() {
 }
 
 async function saveStory(silent = false) {
-  if (content.value === originalContent.value) {
+  const normalizedContent = normalizeMarkdownImageSpacing(content.value)
+  const normalizedOriginal = normalizeMarkdownImageSpacing(originalContent.value)
+
+  // Check if normalization changed the editor content (e.g., image spacing)
+  const wasNormalized = normalizedContent !== content.value
+
+  // Keep editor content canonical when save is triggered
+  if (wasNormalized) {
+    content.value = normalizedContent
+  }
+
+  // Only skip save if there are no semantic changes AND no formatting normalization
+  if (!wasNormalized && normalizedContent === normalizedOriginal) {
     return // No changes
   }
 
   try {
-    const result = await storiesAPI.updateContent(props.storyId, content.value)
-    originalContent.value = content.value
+    const result = await storiesAPI.updateContent(props.storyId, normalizedContent)
+    originalContent.value = normalizedContent
 
     // Update history status from response
     if (result.canUndo !== undefined) {
@@ -654,6 +814,28 @@ async function handleRedo() {
     await nextTick()
     isUndoRedoOperation = false
     undoRedoInProgress.value = false
+  }
+}
+
+async function handleBottomInputSend() {
+  if (!bottomInput.value.trim() || generating.value) return
+
+  try {
+    // Add user message to content with newline before and after
+    const userMessage = bottomInput.value.trim()
+    const trimmed = content.value.replace(/\n+$/, '')
+    content.value = trimmed + '\n\n' + userMessage + '\n\n'
+
+    bottomInput.value = ''
+
+    // Save the story
+    await saveStory(true)
+
+    // Trigger character response
+    await handleCharacterResponse()
+  } catch (error) {
+    console.error('Failed to send message:', error)
+    toast.error('Failed to send message: ' + error.message)
   }
 }
 
@@ -807,8 +989,8 @@ async function generate(isCustom, instruction, characterId) {
     reasoning.value = ''
     showReasoningPanel.value = false  // Only open when reasoning is actually received
 
-    // Track cursor position
-    const cursorPos = editorRef.value.selectionStart
+    // Track cursor position (only if editor is visible)
+    const cursorPos = editorRef.value ? editorRef.value.selectionStart : content.value.length
     const textBefore = content.value.substring(0, cursorPos)
     const textAfter = content.value.substring(cursorPos)
 
@@ -928,6 +1110,10 @@ function cancelGeneration() {
 
 async function selectGreeting(greeting) {
   content.value = greeting + '\n\n'
+  // Switch to preview mode if the greeting contains images
+  if (hasImages.value) {
+    showPreview.value = true
+  }
   await saveStory()
   showGreetingSelector.value = false
   toast.success('Greeting selected')
@@ -937,6 +1123,19 @@ async function selectGreeting(greeting) {
     await nextTick()
     showThirdPersonPrompt.value = true
   }
+}
+
+/**
+ * Called when the greeting selector is dismissed without selecting a greeting.
+ * Still shows the third-person rewrite prompt so it isn't silently skipped.
+ */
+function handleCloseGreeting() {
+  showGreetingSelector.value = false
+  nextTick().then(() => {
+    if (shouldShowThirdPersonPrompt()) {
+      showThirdPersonPrompt.value = true
+    }
+  })
 }
 
 // Handler for when user accepts the third-person prompt
@@ -956,7 +1155,8 @@ async function rewriteToThirdPerson(skipConfirm = false) {
     if (!confirmed) return
   }
 
-  // Save before rewriting
+  // Save the current content (with any embedded images) before rewriting
+  // The server-side ImagePreserver handles image extraction/restoration
   await saveStory(true)
 
   // Create abort controller for cancellation
@@ -1026,6 +1226,17 @@ async function rewriteToThirdPerson(skipConfirm = false) {
         }
       }
 
+      // Handle server-side image restoration event
+      if (chunk.imagesRestored && chunk.finalContent) {
+        // Server already restored images; use its final content directly
+        rewrittenContent = chunk.finalContent
+        content.value = rewrittenContent
+        await nextTick()
+        if (editorRef.value) {
+          editorRef.value.scrollTop = editorRef.value.scrollHeight
+        }
+      }
+
       if (chunk.finished) {
         break
       }
@@ -1053,6 +1264,13 @@ async function rewriteToThirdPerson(skipConfirm = false) {
     // Save
     await saveStory(true)
     toast.success('Rewrite complete')
+
+    // Scroll preview to end now that renderedContent has updated via RAF
+    await nextTick()
+    await new Promise(resolve => requestAnimationFrame(resolve))
+    if (previewRef.value) {
+      previewRef.value.scrollTop = previewRef.value.scrollHeight
+    }
   } catch (error) {
     // Check if it was a cancellation
     if (error.name === 'AbortError' || error.message === 'Generation cancelled') {
@@ -1294,6 +1512,7 @@ function saveAvatarWindows() {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   background-color: var(--bg-secondary);
 }
 
@@ -1349,6 +1568,8 @@ function saveAvatarWindows() {
   flex: 1;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
+  position: relative;
 }
 
 .story-editor {
@@ -1461,6 +1682,104 @@ function saveAvatarWindows() {
 
 .stop-button {
   margin-left: auto;
+  white-space: nowrap;
+}
+
+.icon-btn-active {
+  color: var(--accent-primary) !important;
+}
+
+.icon-btn-active i {
+  color: var(--accent-primary) !important;
+}
+
+.story-preview {
+  width: 100%;
+  flex: 1;
+  overflow-y: auto;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  padding-left: max(2rem, calc((100% - 700px) / 2));
+  padding-right: max(2rem, calc((100% - 700px) / 2));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.8;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+}
+
+.story-preview p {
+  margin: 0 0 1em 0;
+}
+
+:deep(.story-preview .story-image) {
+  /* Responsive: scale image to viewport with adaptive margins */
+  width: auto;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+/* Small screens (phones) — keep some edge padding */
+@media (max-width: 480px) {
+  :deep(.story-preview .story-image) {
+    max-width: calc(100vw - 2rem);
+    max-height: 70vh;
+  }
+}
+
+/* Medium screens (tablets) */
+@media (min-width: 481px) and (max-width: 1024px) {
+  :deep(.story-preview .story-image) {
+    max-width: calc(100vw - 4rem);
+    max-height: 70vh;
+  }
+}
+
+/* Large screens (desktop) — cap width so images don't span edge-to-edge */
+@media (min-width: 1025px) {
+  :deep(.story-preview .story-image) {
+    max-width: min(100%, calc(100vw - 8rem), 800px);
+    max-height: calc(100vh - 10rem);
+  }
+}
+
+/* Preview input bar at bottom of editor when in preview mode */
+.editor-container {
+  position: relative;
+}
+
+.preview-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.preview-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.preview-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(139, 90, 43, 0.1);
+}
+
+.btn-send {
+  padding: 0.75rem 1.5rem;
   white-space: nowrap;
 }
 </style>

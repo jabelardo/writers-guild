@@ -53,12 +53,12 @@
       <!-- Import from URL -->
       <section class="import-section">
         <h3><i class="fas fa-link"></i> Import from URL</h3>
-        <p class="help-text">Paste a character URL from CHUB</p>
+        <p class="help-text">Paste a character URL from CHUB or a direct image URL (PNG, JPEG, WebP)</p>
         <input
           v-model="characterUrl"
           type="text"
           class="text-input"
-          placeholder="https://chub.ai/characters/..."
+          placeholder="https://chub.ai/characters/... or https://example.com/character.png"
           @keydown.enter="importFromURL"
         />
         <button
@@ -69,7 +69,7 @@
           <i class="fas fa-download"></i>
           {{ importing ? 'Importing...' : 'Import from URL' }}
         </button>
-        <small class="hint">Supported: chub.ai</small>
+        <small class="hint">Supported: chub.ai, direct image URLs (PNG, JPEG, WebP)</small>
       </section>
     </div>
   </Modal>

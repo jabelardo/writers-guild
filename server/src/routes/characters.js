@@ -332,7 +332,7 @@ router.post('/import-json', jsonUpload.single('character'), asyncHandler(async (
   });
 }));
 
-// Import character from URL (CHUB, etc.)
+// Import character from URL (CHUB, or direct image URL)
 router.post('/import-url', asyncHandler(async (req, res) => {
   const { url } = req.body;
 
@@ -340,9 +340,50 @@ router.post('/import-url', asyncHandler(async (req, res) => {
     throw new AppError('URL is required', 400);
   }
 
+  // Detect image URLs by extension (before query string or fragment)
+  const imageExtensions = /\.(png|jpg|jpeg|webp|avif)(?=[?#]|$)/i;
+  const isImageUrl = imageExtensions.test(url);
+
+  if (isImageUrl) {
+    // Fetch the image and process as a character card PNG
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new AppError(`Failed to fetch image: ${response.statusText}`, 400);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const imageBuffer = Buffer.from(arrayBuffer);
+
+      const characterId = uuidv4();
+
+      // Parse character card from PNG
+      const rawCardData = await CharacterParser.parseCard(imageBuffer);
+      const cardData = CharacterParser.normalizeCardData(rawCardData);
+
+      // Extract embedded lorebook if present
+      const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
+
+      // Save character data as JSON and image separately
+      await storage.saveCharacter(characterId, cardData, imageBuffer);
+
+      res.status(201).json({
+        id: characterId,
+        name: cardData.data?.name || 'Unknown',
+        description: cardData.data?.description || '',
+        imageUrl: `/api/characters/${characterId}/image`,
+        firstMessage: cardData.data?.first_mes || '',
+        embeddedLorebook: embeddedLorebook
+      });
+      return;
+    } catch (error) {
+      throw new AppError(`Failed to import image character: ${error.message}`, 400);
+    }
+  }
+
   // Check if it's a CHUB URL
   if (!url.includes('chub.ai')) {
-    throw new AppError('Only CHUB URLs are currently supported', 400);
+    throw new AppError('Only CHUB URLs and direct image URLs (PNG, JPEG, WebP) are currently supported', 400);
   }
 
   try {

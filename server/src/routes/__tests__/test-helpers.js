@@ -38,8 +38,8 @@ export const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
  * @returns {Promise<Buffer>} PNG buffer with embedded data
  */
 export async function createTestCharacterPng(characterData = {}) {
-  const { createCharacterCardPng } = await import('../../services/character-parser.js');
-  
+  const { CharacterParser } = await import('../../services/character-parser.js');
+
   const defaultData = {
     name: 'Test Character',
     description: 'A test character',
@@ -47,7 +47,7 @@ export async function createTestCharacterPng(characterData = {}) {
     ...characterData
   };
 
-  return createCharacterCardPng(defaultData, createTestPng());
+  return CharacterParser.createPNGWithCharacterData(defaultData);
 }
 
 /**

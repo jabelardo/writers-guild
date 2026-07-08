@@ -10,6 +10,7 @@ import { SqliteStorageService } from '../services/sqliteStorage.js';
 import { CharacterParser } from '../services/character-parser.js';
 import { LorebookParser } from '../services/lorebook-parser.js';
 import { ChubImporter } from '../services/chub-importer.js';
+import { IMAGE_EXTENSIONS } from '../../../shared/regex-patterns.js';
 
 const router = express.Router();
 
@@ -339,13 +340,10 @@ router.post('/import-url', asyncHandler(async (req, res) => {
   if (!url || typeof url !== 'string') {
     throw new AppError('URL is required', 400);
   }
-
-  // Detect image URLs by extension (before query string or fragment)
-  const imageExtensions = /\.(png|jpg|jpeg|webp|avif)(?=[?#]|$)/i;
-  const isImageUrl = imageExtensions.test(url);
+  
+  const isImageUrl = IMAGE_EXTENSIONS.test(url);
 
   if (isImageUrl) {
-    // Fetch the image and process as a character card PNG
     try {
       const response = await fetch(url);
       if (!response.ok) {

@@ -17,3 +17,5 @@ export const HTML_IMAGE_RE = /<img[^>]+>/gi;
 
 // Regex pattern for WG placeholders: [WG_IMAGE_X]
 export const WG_PLACEHOLDER_RE = /\[WG_IMAGE_(\d+)\]/g;
+
+export const IMAGE_EXTENSIONS = /\.(png|jpg|jpeg|webp)(?=[?#]|$)/i;

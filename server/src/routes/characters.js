@@ -10,6 +10,7 @@ import { SqliteStorageService } from '../services/sqliteStorage.js';
 import { CharacterParser } from '../services/character-parser.js';
 import { LorebookParser } from '../services/lorebook-parser.js';
 import { ChubImporter } from '../services/chub-importer.js';
+import { IMAGE_EXTENSIONS } from '../../../shared/regex-patterns.js';
 
 const router = express.Router();
 
@@ -332,17 +333,55 @@ router.post('/import-json', jsonUpload.single('character'), asyncHandler(async (
   });
 }));
 
-// Import character from URL (CHUB, etc.)
+// Import character from URL (CHUB, or direct image URL)
 router.post('/import-url', asyncHandler(async (req, res) => {
   const { url } = req.body;
 
   if (!url || typeof url !== 'string') {
     throw new AppError('URL is required', 400);
   }
+  
+  const isImageUrl = IMAGE_EXTENSIONS.test(url);
+
+  if (isImageUrl) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new AppError(`Failed to fetch image: ${response.statusText}`, 400);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const imageBuffer = Buffer.from(arrayBuffer);
+
+      const characterId = uuidv4();
+
+      // Parse character card from PNG
+      const rawCardData = await CharacterParser.parseCard(imageBuffer);
+      const cardData = CharacterParser.normalizeCardData(rawCardData);
+
+      // Extract embedded lorebook if present
+      const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
+
+      // Save character data as JSON and image separately
+      await storage.saveCharacter(characterId, cardData, imageBuffer);
+
+      res.status(201).json({
+        id: characterId,
+        name: cardData.data?.name || 'Unknown',
+        description: cardData.data?.description || '',
+        imageUrl: `/api/characters/${characterId}/image`,
+        firstMessage: cardData.data?.first_mes || '',
+        embeddedLorebook: embeddedLorebook
+      });
+      return;
+    } catch (error) {
+      throw new AppError(`Failed to import image character: ${error.message}`, 400);
+    }
+  }
 
   // Check if it's a CHUB URL
   if (!url.includes('chub.ai')) {
-    throw new AppError('Only CHUB URLs are currently supported', 400);
+    throw new AppError('Only CHUB URLs and direct image URLs (PNG, JPEG, WebP) are currently supported', 400);
   }
 
   try {

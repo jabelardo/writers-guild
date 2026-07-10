@@ -4,7 +4,7 @@ import request from 'supertest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { createTestPng, PNG_SIGNATURE } from './test-helpers.js';
+import { createTestPng, createTestCharacterPng, PNG_SIGNATURE } from './test-helpers.js';
 
 // Import the routers
 import charactersRouter from '../characters.js';
@@ -532,6 +532,204 @@ describe('Characters API Routes', () => {
 
       expect(response.body.error).toContain('Only CHUB URLs');
     });
+
+    it('should return 400 for non-CHUB non-image URLs', async () => {
+      const response = await request(app)
+        .post('/api/characters/import-url')
+        .send({ url: 'https://example.com/character' })
+        .expect(400);
+
+      expect(response.body.error).toContain('Only CHUB URLs');
+    });
+
+    it('should import character from PNG image URL', async () => {
+      const characterPng = await createTestCharacterPng({
+        name: 'URL Image Char',
+        description: 'Imported from image URL',
+        first_mes: 'Hello from URL!'
+      });
+
+      const mockResponse = {
+        ok: true,
+        statusText: 'OK',
+        arrayBuffer: async () => characterPng.buffer.slice(
+          characterPng.byteOffset,
+          characterPng.byteOffset + characterPng.byteLength
+        ),
+      };
+      vi.stubGlobal('fetch', async () => mockResponse);
+
+      try {
+        const response = await request(app)
+          .post('/api/characters/import-url')
+          .send({ url: 'https://example.com/character-card.png' })
+          .expect(201);
+
+        expect(response.body.name).toBe('URL Image Char');
+        expect(response.body.description).toBe('Imported from image URL');
+        expect(response.body.firstMessage).toBe('Hello from URL!');
+        expect(response.body.imageUrl).toMatch(/^\/api\/characters\/.+\/image$/);
+        expect(response.body.id).toBeDefined();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('should import character from JPEG image URL', async () => {
+      const characterPng = await createTestCharacterPng({
+        name: 'JPEG URL Char'
+      });
+
+      const mockResponse = {
+        ok: true,
+        statusText: 'OK',
+        arrayBuffer: async () => characterPng.buffer.slice(
+          characterPng.byteOffset,
+          characterPng.byteOffset + characterPng.byteLength
+        ),
+      };
+      vi.stubGlobal('fetch', async () => mockResponse);
+
+      try {
+        const response = await request(app)
+          .post('/api/characters/import-url')
+          .send({ url: 'https://example.com/avatar.jpg' })
+          .expect(201);
+
+        expect(response.body.name).toBe('JPEG URL Char');
+        expect(response.body.imageUrl).toMatch(/^\/api\/characters\/.+\/image$/);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('should import character from WebP image URL', async () => {
+      const characterPng = await createTestCharacterPng({
+        name: 'WebP URL Char'
+      });
+
+      const mockResponse = {
+        ok: true,
+        statusText: 'OK',
+        arrayBuffer: async () => characterPng.buffer.slice(
+          characterPng.byteOffset,
+          characterPng.byteOffset + characterPng.byteLength
+        ),
+      };
+      vi.stubGlobal('fetch', async () => mockResponse);
+
+      try {
+        const response = await request(app)
+          .post('/api/characters/import-url')
+          .send({ url: 'https://example.com/card.webp' })
+          .expect(201);
+
+        expect(response.body.name).toBe('WebP URL Char');
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('should import character from image URL with query parameters', async () => {
+      const characterPng = await createTestCharacterPng({
+        name: 'Query URL Char'
+      });
+
+      const mockResponse = {
+        ok: true,
+        statusText: 'OK',
+        arrayBuffer: async () => characterPng.buffer.slice(
+          characterPng.byteOffset,
+          characterPng.byteOffset + characterPng.byteLength
+        ),
+      };
+      vi.stubGlobal('fetch', async () => mockResponse);
+
+      try {
+        const response = await request(app)
+          .post('/api/characters/import-url')
+          .send({ url: 'https://example.com/character.png?width=256&format=png' })
+          .expect(201);
+
+        expect(response.body.name).toBe('Query URL Char');
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('should return 400 when image URL fetch fails', async () => {
+      vi.stubGlobal('fetch', async () => ({
+        ok: false,
+        statusText: 'Not Found',
+      }));
+
+      try {
+        const response = await request(app)
+          .post('/api/characters/import-url')
+          .send({ url: 'https://example.com/missing.png' })
+          .expect(400);
+
+        expect(response.body.error).toContain('Failed to fetch image');
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('should return 400 when image URL returns invalid PNG', async () => {
+      const notPng = Buffer.from('not a real PNG image');
+      vi.stubGlobal('fetch', async () => ({
+        ok: true,
+        statusText: 'OK',
+        arrayBuffer: async () => notPng.buffer.slice(
+          notPng.byteOffset,
+          notPng.byteOffset + notPng.byteLength
+        ),
+      }));
+
+      try {
+        const response = await request(app)
+          .post('/api/characters/import-url')
+          .send({ url: 'https://example.com/fake.png' })
+          .expect(400);
+
+        expect(response.body.error).toContain('Failed to import image character');
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('should not check CHUB URL after successful image URL import', async () => {
+      // Verifies that a successful image URL import returns 201 and does NOT
+      // fall through to the CHUB URL check (which would throw a 400 error).
+      const characterPng = await createTestCharacterPng({
+        name: 'No Fallthrough Char'
+      });
+
+      const mockResponse = {
+        ok: true,
+        statusText: 'OK',
+        arrayBuffer: async () => characterPng.buffer.slice(
+          characterPng.byteOffset,
+          characterPng.byteOffset + characterPng.byteLength
+        ),
+      };
+      vi.stubGlobal('fetch', async () => mockResponse);
+
+      try {
+        const response = await request(app)
+          .post('/api/characters/import-url')
+          .send({ url: 'https://example.com/some-card.png' })
+          .expect(201);
+
+        // If execution fell through to the CHUB check, we'd get a 400 error
+        // instead of this 201 response.
+        expect(response.body.name).toBe('No Fallthrough Char');
+        expect(response.body.id).toBeDefined();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
   });
 
   describe('POST /import - Import PNG', () => {

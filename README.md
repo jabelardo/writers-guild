@@ -87,7 +87,6 @@ writers-guild/
 
 - To build natively in Android you need `node-addon-api` and `node-gyp`
 
-
 ## API
 
 The server runs on port 8000 and provides:
@@ -96,3 +95,7 @@ The server runs on port 8000 and provides:
 - `/api/lorebooks` - Lorebook management
 - `/api/settings` - User settings
 - `/` - Serves the Vue client (production) or forwards to Vite (dev)
+
+## Community & Discussion
+- Discuss Writers Guild [on Libera.Chat IRC](https://web.libera.chat/#writers-guild) in #writers-guild
+- Or in [The Eye of Providence Discord](https://discord.gg/rpSKvGp2uY) in #writers-guild

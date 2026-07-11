@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import fs from 'fs';
@@ -1131,6 +1131,172 @@ describe('Characters API Routes', () => {
         .expect(200);
 
       expect(dataResponse.body.character.data.mes_example).toBe('Example dialogue');
+    });
+  });
+
+  describe('POST /:characterId/refresh-images', () => {
+    let charId;
+
+    beforeEach(async () => {
+      // Create a character via POST /
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({
+          name: 'Refresh Test',
+          description: 'Character for refresh-images test',
+        })
+        .expect(201);
+
+      charId = createResponse.body.id;
+
+      // Add external image URLs to the character data via PUT
+      await request(app)
+        .put(`/api/characters/${charId}`)
+        .send({
+          description: 'A character with an external image ![img](https://example.com/photo.png)',
+          first_mes: 'Hello! Check this out: <img src="https://example.com/banner.jpg"/>',
+        })
+        .expect(200);
+    });
+
+    it('should return success with imagesCached=0 when no images can be downloaded', async () => {
+      const response = await request(app)
+        .post(`/api/characters/${charId}/refresh-images`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.imagesCached).toBe(0);
+      expect(response.body.message).toBe('All images already cached');
+    });
+
+    it('should return success with imagesCached>0 when new images are cached', async () => {
+      // Mock fetch to return a valid PNG so images get downloaded and cached
+      const pngBuffer = createTestPng();
+      const origFetch = globalThis.fetch;
+      globalThis.fetch = async () => new Response(pngBuffer, {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      });
+
+      try {
+        const response = await request(app)
+          .post(`/api/characters/${charId}/refresh-images`)
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        expect(response.body.imagesCached).toBeGreaterThan(0);
+        expect(response.body.message).toContain('Cached');
+      } finally {
+        globalThis.fetch = origFetch;
+      }
+    });
+
+    it('should return 500 for a non-existent character', async () => {
+      await request(app)
+        .post('/api/characters/non-existent-id/refresh-images')
+        .expect(500);
+    });
+  });
+
+  describe('extractAndSaveEmbeddedLorebook error handling', () => {
+    it('should handle lorebook with no entries (empty array)', async () => {
+      const characterWithEmptyLorebook = {
+        name: 'Empty Lore',
+        description: 'Has empty lorebook',
+        character_book: {
+          name: 'Empty',
+          entries: []
+        }
+      };
+
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(characterWithEmptyLorebook)), {
+          filename: 'char.json'
+        })
+        .expect(201);
+
+      // No embedded lorebook should be created when entries are empty
+      expect(response.body.embeddedLorebook).toBeNull();
+
+      // Verify character was still created
+      expect(response.body.name).toBe('Empty Lore');
+    });
+
+    it('should handle character data with no extensions field on update-with-image', async () => {
+      // Create a character
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({ name: 'No Ext Char' })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+
+      // Update with only ursceal_lorebook_id (covers extensions init path)
+      const response = await request(app)
+        .put(`/api/characters/${charId}`)
+        .send({ ursceal_lorebook_id: 'some-lorebook-id' })
+        .expect(200);
+
+      // Verify via data endpoint
+      const dataResponse = await request(app)
+        .get(`/api/characters/${charId}/data`)
+        .expect(200);
+
+      expect(dataResponse.body.character.data.extensions.ursceal_lorebook_id).toBe('some-lorebook-id');
+    });
+  });
+
+  describe('POST /:characterId/update-with-image edge cases', () => {
+    it('should update lorebook association via update-with-image', async () => {
+      // Create a character
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({ name: 'Lorebook Update Char' })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+
+      // Update with lorebook_id (covers extensions init in update-with-image)
+      const response = await request(app)
+        .put(`/api/characters/${charId}/update-with-image`)
+        .field('characterData', JSON.stringify({
+          name: 'Lorebook Updated',
+          ursceal_lorebook_id: 'test-lorebook-id'
+        }))
+        .expect(200);
+
+      // Verify via data endpoint
+      const dataResponse = await request(app)
+        .get(`/api/characters/${charId}/data`)
+        .expect(200);
+
+      expect(dataResponse.body.character.data.extensions.ursceal_lorebook_id).toBe('test-lorebook-id');
+    });
+
+    it('should accept image with character update', async () => {
+      // Create a character
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({ name: 'Update Img Char' })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+
+      // Update with image
+      const testPng = createTestPng();
+      const response = await request(app)
+        .put(`/api/characters/${charId}/update-with-image`)
+        .field('characterData', JSON.stringify({ name: 'Updated Img', description: 'With image' }))
+        .attach('image', testPng, {
+          filename: 'avatar.png',
+          contentType: 'image/png'
+        })
+        .expect(200);
+
+      expect(response.body.name).toBe('Updated Img');
+      expect(response.body.description).toBe('With image');
+      expect(response.body.imageUrl).toContain(`/api/characters/${charId}/image`);
     });
   });
 });

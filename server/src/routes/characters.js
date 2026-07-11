@@ -11,6 +11,8 @@ import { CharacterParser } from '../services/character-parser.js';
 import { LorebookParser } from '../services/lorebook-parser.js';
 import { ChubImporter } from '../services/chub-importer.js';
 import { IMAGE_EXTENSIONS } from '../../../shared/regex-patterns.js';
+import { cacheExternalImages, rewriteImageUrls } from '../services/image-cacher.js';
+import { AssetManager } from '../services/asset-manager.js';
 
 const router = express.Router();
 
@@ -42,6 +44,23 @@ router.use((req, res, next) => {
   }
   next();
 });
+
+/**
+ * Helper to cache external images and rewrite URLs in character card data.
+ * Does NOT throw on failure — just logs warnings so imports still succeed.
+ */
+async function cacheCardImages(characterId, cardData, dataRoot) {
+  try {
+    const imageMap = await cacheExternalImages(characterId, cardData, dataRoot);
+    if (imageMap.size > 0) {
+      rewriteImageUrls(cardData, imageMap);
+      console.log(`[cacheCardImages] Rewrote ${imageMap.size} image URL(s) for character ${characterId}`);
+    }
+  } catch (error) {
+    console.error(`[cacheCardImages] Failed to cache images for ${characterId}:`, error);
+    // Non-fatal: continue with original URLs
+  }
+}
 
 /**
  * Extract embedded lorebook from character data and save it to storage.
@@ -166,6 +185,9 @@ router.post('/import', upload.single('character'), asyncHandler(async (req, res)
   try {
     const cardData = await CharacterParser.parseCard(req.file.buffer);
 
+      // Cache external images and rewrite URLs
+      await cacheCardImages(characterId, cardData, req.app.locals.dataRoot);
+
       // Extract embedded lorebook if present
       const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
 
@@ -220,6 +242,9 @@ router.post('/', asyncHandler(async (req, res) => {
 
   // Save character (no image)
   await storage.saveCharacter(characterId, characterData, null);
+
+  // Cache any external images in the card data
+  await cacheCardImages(characterId, characterData, req.app.locals.dataRoot);
 
   res.status(201).json({
     id: characterId,
@@ -280,6 +305,9 @@ router.post('/create', upload.single('image'), asyncHandler(async (req, res) => 
   const imageBuffer = req.file ? req.file.buffer : null;
   await storage.saveCharacter(characterId, characterData, imageBuffer);
 
+  // Cache any external images in the card data
+  await cacheCardImages(characterId, characterData, req.app.locals.dataRoot);
+
   const hasImage = await storage.hasCharacterImage(characterId);
 
   res.status(201).json({
@@ -316,6 +344,9 @@ router.post('/import-json', jsonUpload.single('character'), asyncHandler(async (
   }
 
   const characterId = uuidv4();
+
+  // Cache external images and rewrite URLs
+  await cacheCardImages(characterId, cardData, req.app.locals.dataRoot);
 
   // Extract embedded lorebook if present
   const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
@@ -359,6 +390,9 @@ router.post('/import-url', asyncHandler(async (req, res) => {
       const rawCardData = await CharacterParser.parseCard(imageBuffer);
       const cardData = CharacterParser.normalizeCardData(rawCardData);
 
+      // Cache external images and rewrite URLs
+      await cacheCardImages(characterId, cardData, req.app.locals.dataRoot);
+
       // Extract embedded lorebook if present
       const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
 
@@ -389,6 +423,9 @@ router.post('/import-url', asyncHandler(async (req, res) => {
     const { characterData, imageBuffer } = await ChubImporter.importFromUrl(url);
 
     const characterId = uuidv4();
+
+    // Cache external images and rewrite URLs
+    await cacheCardImages(characterId, characterData, req.app.locals.dataRoot);
 
     // Extract embedded lorebook if present
     const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, characterData);
@@ -490,6 +527,9 @@ router.put('/:characterId', asyncHandler(async (req, res) => {
   // Save updated data (keep existing image)
   await storage.saveCharacter(characterId, existingData, null);
 
+  // Cache any new external images in the updated fields
+  await cacheCardImages(characterId, existingData, req.app.locals.dataRoot);
+
   res.json({
     id: characterId,
     name: existingData.data.name,
@@ -540,6 +580,9 @@ router.put('/:characterId/update-with-image', upload.single('image'), asyncHandl
   const imageBuffer = req.file ? req.file.buffer : null;
   await storage.saveCharacter(characterId, existingData, imageBuffer);
 
+  // Cache any new external images in the updated fields
+  await cacheCardImages(characterId, existingData, req.app.locals.dataRoot);
+
   const hasImage = await storage.hasCharacterImage(characterId);
 
   res.json({
@@ -584,7 +627,53 @@ router.delete('/:characterId', asyncHandler(async (req, res) => {
   }
 
   await storage.deleteCharacter(characterId);
+
+  // Clean up cached asset files
+  try {
+    const assetManager = new AssetManager(req.app.locals.dataRoot);
+    await assetManager.deleteDir(characterId);
+  } catch (error) {
+    console.error(`Failed to clean up assets for character ${characterId}:`, error);
+  }
+
   res.json({ success: true });
+}));
+
+/**
+ * Refresh cached external images for a character.
+ * Re-scans all text fields for external image URLs, downloads any that
+ * aren't already cached, rewrites URLs in the card data, and saves.
+ */
+router.post('/:characterId/refresh-images', asyncHandler(async (req, res) => {
+  const { characterId } = req.params;
+  const dataRoot = req.app.locals.dataRoot;
+
+  // Load existing character data
+  const cardData = await storage.getCharacter(characterId);
+
+  // Re-cache images: only new ones will be downloaded (already-cached skipped)
+  const imageMap = await cacheExternalImages(characterId, cardData, dataRoot);
+
+  if (imageMap.size > 0) {
+    // Rewrite URLs in card data for any newly cached images
+    rewriteImageUrls(cardData, imageMap);
+
+    // Persist updated card data (keep existing image blob)
+    await storage.saveCharacter(characterId, cardData, null);
+
+    res.json({
+      success: true,
+      imagesCached: imageMap.size,
+      message: `Cached ${imageMap.size} new image(s)`,
+    });
+  } else {
+    // No new images needed caching
+    res.json({
+      success: true,
+      imagesCached: 0,
+      message: 'All images already cached',
+    });
+  }
 }));
 
 export default router;

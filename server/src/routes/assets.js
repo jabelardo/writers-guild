@@ -10,20 +10,10 @@
 import express from 'express';
 import { asyncHandler, AppError } from '../middleware/error-handler.js';
 import { AssetManager } from '../services/asset-manager.js';
+import { mimeTypeFromExt } from '../../../shared/mime-types.js'
 import path from 'path';
 
 const router = express.Router();
-
-// MIME type map for served files
-const MIME_MAP = {
-  '.png':  'image/png',
-  '.jpg':  'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.avif': 'image/avif',
-  '.gif':  'image/gif',
-  '.bmp':  'image/bmp',
-};
 
 /**
  * Middleware to attach an AssetManager instance per request.
@@ -49,9 +39,9 @@ router.get('/characters/:characterId/:filename', asyncHandler(async (req, res) =
 
   // Only serve allowed image extensions
   const ext = path.extname(filename).toLowerCase();
-  const mimeType = MIME_MAP[ext];
+  const mimeType = mimeTypeFromExt(ext);
   if (!mimeType) {
-    throw new AppError('Unsupported file type', 400);
+    throw new AppError(`Unsupported file type ${ext}`, 400);
   }
 
   const buffer = await req.assetManager.readAsset(characterId, filename);

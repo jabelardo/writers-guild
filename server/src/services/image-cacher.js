@@ -9,8 +9,10 @@
  */
 
 import crypto from 'crypto';
-import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE } from '../../../shared/regex-patterns.js';
+import sharp from 'sharp';
 import { AssetManager } from './asset-manager.js';
+import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE } from '../../../shared/regex-patterns.js';
+import { IMAGE_MIME_TYPES_MAP, mimeTypeToExt } from '../../../shared/mime-types.js'
 
 // ── Configuration ─────────────────────────────────────────────────────
 
@@ -18,34 +20,7 @@ const DOWNLOAD_TIMEOUT_MS = 15_000;       // 15 s per image
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_CONCURRENT_DOWNLOADS = 3;
 
-// Allowed image MIME types
-const ALLOWED_MIME_TYPES = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/jpg',
-  'image/webp',
-  'image/avif',
-  'image/gif',
-  'image/bmp',
-]);
-
 // ── Helpers ───────────────────────────────────────────────────────────
-
-/**
- * Map MIME type to file extension.
- */
-function mimeToExt(mime) {
-  const map = {
-    'image/png': 'png',
-    'image/jpeg': 'jpg',
-    'image/jpg': 'jpg',
-    'image/webp': 'webp',
-    'image/avif': 'avif',
-    'image/gif': 'gif',
-    'image/bmp': 'bmp',
-  };
-  return map[mime] || 'bin';
-}
 
 /**
  * Compute SHA-256 hex digest of a buffer.
@@ -146,7 +121,8 @@ async function downloadImage(url) {
     // Validate Content-Type
     const contentType = response.headers.get('content-type') || '';
     const mimeType = contentType.split(';')[0].trim().toLowerCase();
-    if (!ALLOWED_MIME_TYPES.has(mimeType)) {
+    
+    if (!IMAGE_MIME_TYPES_MAP[mimeType]) {
       console.warn(`[ImageCacher] Skipping non-image Content-Type "${mimeType}": ${url}`);
       return null;
     }
@@ -244,15 +220,28 @@ export async function cacheExternalImages(characterId, cardData, dataRoot, optio
         }
 
         const { buffer, mimeType } = result;
-        const hash = sha256(buffer);
-        const ext = mimeToExt(mimeType);
+
+        // Convert to WebP for space savings (JPEG, PNG, GIF → WebP)
+        let finalBuffer = buffer;
+        let finalMimeType = mimeType;
+        if (['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(mimeType)) {
+          try {
+            finalBuffer = await sharp(buffer).webp({ animated: true }).toBuffer();
+            finalMimeType = 'image/webp';
+          } catch (err) {
+            console.warn(`[ImageCacher] WebP conversion failed for ${url}: ${err.message}`);
+          }
+        }
+
+        const hash = sha256(finalBuffer);
+        const ext = mimeTypeToExt(finalMimeType);
         const filename = `${hash}.${ext}`;
         const localPath = `/api/assets/characters/${characterId}/${filename}`;
 
         // Write file directly — metadata is collected and written in bulk at the end
-        await assetManager.writeFileOnly(characterId, filename, buffer);
+        await assetManager.writeFileOnly(characterId, filename, finalBuffer);
 
-        newEntries.push({ originalUrl: url, hash, filename, mimeType });
+        newEntries.push({ originalUrl: url, hash, filename, mimeType: finalMimeType });
         imageMap.set(url, localPath);
       })
     );

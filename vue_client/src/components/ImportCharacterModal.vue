@@ -14,11 +14,11 @@
         />
         <button
           class="btn btn-primary full-width"
-          :disabled="!selectedFile || importing"
+          :disabled="!selectedFile || !!importing"
           @click="importFromPhoto"
         >
-          <i class="fas fa-upload"></i>
-          {{ importing ? 'Importing...' : 'Import from Photos' }}
+          <i :class="importing === 'photo' ? 'fas fa-spinner fa-spin' : 'fas fa-upload'"></i>
+          {{ importing === 'photo' ? 'Importing...' : 'Import from Photos' }}
         </button>
       </section>
 
@@ -38,11 +38,11 @@
         />
         <button
           class="btn btn-primary full-width"
-          :disabled="!selectedStorageFile || importing"
+          :disabled="!selectedStorageFile || !!importing"
           @click="importFromStorage"
         >
-          <i class="fas fa-upload"></i>
-          {{ importing ? 'Importing...' : 'Import from Storage' }}
+          <i :class="importing === 'storage' ? 'fas fa-spinner fa-spin' : 'fas fa-upload'"></i>
+          {{ importing === 'storage' ? 'Importing...' : 'Import from Storage' }}
         </button>
       </section>
 
@@ -63,11 +63,11 @@
         />
         <button
           class="btn btn-primary full-width"
-          :disabled="!characterUrl.trim() || importing"
+          :disabled="!characterUrl.trim() || !!importing"
           @click="importFromURL"
         >
-          <i class="fas fa-download"></i>
-          {{ importing ? 'Importing...' : 'Import from URL' }}
+          <i :class="importing === 'url' ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
+          {{ importing === 'url' ? 'Importing...' : 'Import from URL' }}
         </button>
         <small class="hint">Supported: chub.ai, direct image URLs (PNG, JPEG, WebP)</small>
       </section>
@@ -89,7 +89,7 @@ const fileInput = ref(null)
 const selectedStorageFile = ref(null)
 const storageFileInput = ref(null)
 const characterUrl = ref('')
-const importing = ref(false)
+const importing = ref(null) // null | 'photo' | 'storage' | 'url'
 
 function handleFileSelect(event) {
   const file = event.target.files[0]
@@ -109,7 +109,7 @@ async function importFromPhoto() {
   if (!selectedFile.value || importing.value) return
 
   try {
-    importing.value = true
+    importing.value = 'photo'
     const result = await charactersAPI.importPNG(selectedFile.value)
 
     toast.success(`Successfully imported "${result.name}"!`)
@@ -127,7 +127,7 @@ async function importFromURL() {
   if (!characterUrl.value.trim() || importing.value) return
 
   try {
-    importing.value = true
+    importing.value = 'url'
     const result = await charactersAPI.importFromURL(characterUrl.value.trim())
 
     toast.success(`Successfully imported "${result.name}"!`)
@@ -145,7 +145,7 @@ async function importFromStorage() {
   if (!selectedStorageFile.value || importing.value) return
 
   try {
-    importing.value = true
+    importing.value = 'storage'
 
     // Detect if it's an image file (PNG/JPEG) and route accordingly
     const file = selectedStorageFile.value

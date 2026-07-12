@@ -11,7 +11,7 @@
 import crypto from 'crypto';
 import sharp from 'sharp';
 import { AssetManager } from './asset-manager.js';
-import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE } from '../../../shared/regex-patterns.js';
+import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE, IMAGE_EXTENSIONS } from '../../../shared/regex-patterns.js';
 import { IMAGE_MIME_TYPES_MAP, mimeTypeToExt } from '../../../shared/mime-types.js'
 
 // ── Configuration ─────────────────────────────────────────────────────
@@ -131,13 +131,50 @@ function collectLorebookImageUrls(lorebookData) {
 }
 
 /**
+ * Validate that a URL is a plausible image URL before attempting to download.
+ *
+ * @param {string} url
+ * @returns {boolean}
+ */
+function isValidImageUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+
+  try {
+    const parsed = new URL(url);
+
+    // Only http / https are supported
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      console.warn(`[ImageCacher] Skipping non-HTTP URL: ${url}`);
+      return false;
+    }
+
+    // Reject URLs with no hostname
+    if (!parsed.hostname) {
+      console.warn(`[ImageCacher] Skipping URL with no hostname: ${url}`);
+      return false;
+    }
+
+    return true;
+  } catch {
+    console.warn(`[ImageCacher] Skipping malformed URL: ${url}`);
+    return false;
+  }
+}
+
+/**
  * Download a single image from a URL.
  *
  * @param {string} url
  * @returns {Promise<{ buffer: Buffer, mimeType: string } | null>}
- *   Returns null if the download fails or the content is not a valid image.
+ *   Returns null if the URL is invalid, the download fails, or the content
+ *   is not a valid image.
  */
 async function downloadImage(url) {
+  // Validate URL before making any network request
+  if (!isValidImageUrl(url)) {
+    return null;
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
 

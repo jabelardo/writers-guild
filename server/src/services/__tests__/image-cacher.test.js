@@ -435,6 +435,27 @@ describe('cacheExternalImages (mocked fetch + fs)', () => {
     const result = await cacheExternalImages('char-1', card, '/fake/data');
     expect(result.size).toBe(0);
   });
+
+  it('rejects non-HTTP URLs', async () => {
+    const card = makeCard({ description: '![x](ftp://example.com/img.png)' });
+    const result = await cacheExternalImages('char-1', card, '/fake/data');
+    expect(result.size).toBe(0);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed URLs', async () => {
+    const card = makeCard({ description: '![x](not a url)' });
+    const result = await cacheExternalImages('char-1', card, '/fake/data');
+    expect(result.size).toBe(0);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('rejects empty or null URLs', async () => {
+    const card = makeCard({ description: '![](  )' });
+    const result = await cacheExternalImages('char-1', card, '/fake/data');
+    expect(result.size).toBe(0);
+    expect(fetch).not.toHaveBeenCalled();
+  });
 });
 
 describe('AssetManager (interface)', () => {

@@ -327,7 +327,7 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
  * locally via AssetManager, and return a mapping of original URL → local path.
  *
  * Only downloads images that are not already cached (by checking metadata).
- * Does NOT modify cardData — call rewriteImageUrls() separately.
+ * Does NOT modify cardData — call rewriteCharacterImageUrls() separately.
  *
  * @param {string}   characterId
  * @param {object}   cardData   — normalized V2 card data
@@ -337,7 +337,7 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
  * @returns {Promise<Map<string, string>>}
  *   Map where key = original URL, value = local path (e.g. "/api/assets/characters/{id}/{hash}.jpg")
  */
-export async function cacheExternalImages(characterId, cardData, dataRoot, options = {}) {
+export async function cacheCharacterImages(characterId, cardData, dataRoot, options = {}) {
   const urls = collectAllImageUrls(cardData);
   const label = cardData.data?.name || characterId;
   return cacheImageSet(characterId, urls, dataRoot, 'characters', label, options);
@@ -355,10 +355,33 @@ export async function cacheExternalImages(characterId, cardData, dataRoot, optio
  * @returns {Promise<Map<string, string>>}
  *   Map where key = original URL, value = local path (e.g. "/api/assets/lorebooks/{id}/{hash}.webp")
  */
-export async function cacheLorebookImages(lorebookId, lorebookData, dataRoot, options = {}) {
-  const urls = collectLorebookImageUrls(lorebookData);
-  const label = lorebookData.name || lorebookId;
-  return cacheImageSet(lorebookId, urls, dataRoot, 'lorebooks', label, options);
+export async function cacheLorebookImages(storage, lorebookId, lorebookData, dataRoot, options = {}) {
+    try {
+      const urls = collectLorebookImageUrls(lorebookData);
+      const label = lorebookData.name || lorebookId;
+      const imageMap = await cacheImageSet(lorebookId, urls, dataRoot, 'lorebooks', label, options);
+      if (imageMap.size > 0) {
+        rewriteLorebookImageUrls(lorebookData, imageMap);
+        const saved = await storage.saveLorebook(lorebookId, lorebookData);
+        console.log(`[Lorebooks] Rewrote ${imageMap.size} image URL(s) in lorebook ${lorebookId}`);
+        return imageMap;
+      }
+    } catch (error) {
+      console.error(`[Lorebooks] Failed to cache images for lorebook ${lorebookId}:`, error);
+    }
+    return null;
+}
+
+function replaceUrls(text, imageMap) {
+  if (!text || typeof text !== 'string') return text;
+
+  // Replace each original URL in the text with its local path
+  for (const [originalUrl, localPath] of imageMap) {
+    // Escape URL for regex special characters
+    const escaped = originalUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    text = text.replace(new RegExp(escaped, 'g'), localPath);
+  }
+  return text;
 }
 
 /**
@@ -368,24 +391,11 @@ export async function cacheLorebookImages(lorebookId, lorebookData, dataRoot, op
  * @param {Map<string, string>} imageMap   — original URL → local path
  * @returns {object}  — the same cardData object (mutated), for chaining
  */
-export function rewriteImageUrls(cardData, imageMap) {
+export function rewriteCharacterImageUrls(cardData, imageMap) {
   if (!imageMap || imageMap.size === 0) return cardData;
   if (!cardData?.data) return cardData;
 
   const data = cardData.data;
-
-  // Build a single-pass replacement function
-  function replaceUrls(text) {
-    if (!text || typeof text !== 'string') return text;
-
-    // Replace each original URL in the text with its local path
-    for (const [originalUrl, localPath] of imageMap) {
-      // Escape URL for regex special characters
-      const escaped = originalUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      text = text.replace(new RegExp(escaped, 'g'), localPath);
-    }
-    return text;
-  }
 
   // Apply to all text fields
   const fields = [
@@ -401,13 +411,13 @@ export function rewriteImageUrls(cardData, imageMap) {
 
   for (const field of fields) {
     if (data[field] !== undefined) {
-      data[field] = replaceUrls(data[field]);
+      data[field] = replaceUrls(data[field], imageMap);
     }
   }
 
   // Alternate greetings (array of strings)
   if (Array.isArray(data.alternate_greetings)) {
-    data.alternate_greetings = data.alternate_greetings.map(g => replaceUrls(g));
+    data.alternate_greetings = data.alternate_greetings.map(g => replaceUrls(g, imageMap));
   }
 
   return cardData;
@@ -444,28 +454,19 @@ export function rewriteLorebookImageUrls(lorebookData, imageMap) {
   if (!imageMap || imageMap.size === 0) return lorebookData;
   if (!lorebookData?.entries || !Array.isArray(lorebookData.entries)) return lorebookData;
 
-  function replaceUrls(text) {
-    if (!text || typeof text !== 'string') return text;
-    for (const [originalUrl, localPath] of imageMap) {
-      const escaped = originalUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      text = text.replace(new RegExp(escaped, 'g'), localPath);
-    }
-    return text;
-  }
-
-  // Rewrite in each entry's content and comment
+ // Rewrite in each entry's content and comment
   for (const entry of lorebookData.entries) {
     if (entry.content) {
-      entry.content = replaceUrls(entry.content);
+      entry.content = replaceUrls(entry.content, imageMap);
     }
     if (entry.comment) {
-      entry.comment = replaceUrls(entry.comment);
+      entry.comment = replaceUrls(entry.comment, imageMap);
     }
   }
 
   // Also rewrite in lorebook description
   if (lorebookData.description) {
-    lorebookData.description = replaceUrls(lorebookData.description);
+    lorebookData.description = replaceUrls(lorebookData.description, imageMap);
   }
 
   return lorebookData;

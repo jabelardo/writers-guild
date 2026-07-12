@@ -11,7 +11,7 @@ import { CharacterParser } from '../services/character-parser.js';
 import { LorebookParser } from '../services/lorebook-parser.js';
 import { ChubImporter } from '../services/chub-importer.js';
 import { IMAGE_EXTENSIONS } from '../../../shared/regex-patterns.js';
-import { cacheExternalImages, cacheLorebookImages, rewriteImageUrls, rewriteLorebookImageUrls } from '../services/image-cacher.js';
+import { cacheCharacterImages, cacheLorebookImages, rewriteCharacterImageUrls, rewriteLorebookImageUrls } from '../services/image-cacher.js';
 import { AssetManager } from '../services/asset-manager.js';
 
 const router = express.Router();
@@ -51,9 +51,9 @@ router.use((req, res, next) => {
  */
 async function cacheCardImages(characterId, cardData, dataRoot) {
   try {
-    const imageMap = await cacheExternalImages(characterId, cardData, dataRoot);
+    const imageMap = await cacheCharacterImages(characterId, cardData, dataRoot);
     if (imageMap.size > 0) {
-      rewriteImageUrls(cardData, imageMap);
+      rewriteCharacterImageUrls(cardData, imageMap);
       console.log(`[cacheCardImages] Rewrote ${imageMap.size} image URL(s) for character ${characterId}`);
     }
   } catch (error) {
@@ -85,17 +85,7 @@ async function extractAndSaveEmbeddedLorebook(storageInstance, cardData, dataRoo
       lorebookId = uuidv4();
       await storageInstance.saveLorebook(lorebookId, lorebookData);
 
-      // Cache external images in the lorebook entry content
-      try {
-        const imageMap = await cacheLorebookImages(lorebookId, lorebookData, dataRoot);
-        if (imageMap.size > 0) {
-          rewriteLorebookImageUrls(lorebookData, imageMap);
-          await storageInstance.saveLorebook(lorebookId, lorebookData);
-          console.log(`[characters] Rewrote ${imageMap.size} image URL(s) in embedded lorebook ${lorebookId}`);
-        }
-      } catch (cacheError) {
-        console.error(`[characters] Failed to cache images in embedded lorebook ${lorebookId}:`, cacheError);
-      }
+      await cacheLorebookImages(storageInstance, lorebookId, lorebookData, dataRoot);
 
       embeddedLorebook = {
         id: lorebookId,
@@ -665,11 +655,11 @@ router.post('/:characterId/refresh-images', asyncHandler(async (req, res) => {
   const cardData = await storage.getCharacter(characterId);
 
   // Re-cache images: only new ones will be downloaded (already-cached skipped)
-  const imageMap = await cacheExternalImages(characterId, cardData, dataRoot);
+  const imageMap = await cacheCharacterImages(characterId, cardData, dataRoot);
 
   if (imageMap.size > 0) {
     // Rewrite URLs in card data for any newly cached images
-    rewriteImageUrls(cardData, imageMap);
+    rewriteCharacterImageUrls(cardData, imageMap);
 
     // Persist updated card data (keep existing image blob)
     await storage.saveCharacter(characterId, cardData, null);

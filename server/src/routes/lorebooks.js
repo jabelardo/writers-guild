@@ -101,17 +101,7 @@ router.post('/import', upload.single('lorebook'), asyncHandler(async (req, res) 
     // Save to storage
     await storage.saveLorebook(lorebookId, parsed);
 
-    // Cache external images in the lorebook entry content (non-fatal)
-    try {
-      const imageMap = await cacheLorebookImages(lorebookId, parsed, req.app.locals.dataRoot);
-      if (imageMap.size > 0) {
-        rewriteLorebookImageUrls(parsed, imageMap);
-        await storage.saveLorebook(lorebookId, parsed);
-        console.log(`[Lorebooks] Rewrote ${imageMap.size} image URL(s) in lorebook ${lorebookId}`);
-      }
-    } catch (error) {
-      console.error(`[Lorebooks] Failed to cache images for lorebook ${lorebookId}:`, error);
-    }
+    await cacheLorebookImages(storage, lorebookId, parsed, req.app.locals.dataRoot);
 
     res.json({
       id: lorebookId,
@@ -160,17 +150,7 @@ router.post('/import-url', asyncHandler(async (req, res) => {
     // Save to storage
     await storage.saveLorebook(lorebookId, parsed);
 
-    // Cache external images in the lorebook entry content (non-fatal)
-    try {
-      const imageMap = await cacheLorebookImages(lorebookId, parsed, req.app.locals.dataRoot);
-      if (imageMap.size > 0) {
-        rewriteLorebookImageUrls(parsed, imageMap);
-        await storage.saveLorebook(lorebookId, parsed);
-        console.log(`[Lorebooks] Rewrote ${imageMap.size} image URL(s) in lorebook ${lorebookId}`);
-      }
-    } catch (error) {
-      console.error(`[Lorebooks] Failed to cache images for lorebook ${lorebookId}:`, error);
-    }
+    await cacheLorebookImages(storage, lorebookId, parsed, req.app.locals.dataRoot);
 
     res.json({
       id: lorebookId,

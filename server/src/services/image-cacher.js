@@ -11,7 +11,7 @@
 import crypto from 'crypto';
 import sharp from 'sharp';
 import { AssetManager } from './asset-manager.js';
-import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE } from '../../../shared/regex-patterns.js';
+import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE, IMAGE_EXTENSIONS } from '../../../shared/regex-patterns.js';
 import { IMAGE_MIME_TYPES_MAP, mimeTypeToExt } from '../../../shared/mime-types.js'
 
 // ── Configuration ─────────────────────────────────────────────────────
@@ -94,13 +94,87 @@ function collectAllImageUrls(cardData) {
 }
 
 /**
+ * Collect all image URLs from a lorebook's entry content fields.
+ *
+ * @param {object} lorebookData  — lorebook with .entries[].content fields
+ * @returns {Set<string>}
+ */
+function collectLorebookImageUrls(lorebookData) {
+  if (!lorebookData?.entries || !Array.isArray(lorebookData.entries)) {
+    return new Set();
+  }
+
+  const all = new Set();
+
+  // Scan entry content and comment fields
+  for (const entry of lorebookData.entries) {
+    if (entry.content) {
+      for (const url of extractImageUrls(entry.content)) {
+        all.add(url);
+      }
+    }
+    if (entry.comment) {
+      for (const url of extractImageUrls(entry.comment)) {
+        all.add(url);
+      }
+    }
+  }
+
+  // Also scan lorebook description
+  if (lorebookData.description) {
+    for (const url of extractImageUrls(lorebookData.description)) {
+      all.add(url);
+    }
+  }
+
+  return all;
+}
+
+/**
+ * Validate that a URL is a plausible image URL before attempting to download.
+ *
+ * @param {string} url
+ * @returns {boolean}
+ */
+function isValidImageUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+
+  try {
+    const parsed = new URL(url);
+
+    // Only http / https are supported
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      console.warn(`[ImageCacher] Skipping non-HTTP URL: ${url}`);
+      return false;
+    }
+
+    // Reject URLs with no hostname
+    if (!parsed.hostname) {
+      console.warn(`[ImageCacher] Skipping URL with no hostname: ${url}`);
+      return false;
+    }
+
+    return true;
+  } catch {
+    console.warn(`[ImageCacher] Skipping malformed URL: ${url}`);
+    return false;
+  }
+}
+
+/**
  * Download a single image from a URL.
  *
  * @param {string} url
  * @returns {Promise<{ buffer: Buffer, mimeType: string } | null>}
- *   Returns null if the download fails or the content is not a valid image.
+ *   Returns null if the URL is invalid, the download fails, or the content
+ *   is not a valid image.
  */
 async function downloadImage(url) {
+  // Validate URL before making any network request
+  if (!isValidImageUrl(url)) {
+    return null;
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
 
@@ -158,44 +232,33 @@ async function downloadImage(url) {
   }
 }
 
-// ── Public API ────────────────────────────────────────────────────────
+// ── Internal: generic caching pipeline ────────────────────────────────
 
 /**
- * Download all external images referenced in a character card, store them
- * locally via AssetManager, and return a mapping of original URL → local path.
+ * Internal: download, convert, and store images for any entity.
  *
- * Only downloads images that are not already cached (by checking metadata).
- * Does NOT modify cardData — call rewriteImageUrls() separately.
- *
- * @param {string}   characterId
- * @param {object}   cardData   — normalized V2 card data
- * @param {string}   dataRoot   — resolved data root path
+ * @param {string}   entityId
+ * @param {Set<string>} urls      — image URLs to cache
+ * @param {string}   dataRoot
+ * @param {string}   entityType   — 'characters' or 'lorebooks'
+ * @param {string}   [label]      — human-readable label for log messages
  * @param {object}   [options]
- * @param {number}   [options.concurrency]  — max parallel downloads (default 3)
+ * @param {number}   [options.concurrency]
  * @returns {Promise<Map<string, string>>}
- *   Map where key = original URL, value = local path (e.g. "/api/assets/characters/{id}/{hash}.jpg")
  */
-export async function cacheExternalImages(characterId, cardData, dataRoot, options = {}) {
-  const assetManager = new AssetManager(dataRoot);
+async function cacheImageSet(entityId, urls, dataRoot, entityType, label, options = {}) {
+  const assetManager = new AssetManager(dataRoot, entityType);
   const concurrency = options.concurrency ?? MAX_CONCURRENT_DOWNLOADS;
 
-  // Collect all unique image URLs from the card
-  const urls = collectAllImageUrls(cardData);
   if (urls.size === 0) {
     return new Map();
   }
 
-  console.log(`[ImageCacher] Found ${urls.size} external image(s) in character "${cardData.data?.name || characterId}"`);
+  console.log(`[ImageCacher] Found ${urls.size} external image(s) in ${entityType.slice(0, -1)} "${label || entityId}"`);
 
-  // Load existing metadata to skip already-cached images
-  const meta = await assetManager.readMetadata(characterId);
+  const meta = await assetManager.readMetadata(entityId);
   const cachedUrls = new Set(meta.images.map(i => i.originalUrl));
-
-  // We collect new metadata entries in-memory, then write metadata.json
-  // once at the end to avoid race conditions between parallel downloads.
   const newEntries = [];
-
-  // Download in batches with concurrency limit
   const urlArray = [...urls];
   const imageMap = new Map();
 
@@ -203,12 +266,10 @@ export async function cacheExternalImages(characterId, cardData, dataRoot, optio
     const batch = urlArray.slice(i, i + concurrency);
     const results = await Promise.allSettled(
       batch.map(async (url) => {
-        // Skip if already cached
         if (cachedUrls.has(url)) {
           const existing = meta.images.find(img => img.originalUrl === url);
           if (existing) {
-            const localPath = `/api/assets/characters/${characterId}/${existing.filename}`;
-            imageMap.set(url, localPath);
+            imageMap.set(url, `/api/assets/${entityType}/${entityId}/${existing.filename}`);
           }
           return;
         }
@@ -221,7 +282,6 @@ export async function cacheExternalImages(characterId, cardData, dataRoot, optio
 
         const { buffer, mimeType } = result;
 
-        // Convert to WebP for space savings (JPEG, PNG, GIF → WebP)
         let finalBuffer = buffer;
         let finalMimeType = mimeType;
         if (['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(mimeType)) {
@@ -236,11 +296,9 @@ export async function cacheExternalImages(characterId, cardData, dataRoot, optio
         const hash = sha256(finalBuffer);
         const ext = mimeTypeToExt(finalMimeType);
         const filename = `${hash}.${ext}`;
-        const localPath = `/api/assets/characters/${characterId}/${filename}`;
+        const localPath = `/api/assets/${entityType}/${entityId}/${filename}`;
 
-        // Write file directly — metadata is collected and written in bulk at the end
-        await assetManager.writeFileOnly(characterId, filename, finalBuffer);
-
+        await assetManager.writeFileOnly(entityId, filename, finalBuffer);
         newEntries.push({ originalUrl: url, hash, filename, mimeType: finalMimeType });
         imageMap.set(url, localPath);
       })
@@ -253,14 +311,77 @@ export async function cacheExternalImages(characterId, cardData, dataRoot, optio
     }
   }
 
-  // Write complete metadata once — merges existing cached entries with new ones
   if (newEntries.length > 0) {
     const allImages = [...meta.images, ...newEntries];
-    await assetManager.writeMetadata(characterId, { images: allImages });
+    await assetManager.writeMetadata(entityId, { images: allImages });
   }
 
-  console.log(`[ImageCacher] Cached ${imageMap.size}/${urls.size} image(s) for character "${cardData.data?.name || characterId}"`);
+  console.log(`[ImageCacher] Cached ${imageMap.size}/${urls.size} image(s) for ${entityType.slice(0, -1)} "${label || entityId}"`);
   return imageMap;
+}
+
+// ── Public API ────────────────────────────────────────────────────────
+
+/**
+ * Download all external images referenced in a character card, store them
+ * locally via AssetManager, and return a mapping of original URL → local path.
+ *
+ * Only downloads images that are not already cached (by checking metadata).
+ * Does NOT modify cardData — call rewriteCharacterImageUrls() separately.
+ *
+ * @param {string}   characterId
+ * @param {object}   cardData   — normalized V2 card data
+ * @param {string}   dataRoot   — resolved data root path
+ * @param {object}   [options]
+ * @param {number}   [options.concurrency]  — max parallel downloads (default 3)
+ * @returns {Promise<Map<string, string>>}
+ *   Map where key = original URL, value = local path (e.g. "/api/assets/characters/{id}/{hash}.jpg")
+ */
+export async function cacheCharacterImages(characterId, cardData, dataRoot, options = {}) {
+  const urls = collectAllImageUrls(cardData);
+  const label = cardData.data?.name || characterId;
+  return cacheImageSet(characterId, urls, dataRoot, 'characters', label, options);
+}
+
+/**
+ * Download all external images referenced in a lorebook's entry content,
+ * store them locally, and return a mapping of original URL → local path.
+ *
+ * @param {string}   lorebookId
+ * @param {object}   lorebookData  — lorebook with .entries[].content fields
+ * @param {string}   dataRoot
+ * @param {object}   [options]
+ * @param {number}   [options.concurrency]
+ * @returns {Promise<Map<string, string>>}
+ *   Map where key = original URL, value = local path (e.g. "/api/assets/lorebooks/{id}/{hash}.webp")
+ */
+export async function cacheLorebookImages(storage, lorebookId, lorebookData, dataRoot, options = {}) {
+    try {
+      const urls = collectLorebookImageUrls(lorebookData);
+      const label = lorebookData.name || lorebookId;
+      const imageMap = await cacheImageSet(lorebookId, urls, dataRoot, 'lorebooks', label, options);
+      if (imageMap.size > 0) {
+        rewriteLorebookImageUrls(lorebookData, imageMap);
+        const saved = await storage.saveLorebook(lorebookId, lorebookData);
+        console.log(`[Lorebooks] Rewrote ${imageMap.size} image URL(s) in lorebook ${lorebookId}`);
+        return imageMap;
+      }
+    } catch (error) {
+      console.error(`[Lorebooks] Failed to cache images for lorebook ${lorebookId}:`, error);
+    }
+    return null;
+}
+
+function replaceUrls(text, imageMap) {
+  if (!text || typeof text !== 'string') return text;
+
+  // Replace each original URL in the text with its local path
+  for (const [originalUrl, localPath] of imageMap) {
+    // Escape URL for regex special characters
+    const escaped = originalUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    text = text.replace(new RegExp(escaped, 'g'), localPath);
+  }
+  return text;
 }
 
 /**
@@ -270,24 +391,11 @@ export async function cacheExternalImages(characterId, cardData, dataRoot, optio
  * @param {Map<string, string>} imageMap   — original URL → local path
  * @returns {object}  — the same cardData object (mutated), for chaining
  */
-export function rewriteImageUrls(cardData, imageMap) {
+export function rewriteCharacterImageUrls(cardData, imageMap) {
   if (!imageMap || imageMap.size === 0) return cardData;
   if (!cardData?.data) return cardData;
 
   const data = cardData.data;
-
-  // Build a single-pass replacement function
-  function replaceUrls(text) {
-    if (!text || typeof text !== 'string') return text;
-
-    // Replace each original URL in the text with its local path
-    for (const [originalUrl, localPath] of imageMap) {
-      // Escape URL for regex special characters
-      const escaped = originalUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      text = text.replace(new RegExp(escaped, 'g'), localPath);
-    }
-    return text;
-  }
 
   // Apply to all text fields
   const fields = [
@@ -303,13 +411,13 @@ export function rewriteImageUrls(cardData, imageMap) {
 
   for (const field of fields) {
     if (data[field] !== undefined) {
-      data[field] = replaceUrls(data[field]);
+      data[field] = replaceUrls(data[field], imageMap);
     }
   }
 
   // Alternate greetings (array of strings)
   if (Array.isArray(data.alternate_greetings)) {
-    data.alternate_greetings = data.alternate_greetings.map(g => replaceUrls(g));
+    data.alternate_greetings = data.alternate_greetings.map(g => replaceUrls(g, imageMap));
   }
 
   return cardData;
@@ -323,4 +431,43 @@ export function rewriteImageUrls(cardData, imageMap) {
  */
 export function extractCardImageUrls(cardData) {
   return collectAllImageUrls(cardData);
+}
+
+/**
+ * Collect all image URLs from a lorebook's entry content (utility, used externally).
+ *
+ * @param {object} lorebookData
+ * @returns {Set<string>}
+ */
+export function extractLorebookImageUrls(lorebookData) {
+  return collectLorebookImageUrls(lorebookData);
+}
+
+/**
+ * Rewrite all image URLs in a lorebook's entry content using the provided map.
+ *
+ * @param {object}              lorebookData  — lorebook with .entries[].content (mutated in place)
+ * @param {Map<string, string>} imageMap      — original URL → local path
+ * @returns {object}  — the same lorebookData object (mutated), for chaining
+ */
+export function rewriteLorebookImageUrls(lorebookData, imageMap) {
+  if (!imageMap || imageMap.size === 0) return lorebookData;
+  if (!lorebookData?.entries || !Array.isArray(lorebookData.entries)) return lorebookData;
+
+ // Rewrite in each entry's content and comment
+  for (const entry of lorebookData.entries) {
+    if (entry.content) {
+      entry.content = replaceUrls(entry.content, imageMap);
+    }
+    if (entry.comment) {
+      entry.comment = replaceUrls(entry.comment, imageMap);
+    }
+  }
+
+  // Also rewrite in lorebook description
+  if (lorebookData.description) {
+    lorebookData.description = replaceUrls(lorebookData.description, imageMap);
+  }
+
+  return lorebookData;
 }

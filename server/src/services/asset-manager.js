@@ -1,8 +1,8 @@
 /**
  * Asset Manager Service
  *
- * Manages per-character asset directories under:
- *   {dataRoot}/public-assets/gallery/characters/{characterId}/
+ * Manages per-entity asset directories under:
+ *   {dataRoot}/public-assets/gallery/{entityType}/{entityId}/
  *
  * Each directory contains:
  *   - {hash}.{ext}         — downloaded image files named by content hash
@@ -12,40 +12,48 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-const ASSETS_BASE = ['public-assets', 'gallery', 'characters'];
+const ASSETS_BASE = ['public-assets', 'gallery'];
 
 export class AssetManager {
   /**
-   * @param {string} dataRoot  — resolved data root path (e.g. ../data)
+   * @param {string} dataRoot    — resolved data root path (e.g. ../data)
+   * @param {string} [entityType] — subdirectory under gallery, e.g. 'characters' or 'lorebooks' (default 'characters')
    */
-  constructor(dataRoot) {
+  constructor(dataRoot, entityType = 'characters') {
     this.dataRoot = dataRoot;
+    this.entityType = entityType;
   }
 
   // ── Path helpers ────────────────────────────────────────────────────
 
+  entityDir(entityId) {
+    return path.join(this.dataRoot, ...ASSETS_BASE, this.entityType, entityId);
+  }
+
+  assetPath(entityId, filename) {
+    return path.join(this.entityDir(entityId), filename);
+  }
+
+  metadataPath(entityId) {
+    return path.join(this.entityDir(entityId), 'metadata.json');
+  }
+
+  // ── Backward-compatible aliases ─────────────────────────────────────
+
   characterDir(characterId) {
-    return path.join(this.dataRoot, ...ASSETS_BASE, characterId);
-  }
-
-  assetPath(characterId, filename) {
-    return path.join(this.characterDir(characterId), filename);
-  }
-
-  metadataPath(characterId) {
-    return path.join(this.characterDir(characterId), 'metadata.json');
+    return this.entityDir(characterId);
   }
 
   // ── Directory lifecycle ─────────────────────────────────────────────
 
-  async ensureDir(characterId) {
-    const dir = this.characterDir(characterId);
+  async ensureDir(entityId) {
+    const dir = this.entityDir(entityId);
     await fs.mkdir(dir, { recursive: true });
     return dir;
   }
 
-  async deleteDir(characterId) {
-    const dir = this.characterDir(characterId);
+  async deleteDir(entityId) {
+    const dir = this.entityDir(entityId);
     try {
       await fs.rm(dir, { recursive: true, force: true });
     } catch (err) {
@@ -53,8 +61,8 @@ export class AssetManager {
     }
   }
 
-  async exists(characterId) {
-    const dir = this.characterDir(characterId);
+  async exists(entityId) {
+    const dir = this.entityDir(entityId);
     try {
       await fs.access(dir);
       return true;
@@ -65,8 +73,8 @@ export class AssetManager {
 
   // ── Metadata ────────────────────────────────────────────────────────
 
-  async readMetadata(characterId) {
-    const mpath = this.metadataPath(characterId);
+  async readMetadata(entityId) {
+    const mpath = this.metadataPath(entityId);
     try {
       const raw = await fs.readFile(mpath, 'utf8');
       return JSON.parse(raw);
@@ -75,21 +83,21 @@ export class AssetManager {
     }
   }
 
-  async writeMetadata(characterId, metadata) {
-    const mpath = this.metadataPath(characterId);
-    await this.ensureDir(characterId);
+  async writeMetadata(entityId, metadata) {
+    const mpath = this.metadataPath(entityId);
+    await this.ensureDir(entityId);
     await fs.writeFile(mpath, JSON.stringify(metadata, null, 2), 'utf8');
   }
 
-  async addImageMetadata(characterId, entry) {
-    const meta = await this.readMetadata(characterId);
+  async addImageMetadata(entityId, entry) {
+    const meta = await this.readMetadata(entityId);
     const existing = meta.images.find(i => i.originalUrl === entry.originalUrl);
     if (existing) {
       Object.assign(existing, entry);
     } else {
       meta.images.push(entry);
     }
-    await this.writeMetadata(characterId, meta);
+    await this.writeMetadata(entityId, meta);
   }
 
   // ── File operations ─────────────────────────────────────────────────
@@ -98,9 +106,9 @@ export class AssetManager {
    * Write a file and update metadata.json.
    * Safe for single writes; for bulk writes use writeFileOnly() + writeMetadata().
    */
-  async writeAsset(characterId, filename, buffer, originalUrl, mimeType) {
-    await this.writeFileOnly(characterId, filename, buffer);
-    await this.addImageMetadata(characterId, {
+  async writeAsset(entityId, filename, buffer, originalUrl, mimeType) {
+    await this.writeFileOnly(entityId, filename, buffer);
+    await this.addImageMetadata(entityId, {
       originalUrl,
       hash: path.parse(filename).name,
       filename,
@@ -112,14 +120,14 @@ export class AssetManager {
    * Write a file to the asset directory without touching metadata.
    * Useful when bulk-writing files before a single metadata write.
    */
-  async writeFileOnly(characterId, filename, buffer) {
-    await this.ensureDir(characterId);
-    const filePath = this.assetPath(characterId, filename);
+  async writeFileOnly(entityId, filename, buffer) {
+    await this.ensureDir(entityId);
+    const filePath = this.assetPath(entityId, filename);
     await fs.writeFile(filePath, buffer);
   }
 
-  async readAsset(characterId, filename) {
-    const filePath = this.assetPath(characterId, filename);
+  async readAsset(entityId, filename) {
+    const filePath = this.assetPath(entityId, filename);
     try {
       return await fs.readFile(filePath);
     } catch {
@@ -127,8 +135,8 @@ export class AssetManager {
     }
   }
 
-  async listAssets(characterId) {
-    const dir = this.characterDir(characterId);
+  async listAssets(entityId) {
+    const dir = this.entityDir(entityId);
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
       return entries.filter(e => e.isFile() && e.name !== 'metadata.json').map(e => e.name);

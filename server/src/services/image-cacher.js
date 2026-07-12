@@ -94,6 +94,43 @@ function collectAllImageUrls(cardData) {
 }
 
 /**
+ * Collect all image URLs from a lorebook's entry content fields.
+ *
+ * @param {object} lorebookData  — lorebook with .entries[].content fields
+ * @returns {Set<string>}
+ */
+function collectLorebookImageUrls(lorebookData) {
+  if (!lorebookData?.entries || !Array.isArray(lorebookData.entries)) {
+    return new Set();
+  }
+
+  const all = new Set();
+
+  // Scan entry content and comment fields
+  for (const entry of lorebookData.entries) {
+    if (entry.content) {
+      for (const url of extractImageUrls(entry.content)) {
+        all.add(url);
+      }
+    }
+    if (entry.comment) {
+      for (const url of extractImageUrls(entry.comment)) {
+        all.add(url);
+      }
+    }
+  }
+
+  // Also scan lorebook description
+  if (lorebookData.description) {
+    for (const url of extractImageUrls(lorebookData.description)) {
+      all.add(url);
+    }
+  }
+
+  return all;
+}
+
+/**
  * Download a single image from a URL.
  *
  * @param {string} url
@@ -158,6 +195,94 @@ async function downloadImage(url) {
   }
 }
 
+// ── Internal: generic caching pipeline ────────────────────────────────
+
+/**
+ * Internal: download, convert, and store images for any entity.
+ *
+ * @param {string}   entityId
+ * @param {Set<string>} urls      — image URLs to cache
+ * @param {string}   dataRoot
+ * @param {string}   entityType   — 'characters' or 'lorebooks'
+ * @param {string}   [label]      — human-readable label for log messages
+ * @param {object}   [options]
+ * @param {number}   [options.concurrency]
+ * @returns {Promise<Map<string, string>>}
+ */
+async function cacheImageSet(entityId, urls, dataRoot, entityType, label, options = {}) {
+  const assetManager = new AssetManager(dataRoot, entityType);
+  const concurrency = options.concurrency ?? MAX_CONCURRENT_DOWNLOADS;
+
+  if (urls.size === 0) {
+    return new Map();
+  }
+
+  console.log(`[ImageCacher] Found ${urls.size} external image(s) in ${entityType.slice(0, -1)} "${label || entityId}"`);
+
+  const meta = await assetManager.readMetadata(entityId);
+  const cachedUrls = new Set(meta.images.map(i => i.originalUrl));
+  const newEntries = [];
+  const urlArray = [...urls];
+  const imageMap = new Map();
+
+  for (let i = 0; i < urlArray.length; i += concurrency) {
+    const batch = urlArray.slice(i, i + concurrency);
+    const results = await Promise.allSettled(
+      batch.map(async (url) => {
+        if (cachedUrls.has(url)) {
+          const existing = meta.images.find(img => img.originalUrl === url);
+          if (existing) {
+            imageMap.set(url, `/api/assets/${entityType}/${entityId}/${existing.filename}`);
+          }
+          return;
+        }
+
+        const result = await downloadImage(url);
+        if (!result) {
+          console.warn(`[ImageCacher] Could not cache image: ${url}`);
+          return;
+        }
+
+        const { buffer, mimeType } = result;
+
+        let finalBuffer = buffer;
+        let finalMimeType = mimeType;
+        if (['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(mimeType)) {
+          try {
+            finalBuffer = await sharp(buffer).webp({ animated: true }).toBuffer();
+            finalMimeType = 'image/webp';
+          } catch (err) {
+            console.warn(`[ImageCacher] WebP conversion failed for ${url}: ${err.message}`);
+          }
+        }
+
+        const hash = sha256(finalBuffer);
+        const ext = mimeTypeToExt(finalMimeType);
+        const filename = `${hash}.${ext}`;
+        const localPath = `/api/assets/${entityType}/${entityId}/${filename}`;
+
+        await assetManager.writeFileOnly(entityId, filename, finalBuffer);
+        newEntries.push({ originalUrl: url, hash, filename, mimeType: finalMimeType });
+        imageMap.set(url, localPath);
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        console.error('[ImageCacher] Unexpected error in download batch:', result.reason);
+      }
+    }
+  }
+
+  if (newEntries.length > 0) {
+    const allImages = [...meta.images, ...newEntries];
+    await assetManager.writeMetadata(entityId, { images: allImages });
+  }
+
+  console.log(`[ImageCacher] Cached ${imageMap.size}/${urls.size} image(s) for ${entityType.slice(0, -1)} "${label || entityId}"`);
+  return imageMap;
+}
+
 // ── Public API ────────────────────────────────────────────────────────
 
 /**
@@ -176,91 +301,27 @@ async function downloadImage(url) {
  *   Map where key = original URL, value = local path (e.g. "/api/assets/characters/{id}/{hash}.jpg")
  */
 export async function cacheExternalImages(characterId, cardData, dataRoot, options = {}) {
-  const assetManager = new AssetManager(dataRoot);
-  const concurrency = options.concurrency ?? MAX_CONCURRENT_DOWNLOADS;
-
-  // Collect all unique image URLs from the card
   const urls = collectAllImageUrls(cardData);
-  if (urls.size === 0) {
-    return new Map();
-  }
+  const label = cardData.data?.name || characterId;
+  return cacheImageSet(characterId, urls, dataRoot, 'characters', label, options);
+}
 
-  console.log(`[ImageCacher] Found ${urls.size} external image(s) in character "${cardData.data?.name || characterId}"`);
-
-  // Load existing metadata to skip already-cached images
-  const meta = await assetManager.readMetadata(characterId);
-  const cachedUrls = new Set(meta.images.map(i => i.originalUrl));
-
-  // We collect new metadata entries in-memory, then write metadata.json
-  // once at the end to avoid race conditions between parallel downloads.
-  const newEntries = [];
-
-  // Download in batches with concurrency limit
-  const urlArray = [...urls];
-  const imageMap = new Map();
-
-  for (let i = 0; i < urlArray.length; i += concurrency) {
-    const batch = urlArray.slice(i, i + concurrency);
-    const results = await Promise.allSettled(
-      batch.map(async (url) => {
-        // Skip if already cached
-        if (cachedUrls.has(url)) {
-          const existing = meta.images.find(img => img.originalUrl === url);
-          if (existing) {
-            const localPath = `/api/assets/characters/${characterId}/${existing.filename}`;
-            imageMap.set(url, localPath);
-          }
-          return;
-        }
-
-        const result = await downloadImage(url);
-        if (!result) {
-          console.warn(`[ImageCacher] Could not cache image: ${url}`);
-          return;
-        }
-
-        const { buffer, mimeType } = result;
-
-        // Convert to WebP for space savings (JPEG, PNG, GIF → WebP)
-        let finalBuffer = buffer;
-        let finalMimeType = mimeType;
-        if (['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(mimeType)) {
-          try {
-            finalBuffer = await sharp(buffer).webp({ animated: true }).toBuffer();
-            finalMimeType = 'image/webp';
-          } catch (err) {
-            console.warn(`[ImageCacher] WebP conversion failed for ${url}: ${err.message}`);
-          }
-        }
-
-        const hash = sha256(finalBuffer);
-        const ext = mimeTypeToExt(finalMimeType);
-        const filename = `${hash}.${ext}`;
-        const localPath = `/api/assets/characters/${characterId}/${filename}`;
-
-        // Write file directly — metadata is collected and written in bulk at the end
-        await assetManager.writeFileOnly(characterId, filename, finalBuffer);
-
-        newEntries.push({ originalUrl: url, hash, filename, mimeType: finalMimeType });
-        imageMap.set(url, localPath);
-      })
-    );
-
-    for (const result of results) {
-      if (result.status === 'rejected') {
-        console.error('[ImageCacher] Unexpected error in download batch:', result.reason);
-      }
-    }
-  }
-
-  // Write complete metadata once — merges existing cached entries with new ones
-  if (newEntries.length > 0) {
-    const allImages = [...meta.images, ...newEntries];
-    await assetManager.writeMetadata(characterId, { images: allImages });
-  }
-
-  console.log(`[ImageCacher] Cached ${imageMap.size}/${urls.size} image(s) for character "${cardData.data?.name || characterId}"`);
-  return imageMap;
+/**
+ * Download all external images referenced in a lorebook's entry content,
+ * store them locally, and return a mapping of original URL → local path.
+ *
+ * @param {string}   lorebookId
+ * @param {object}   lorebookData  — lorebook with .entries[].content fields
+ * @param {string}   dataRoot
+ * @param {object}   [options]
+ * @param {number}   [options.concurrency]
+ * @returns {Promise<Map<string, string>>}
+ *   Map where key = original URL, value = local path (e.g. "/api/assets/lorebooks/{id}/{hash}.webp")
+ */
+export async function cacheLorebookImages(lorebookId, lorebookData, dataRoot, options = {}) {
+  const urls = collectLorebookImageUrls(lorebookData);
+  const label = lorebookData.name || lorebookId;
+  return cacheImageSet(lorebookId, urls, dataRoot, 'lorebooks', label, options);
 }
 
 /**
@@ -323,4 +384,52 @@ export function rewriteImageUrls(cardData, imageMap) {
  */
 export function extractCardImageUrls(cardData) {
   return collectAllImageUrls(cardData);
+}
+
+/**
+ * Collect all image URLs from a lorebook's entry content (utility, used externally).
+ *
+ * @param {object} lorebookData
+ * @returns {Set<string>}
+ */
+export function extractLorebookImageUrls(lorebookData) {
+  return collectLorebookImageUrls(lorebookData);
+}
+
+/**
+ * Rewrite all image URLs in a lorebook's entry content using the provided map.
+ *
+ * @param {object}              lorebookData  — lorebook with .entries[].content (mutated in place)
+ * @param {Map<string, string>} imageMap      — original URL → local path
+ * @returns {object}  — the same lorebookData object (mutated), for chaining
+ */
+export function rewriteLorebookImageUrls(lorebookData, imageMap) {
+  if (!imageMap || imageMap.size === 0) return lorebookData;
+  if (!lorebookData?.entries || !Array.isArray(lorebookData.entries)) return lorebookData;
+
+  function replaceUrls(text) {
+    if (!text || typeof text !== 'string') return text;
+    for (const [originalUrl, localPath] of imageMap) {
+      const escaped = originalUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      text = text.replace(new RegExp(escaped, 'g'), localPath);
+    }
+    return text;
+  }
+
+  // Rewrite in each entry's content and comment
+  for (const entry of lorebookData.entries) {
+    if (entry.content) {
+      entry.content = replaceUrls(entry.content);
+    }
+    if (entry.comment) {
+      entry.comment = replaceUrls(entry.comment);
+    }
+  }
+
+  // Also rewrite in lorebook description
+  if (lorebookData.description) {
+    lorebookData.description = replaceUrls(lorebookData.description);
+  }
+
+  return lorebookData;
 }

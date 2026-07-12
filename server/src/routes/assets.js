@@ -58,4 +58,35 @@ router.get('/characters/:characterId/:filename', asyncHandler(async (req, res) =
   res.send(buffer);
 }));
 
+/**
+ * GET /api/assets/lorebooks/:lorebookId/:filename
+ *
+ * Serve a cached lorebook asset file (same immutable caching strategy).
+ */
+router.get('/lorebooks/:lorebookId/:filename', asyncHandler(async (req, res) => {
+  const { lorebookId, filename } = req.params;
+
+  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    throw new AppError('Invalid filename', 400);
+  }
+
+  const ext = path.extname(filename).toLowerCase();
+  const mimeType = mimeTypeFromExt(ext);
+  if (!mimeType) {
+    throw new AppError(`Unsupported file type ${ext}`, 400);
+  }
+
+  const buffer = await req.assetManager.readAsset(lorebookId, filename);
+
+  if (!buffer) {
+    throw new AppError('Asset not found', 404);
+  }
+
+  res.setHeader('Content-Type', mimeType);
+  res.setHeader('Content-Length', buffer.length);
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+
+  res.send(buffer);
+}));
+
 export default router;

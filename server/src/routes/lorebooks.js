@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { asyncHandler, AppError } from '../middleware/error-handler.js';
 import { SqliteStorageService } from '../services/sqliteStorage.js';
 import { LorebookParser } from '../services/lorebook-parser.js';
+import { cacheLorebookImages, rewriteLorebookImageUrls } from '../services/image-cacher.js';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -100,6 +101,18 @@ router.post('/import', upload.single('lorebook'), asyncHandler(async (req, res) 
     // Save to storage
     await storage.saveLorebook(lorebookId, parsed);
 
+    // Cache external images in the lorebook entry content (non-fatal)
+    try {
+      const imageMap = await cacheLorebookImages(lorebookId, parsed, req.app.locals.dataRoot);
+      if (imageMap.size > 0) {
+        rewriteLorebookImageUrls(parsed, imageMap);
+        await storage.saveLorebook(lorebookId, parsed);
+        console.log(`[Lorebooks] Rewrote ${imageMap.size} image URL(s) in lorebook ${lorebookId}`);
+      }
+    } catch (error) {
+      console.error(`[Lorebooks] Failed to cache images for lorebook ${lorebookId}:`, error);
+    }
+
     res.json({
       id: lorebookId,
       name: parsed.name,
@@ -146,6 +159,18 @@ router.post('/import-url', asyncHandler(async (req, res) => {
 
     // Save to storage
     await storage.saveLorebook(lorebookId, parsed);
+
+    // Cache external images in the lorebook entry content (non-fatal)
+    try {
+      const imageMap = await cacheLorebookImages(lorebookId, parsed, req.app.locals.dataRoot);
+      if (imageMap.size > 0) {
+        rewriteLorebookImageUrls(parsed, imageMap);
+        await storage.saveLorebook(lorebookId, parsed);
+        console.log(`[Lorebooks] Rewrote ${imageMap.size} image URL(s) in lorebook ${lorebookId}`);
+      }
+    } catch (error) {
+      console.error(`[Lorebooks] Failed to cache images for lorebook ${lorebookId}:`, error);
+    }
 
     res.json({
       id: lorebookId,

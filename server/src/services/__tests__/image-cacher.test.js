@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { cacheExternalImages, rewriteImageUrls, extractCardImageUrls } from '../image-cacher.js';
+import { cacheExternalImages, cacheLorebookImages, rewriteImageUrls, rewriteLorebookImageUrls, extractCardImageUrls, extractLorebookImageUrls } from '../image-cacher.js';
 import { AssetManager } from '../asset-manager.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -135,6 +135,206 @@ describe('rewriteImageUrls', () => {
     const card = { spec: 'v2' };
     const result = rewriteImageUrls(card, new Map([['x', 'y']]));
     expect(result).toBe(card);
+  });
+});
+
+describe('extractLorebookImageUrls', () => {
+  function makeLorebook(entries = [], description = '') {
+    return {
+      name: 'Test Lorebook',
+      description,
+      entries,
+    };
+  }
+
+  it('returns empty set for lorebook with no images', () => {
+    const lorebook = makeLorebook([{ content: 'plain text' }]);
+    expect([...extractLorebookImageUrls(lorebook)]).toEqual([]);
+  });
+
+  it('extracts markdown image URLs from entry content', () => {
+    const lorebook = makeLorebook([
+      { content: '![dragon](https://ex.com/dragon.png)' },
+    ]);
+    const urls = extractLorebookImageUrls(lorebook);
+    expect([...urls]).toEqual(['https://ex.com/dragon.png']);
+  });
+
+  it('extracts HTML img src URLs from entry content', () => {
+    const lorebook = makeLorebook([
+      { content: '<img src="https://host.com/creature.jpg">' },
+    ]);
+    const urls = extractLorebookImageUrls(lorebook);
+    expect([...urls]).toEqual(['https://host.com/creature.jpg']);
+  });
+
+  it('extracts URLs from entry comment fields', () => {
+    const lorebook = makeLorebook([
+      {
+        content: 'just text',
+        comment: 'see ![map](https://ex.com/map.png)',
+      },
+    ]);
+    const urls = extractLorebookImageUrls(lorebook);
+    expect([...urls]).toEqual(['https://ex.com/map.png']);
+  });
+
+  it('extracts URLs from lorebook description', () => {
+    const lorebook = makeLorebook([], 'Cover image: ![cover](https://ex.com/cover.jpg)');
+    const urls = extractLorebookImageUrls(lorebook);
+    expect([...urls]).toEqual(['https://ex.com/cover.jpg']);
+  });
+
+  it('extracts from multiple entries and deduplicates', () => {
+    const lorebook = makeLorebook([
+      { content: '![a](https://ex.com/img.png)' },
+      { content: '![b](https://ex.com/img.png)' },
+      { content: '![c](https://ex.com/other.png)' },
+    ]);
+    const urls = extractLorebookImageUrls(lorebook);
+    expect(urls.size).toBe(2);
+  });
+
+  it('handles lorebook with no entries', () => {
+    const lorebook = makeLorebook([]);
+    expect([...extractLorebookImageUrls(lorebook)]).toEqual([]);
+  });
+
+  it('handles null/undefined lorebook gracefully', () => {
+    expect([...extractLorebookImageUrls(null)]).toEqual([]);
+    expect([...extractLorebookImageUrls(undefined)]).toEqual([]);
+  });
+});
+
+describe('rewriteLorebookImageUrls', () => {
+  function makeLorebook(entries = [], description = '') {
+    return {
+      name: 'Test Lorebook',
+      description,
+      entries,
+    };
+  }
+
+  it('returns lorebookData unchanged when imageMap is empty', () => {
+    const lorebook = makeLorebook([{ content: '![a](https://x.com/img.png)' }]);
+    const result = rewriteLorebookImageUrls(lorebook, new Map());
+    expect(result.entries[0].content).toBe('![a](https://x.com/img.png)');
+  });
+
+  it('rewrites URLs in entry content', () => {
+    const lorebook = makeLorebook([
+      { content: '![dragon](https://ex.com/dragon.png)' },
+    ]);
+    const map = new Map([['https://ex.com/dragon.png', '/api/assets/lorebooks/abc/def.webp']]);
+    rewriteLorebookImageUrls(lorebook, map);
+    expect(lorebook.entries[0].content).toBe('![dragon](/api/assets/lorebooks/abc/def.webp)');
+  });
+
+  it('rewrites URLs in entry comment', () => {
+    const lorebook = makeLorebook([
+      {
+        content: 'plain',
+        comment: 'see ![map](https://ex.com/map.png)',
+      },
+    ]);
+    const map = new Map([['https://ex.com/map.png', '/api/assets/lorebooks/x/y.webp']]);
+    rewriteLorebookImageUrls(lorebook, map);
+    expect(lorebook.entries[0].comment).toContain('/api/assets/lorebooks/x/y.webp');
+  });
+
+  it('rewrites URLs in lorebook description', () => {
+    const lorebook = makeLorebook([{ content: 'text' }], 'Cover: ![c](https://ex.com/cover.jpg)');
+    const map = new Map([['https://ex.com/cover.jpg', '/api/assets/lorebooks/z/cover.webp']]);
+    rewriteLorebookImageUrls(lorebook, map);
+    expect(lorebook.description).toContain('/api/assets/lorebooks/z/cover.webp');
+  });
+
+  it('returns early when lorebookData has no entries', () => {
+    const lorebook = { name: 'Empty' };
+    const result = rewriteLorebookImageUrls(lorebook, new Map([['x', 'y']]));
+    expect(result).toBe(lorebook);
+  });
+});
+
+describe('cacheLorebookImages (mocked fetch + fs)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+    vi.spyOn(AssetManager.prototype, 'readMetadata').mockResolvedValue({ images: [] });
+    vi.spyOn(AssetManager.prototype, 'ensureDir').mockResolvedValue('/fake/dir');
+    vi.spyOn(AssetManager.prototype, 'writeFileOnly').mockResolvedValue(undefined);
+    vi.spyOn(AssetManager.prototype, 'writeMetadata').mockResolvedValue(undefined);
+    vi.spyOn(AssetManager.prototype, 'assetPath').mockReturnValue('/fake/file.png');
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('returns empty map when lorebook has no images', async () => {
+    const lorebook = { name: 'Empty', entries: [{ content: 'no images' }] };
+    const result = await cacheLorebookImages('lb-1', lorebook, '/fake/data');
+    expect(result.size).toBe(0);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('downloads and caches images from entry content', async () => {
+    const pngBuffer = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0]);
+    fetch.mockResolvedValue({
+      ok: true,
+      headers: { get: () => 'image/png' },
+      body: {
+        getReader() {
+          let done = false;
+          return {
+            read() {
+              if (done) return Promise.resolve({ done: true });
+              done = true;
+              return Promise.resolve({ done: false, value: new Uint8Array(pngBuffer) });
+            },
+            cancel() {},
+          };
+        },
+      },
+    });
+
+    const lorebook = {
+      name: 'Test Lorebook',
+      entries: [
+        { content: '![dragon](https://remote.com/dragon.png)' },
+      ],
+    };
+    const result = await cacheLorebookImages('lb-1', lorebook, '/fake/data');
+
+    expect(result.size).toBe(1);
+    const localUrl = result.get('https://remote.com/dragon.png');
+    expect(localUrl).toMatch(/^\/api\/assets\/lorebooks\/lb-1\/[a-f0-9]+\.png$/);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips already-cached images', async () => {
+    vi.spyOn(AssetManager.prototype, 'readMetadata').mockResolvedValue({
+      images: [{ originalUrl: 'https://remote.com/dragon.png', hash: 'abc', filename: 'abc.png' }],
+    });
+
+    const lorebook = {
+      name: 'Cached Lorebook',
+      entries: [{ content: '![x](https://remote.com/dragon.png)' }],
+    };
+    const result = await cacheLorebookImages('lb-1', lorebook, '/fake/data');
+    expect(result.size).toBe(1);
+    expect(result.get('https://remote.com/dragon.png')).toBe('/api/assets/lorebooks/lb-1/abc.png');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('does not fail on download errors', async () => {
+    fetch.mockRejectedValue(new Error('Network error'));
+    const lorebook = {
+      name: 'Fail Lorebook',
+      entries: [{ content: '![x](https://remote.com/pic.png)' }],
+    };
+    const result = await cacheLorebookImages('lb-1', lorebook, '/fake/data');
+    expect(result.size).toBe(0);
   });
 });
 

@@ -11,7 +11,7 @@ import { CharacterParser } from '../services/character-parser.js';
 import { LorebookParser } from '../services/lorebook-parser.js';
 import { ChubImporter } from '../services/chub-importer.js';
 import { IMAGE_EXTENSIONS } from '../../../shared/regex-patterns.js';
-import { cacheExternalImages, rewriteImageUrls } from '../services/image-cacher.js';
+import { cacheExternalImages, cacheLorebookImages, rewriteImageUrls, rewriteLorebookImageUrls } from '../services/image-cacher.js';
 import { AssetManager } from '../services/asset-manager.js';
 
 const router = express.Router();
@@ -64,10 +64,11 @@ async function cacheCardImages(characterId, cardData, dataRoot) {
 
 /**
  * Extract embedded lorebook from character data and save it to storage.
+ * Also caches any external images found in the lorebook entry content.
  * Modifies cardData.data.extensions.ursceal_lorebook_id in place.
  * @returns {{ embeddedLorebook: object|null, lorebookId: string|null }}
  */
-async function extractAndSaveEmbeddedLorebook(storageInstance, cardData) {
+async function extractAndSaveEmbeddedLorebook(storageInstance, cardData, dataRoot) {
   let embeddedLorebook = null;
   let lorebookId = null;
 
@@ -83,6 +84,18 @@ async function extractAndSaveEmbeddedLorebook(storageInstance, cardData) {
       // Save to global lorebook library
       lorebookId = uuidv4();
       await storageInstance.saveLorebook(lorebookId, lorebookData);
+
+      // Cache external images in the lorebook entry content
+      try {
+        const imageMap = await cacheLorebookImages(lorebookId, lorebookData, dataRoot);
+        if (imageMap.size > 0) {
+          rewriteLorebookImageUrls(lorebookData, imageMap);
+          await storageInstance.saveLorebook(lorebookId, lorebookData);
+          console.log(`[characters] Rewrote ${imageMap.size} image URL(s) in embedded lorebook ${lorebookId}`);
+        }
+      } catch (cacheError) {
+        console.error(`[characters] Failed to cache images in embedded lorebook ${lorebookId}:`, cacheError);
+      }
 
       embeddedLorebook = {
         id: lorebookId,
@@ -189,7 +202,7 @@ router.post('/import', upload.single('character'), asyncHandler(async (req, res)
       await cacheCardImages(characterId, cardData, req.app.locals.dataRoot);
 
       // Extract embedded lorebook if present
-      const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
+      const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot);
 
       // Save character data as JSON and image separately
     await storage.saveCharacter(characterId, cardData, req.file.buffer);
@@ -349,7 +362,7 @@ router.post('/import-json', jsonUpload.single('character'), asyncHandler(async (
   await cacheCardImages(characterId, cardData, req.app.locals.dataRoot);
 
   // Extract embedded lorebook if present
-  const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
+  const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot);
 
   // Save character data (no image for JSON import)
   await storage.saveCharacter(characterId, cardData, null);
@@ -394,7 +407,7 @@ router.post('/import-url', asyncHandler(async (req, res) => {
       await cacheCardImages(characterId, cardData, req.app.locals.dataRoot);
 
       // Extract embedded lorebook if present
-      const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
+      const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot);
 
       // Save character data as JSON and image separately
       await storage.saveCharacter(characterId, cardData, imageBuffer);
@@ -428,7 +441,7 @@ router.post('/import-url', asyncHandler(async (req, res) => {
     await cacheCardImages(characterId, characterData, req.app.locals.dataRoot);
 
     // Extract embedded lorebook if present
-    const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, characterData);
+    const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, characterData, req.app.locals.dataRoot);
 
     // Save character with image
     await storage.saveCharacter(characterId, characterData, imageBuffer);

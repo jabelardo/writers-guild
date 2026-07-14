@@ -9,6 +9,7 @@ import { asyncHandler, AppError } from '../middleware/error-handler.js';
 import { SqliteStorageService } from '../services/sqliteStorage.js';
 import { LorebookParser } from '../services/lorebook-parser.js';
 import { cacheLorebookImages, rewriteLorebookImageUrls } from '../services/image-cacher.js';
+import { computeLorebookChecksum } from '../services/checksum-service.js';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -22,6 +23,40 @@ router.use((req, res, next) => {
   }
   next();
 });
+
+/**
+ * Perform direct lorebook import checks (collision, duplicate, name disambiguation).
+ * Throws AppError on collision or duplicate.
+ * Modifies parsed.name in place if name disambiguation is needed.
+ * Returns computed checksum.
+ */
+function checkLorebookImport(storageInstance, parsed, internalChecksum) {
+  // 1. Collision check: internal checksum matches any existing lorebook current_checksum
+  const collisionMatches = storageInstance.findLorebookByCurrentChecksum(internalChecksum);
+  if (collisionMatches.length > 0) {
+    throw new AppError(
+      'A lorebook with identical content already exists. Import rejected.',
+      409
+    );
+  }
+
+  // 2. Duplicate check: origin checksum matches AND existing current == internal
+  // For direct imports, we compute origin checksum from incoming data (same as internal
+  // since there's no URL rewrite for lorebook names/descriptions)
+  const originChecksum = internalChecksum; // lorebook has no pre/post-rewrite distinction
+  const originMatches = storageInstance.findLorebookByOriginChecksum(originChecksum);
+  for (const match of originMatches) {
+    if (match.current_checksum === internalChecksum) {
+      throw new AppError(
+        'This lorebook has already been imported (same source content).',
+        409
+      );
+    }
+  }
+
+  // 3. Name disambiguation
+  parsed.name = storageInstance.resolveUniqueLorebookName(parsed.name);
+}
 
 // ==================== Lorebook Library Operations ====================
 
@@ -104,11 +139,21 @@ router.post(
       // Parse lorebook
       const parsed = LorebookParser.parseStandaloneLorebook(req.file.buffer);
 
+      // Compute checksum
+      const internalChecksum = computeLorebookChecksum(parsed);
+
+      // Run import validation (collision, duplicate, name disambiguation)
+      checkLorebookImport(storage, parsed, internalChecksum);
+
       // Generate unique ID
       const lorebookId = uuidv4();
 
-      // Save to storage
-      await storage.saveLorebook(lorebookId, parsed);
+      // Save to storage with checksums
+      await storage.saveLorebook(lorebookId, parsed, {
+        importOriginChecksum: internalChecksum,
+        importInternalChecksum: internalChecksum,
+        currentChecksum: internalChecksum
+      });
 
       await cacheLorebookImages(storage, lorebookId, parsed, req.app.locals.dataRoot);
 
@@ -120,6 +165,7 @@ router.post(
       });
     } catch (error) {
       console.error('Failed to import lorebook:', error);
+      if (error.statusCode) throw error;
       throw new AppError(`Failed to import lorebook: ${error.message}`, 400);
     }
   })
@@ -156,11 +202,21 @@ router.post(
       // Parse lorebook
       const parsed = LorebookParser.parseStandaloneLorebook(buffer);
 
+      // Compute checksum
+      const internalChecksum = computeLorebookChecksum(parsed);
+
+      // Run import validation (collision, duplicate, name disambiguation)
+      checkLorebookImport(storage, parsed, internalChecksum);
+
       // Generate unique ID
       const lorebookId = uuidv4();
 
-      // Save to storage
-      await storage.saveLorebook(lorebookId, parsed);
+      // Save to storage with checksums
+      await storage.saveLorebook(lorebookId, parsed, {
+        importOriginChecksum: internalChecksum,
+        importInternalChecksum: internalChecksum,
+        currentChecksum: internalChecksum
+      });
 
       await cacheLorebookImages(storage, lorebookId, parsed, req.app.locals.dataRoot);
 
@@ -172,6 +228,7 @@ router.post(
       });
     } catch (error) {
       console.error('Failed to import lorebook from URL:', error);
+      if (error.statusCode) throw error;
       throw new AppError(`Failed to import lorebook from URL: ${error.message}`, 400);
     }
   })
@@ -201,7 +258,12 @@ router.post(
       extensions: {}
     };
 
-    await storage.saveLorebook(lorebookId, lorebookData);
+    // Compute checksum (empty lorebook)
+    const currentChecksum = computeLorebookChecksum(lorebookData);
+
+    await storage.saveLorebook(lorebookId, lorebookData, {
+      currentChecksum
+    });
 
     res.json({
       id: lorebookId,
@@ -235,6 +297,10 @@ router.put(
     };
 
     await storage.saveLorebook(lorebookId, updated);
+
+    // Recompute and store current_checksum
+    const currentChecksum = computeLorebookChecksum(updated);
+    await storage.updateLorebookCurrentChecksum(lorebookId, currentChecksum);
 
     res.json({
       id: lorebookId,
@@ -308,6 +374,10 @@ router.post(
     // Save
     await storage.saveLorebook(lorebookId, lorebook);
 
+    // Recompute and store current_checksum
+    const currentChecksum = computeLorebookChecksum(lorebook);
+    await storage.updateLorebookCurrentChecksum(lorebookId, currentChecksum);
+
     // Refetch to get actual entry ID from database
     const savedLorebook = await storage.getLorebook(lorebookId);
     const savedEntry = savedLorebook.entries[savedLorebook.entries.length - 1];
@@ -344,6 +414,10 @@ router.put(
     // Save
     await storage.saveLorebook(lorebookId, lorebook);
 
+    // Recompute and store current_checksum
+    const currentChecksum = computeLorebookChecksum(lorebook);
+    await storage.updateLorebookCurrentChecksum(lorebookId, currentChecksum);
+
     res.json({ entry: lorebook.entries[entryIndex] });
   })
 );
@@ -364,6 +438,10 @@ router.delete(
 
     // Save
     await storage.saveLorebook(lorebookId, lorebook);
+
+    // Recompute and store current_checksum
+    const currentChecksum = computeLorebookChecksum(lorebook);
+    await storage.updateLorebookCurrentChecksum(lorebookId, currentChecksum);
 
     res.json({ success: true });
   })

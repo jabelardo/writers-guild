@@ -753,19 +753,35 @@ function cancelImageEdit() {
 
 async function deleteCharacter() {
   const confirmed = await confirm({
-    message: `Are you sure you want to delete "${character.value.name}"? This cannot be undone.`,
+    message: `Are you sure you want to delete "${character.value.name}"?`,
     confirmText: 'Delete Character',
     variant: 'danger'
   });
 
   if (!confirmed) return;
 
+  const lorebookId = character.value.ursceal_lorebook_id;
+
   try {
-    await charactersAPI.delete(props.characterId);
+    const result = await charactersAPI.delete(props.characterId);
     toast.success('Character deleted successfully');
+
+    if (result.orphanedLorebookId) {
+      const lbName = result.orphanedLorebookName || 'this lorebook';
+      const deleteLorebook = await confirm({
+        message: `The "${lbName}" lorebook is now unused. Delete it too?`,
+        confirmText: 'Delete Lorebook',
+        cancelText: 'Keep It',
+        variant: 'warning'
+      });
+      if (deleteLorebook) {
+        await lorebooksAPI.delete(result.orphanedLorebookId);
+        toast.success('Lorebook deleted');
+      }
+    }
+
     router.push('/');
   } catch (error) {
-    console.error('Failed to delete character:', error);
     toast.error('Failed to delete character: ' + error.message);
   }
 }

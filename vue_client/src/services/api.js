@@ -15,8 +15,15 @@ async function request(endpoint, options = {}) {
   const response = await fetch(url, { ...defaultOptions, ...options });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(error.error || `Request failed: ${response.statusText}`);
+    const body = await response.json().catch(() => ({ error: response.statusText }));
+    const err = new Error(body.error || `Request failed: ${response.statusText}`);
+    // Attach extra fields (but don't overwrite the error message with a user-friendly message field)
+    for (const key of Object.keys(body)) {
+      if (key !== 'error' && key !== 'message') {
+        err[key] = body[key];
+      }
+    }
+    throw err;
   }
 
   return response.json();
@@ -425,6 +432,15 @@ export const charactersAPI = {
 
   delete(characterId) {
     return request(`/characters/${characterId}`, {
+      method: 'DELETE'
+    }).catch((error) => {
+      // Re-throw with full response body so caller can inspect fields like needsLorebookConfirmation
+      throw error;
+    });
+  },
+
+  deleteWithLorebookOption(characterId, deleteLorebook) {
+    return request(`/characters/${characterId}?deleteLorebook=${deleteLorebook}`, {
       method: 'DELETE'
     });
   },

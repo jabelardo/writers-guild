@@ -4,11 +4,12 @@ import request from 'supertest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { createTestPng, createTestCharacterPng, PNG_SIGNATURE } from './test-helpers.js';
+import { createTestPng, createTestCharacterPng, createTestCharacterJson, PNG_SIGNATURE } from './test-helpers.js';
 
 // Import the routers
 import charactersRouter from '../characters.js';
 import storiesRouter from '../stories.js';
+import lorebooksRouter from '../lorebooks.js';
 import { SqliteStorageService } from '../../services/sqliteStorage.js';
 
 describe('Characters API Routes', () => {
@@ -38,6 +39,7 @@ describe('Characters API Routes', () => {
     app.locals.dataRoot = tempDir;
     app.use('/api/characters', charactersRouter);
     app.use('/api/stories', storiesRouter);
+    app.use('/api/lorebooks', lorebooksRouter);
 
     // Add error handler
     app.use((err, req, res, next) => {
@@ -1246,6 +1248,342 @@ describe('Characters API Routes', () => {
       expect(response.body.name).toBe('Updated Img');
       expect(response.body.description).toBe('With image');
       expect(response.body.imageUrl).toContain(`/api/characters/${charId}/image`);
+    });
+  });
+
+  describe('Checksum: Import Duplicate Detection', () => {
+    let originalChar;
+
+    it('should reject duplicate JSON import (same origin + current)', async () => {
+      // Import a character
+      const charData = createTestCharacterJson({ name: 'UniqueChar' });
+      originalChar = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(charData)), 'char.json')
+        .expect(201);
+
+      // Try importing the same JSON again
+      const duplicate = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(charData)), 'char.json')
+        .expect(409);
+
+      expect(duplicate.body.error).toMatch(/already/i);
+      expect(duplicate.body.error).toMatch(/import|exist/i);
+    });
+
+    it('should reject import when internal checksum collides with existing current_checksum', async () => {
+      // Import a character
+      const charData = createTestCharacterJson({ name: 'CollisionChar' });
+      await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(charData)), 'char.json')
+        .expect(201);
+
+      // Import a different character with identical content — triggers collision
+      const differentNameSameContent = createTestCharacterJson({ name: 'CollisionChar2' });
+      // But the same content will produce the same checksum
+      // However, our name disambiguation will rename it and change checksum.
+      // To test pure collision, we need identical content with a name that already exists
+      // but content is identical.
+
+      // Actually, the collision check happens first with the ORIGINAL name's checksum.
+      // Since duplicate also fires for same source, we test collision by:
+      // 1. Importing char A
+      // 2. Creating a char B from scratch (different origin, so no duplicate)
+      // 3. Editing char B to have IDENTICAL content to char A
+      // 4. Now B's current_checksum == A's import_internal_checksum
+      // 5. Try importing char A again → collision check triggers
+
+      const createB = await request(app)
+        .post('/api/characters')
+        .send({ name: 'ScratchChar', description: 'Made in app' })
+        .expect(201);
+
+      // Edit B to match the imported character's content exactly
+      await request(app)
+        .put(`/api/characters/${createB.body.id}`)
+        .send({
+          name: 'CollisionChar',
+          description: 'A duplicate of CollisionChar',
+          personality: 'Friendly and helpful',
+          scenario: 'In a test environment',
+          first_mes: 'Hello, I am a test character!'
+        })
+        .expect(200);
+
+      // Now try importing original char data again — collision check should fire
+      const reImport = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(charData)), 'char.json')
+        .expect(409);
+
+      expect(reImport.body.error).toMatch(/identical content|already|exist/i);
+    });
+
+    it('should allow re-import of edited original (origin match, current differs)', async () => {
+      // Import a character
+      const editCharData = createTestCharacterJson({ name: 'EditCheck' });
+      const original = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(editCharData)), 'char.json')
+        .expect(201);
+
+      // Edit the character so current_checksum changes
+      await request(app)
+        .put(`/api/characters/${original.body.id}`)
+        .send({ name: 'EditCheck Modified', description: 'Edited' })
+        .expect(200);
+
+      // Re-import the original card — should succeed (edited entity case)
+      // Name will be disambiguated to something like "EditCheck (2)"
+      const reImport = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(editCharData)), 'char.json')
+        .expect(201);
+
+      // The new import should have a disambiguated name
+      expect(reImport.body.name).toMatch(/EditCheck/);
+    });
+  });
+
+  describe('Checksum: Create & Update recompute current_checksum', () => {
+    it('should set current_checksum on character creation', async () => {
+      const createResp = await request(app)
+        .post('/api/characters')
+        .send({ name: 'ChecksumChar', description: 'Check my checksums' })
+        .expect(201);
+
+      // Verify through storage directly
+      const charData = await storage.getCharacter(createResp.body.id);
+      expect(charData).toBeDefined();
+
+      // The checksum is stored in the DB, not the card data
+      const dbChar = storage.db.prepare('SELECT current_checksum FROM characters WHERE id = ?').get(createResp.body.id);
+      expect(dbChar.current_checksum).toBeTruthy();
+      expect(dbChar.current_checksum.length).toBe(64); // SHA-256 hex
+    });
+
+    it('should update current_checksum on character update', async () => {
+      const createResp = await request(app)
+        .post('/api/characters')
+        .send({ name: 'UpdateCS Char' })
+        .expect(201);
+
+      const before = storage.db.prepare('SELECT current_checksum FROM characters WHERE id = ?').get(createResp.body.id);
+
+      await request(app)
+        .put(`/api/characters/${createResp.body.id}`)
+        .send({ name: 'UpdateCS Char Changed', description: 'Modified' })
+        .expect(200);
+
+      const after = storage.db.prepare('SELECT current_checksum FROM characters WHERE id = ?').get(createResp.body.id);
+
+      expect(after.current_checksum).not.toBe(before.current_checksum);
+    });
+  });
+
+  describe('Checksum: Name disambiguation on import', () => {
+    it('should append (2), (3) when duplicate names exist', async () => {
+      // Import first character
+      await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(createTestCharacterJson({ name: 'DupName', description: 'First' }))), 'char.json')
+        .expect(201);
+
+      // Second import with different content but same name
+      await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(createTestCharacterJson({ name: 'DupName', description: 'Second' }))), 'char.json')
+        .expect(201);
+
+      // Third
+      await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(createTestCharacterJson({ name: 'DupName', description: 'Third' }))), 'char.json')
+        .expect(201);
+
+      const listResp = await request(app).get('/api/characters').expect(200);
+      const names = listResp.body.characters.map(c => c.name).sort();
+      expect(names).toContain('DupName');
+      expect(names).toContain('DupName (2)');
+      expect(names).toContain('DupName (3)');
+    });
+  });
+
+  describe('Checksum: Delete with orphaned lorebook', () => {
+    async function createCharWithEmbeddedLorebook(charName) {
+      const charWithLB = {
+        name: charName,
+        description: 'Has embedded lorebook',
+        character_book: {
+          name: charName + "'s Lorebook",
+          description: 'Auto-created',
+          entries: [
+            {
+              keys: ['testkey'],
+              content: 'Test content',
+              enabled: true,
+              insertion_order: 100
+            }
+          ]
+        }
+      };
+      return await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(charWithLB)), 'char.json')
+        .expect(201);
+    }
+
+    it('should delete character and report orphaned lorebook', async () => {
+      const createResp = await createCharWithEmbeddedLorebook('DelAndReport');
+      expect(createResp.body.embeddedLorebook).not.toBeNull();
+
+      const deleteResp = await request(app)
+        .delete(`/api/characters/${createResp.body.id}`)
+        .expect(200);
+
+      expect(deleteResp.body.success).toBe(true);
+      expect(deleteResp.body.orphanedLorebookId).toBe(createResp.body.embeddedLorebook.id);
+      expect(deleteResp.body.orphanedLorebookName).toBeTruthy();
+
+      // Character should be deleted
+      await request(app)
+        .get(`/api/characters/${createResp.body.id}/data`)
+        .expect(500);
+    });
+
+    it('should delete character and lorebook when ?deleteLorebook=true', async () => {
+      const createResp = await createCharWithEmbeddedLorebook('DelBoth');
+      const lorebookId = createResp.body.embeddedLorebook.id;
+
+      await request(app)
+        .delete(`/api/characters/${createResp.body.id}?deleteLorebook=true`)
+        .expect(200);
+
+      // Lorebook should be deleted
+      await request(app)
+        .get(`/api/lorebooks/${lorebookId}`)
+        .expect(500);
+    });
+
+    it('should delete character and keep lorebook when ?deleteLorebook=false', async () => {
+      const createResp = await createCharWithEmbeddedLorebook('KeepLB');
+      const lorebookId = createResp.body.embeddedLorebook.id;
+
+      await request(app)
+        .delete(`/api/characters/${createResp.body.id}?deleteLorebook=false`)
+        .expect(200);
+
+      // Lorebook should still exist
+      await request(app)
+        .get(`/api/lorebooks/${lorebookId}`)
+        .expect(200);
+    });
+
+    it('should not report orphaned lorebook if referenced by another character', async () => {
+      const createResp1 = await createCharWithEmbeddedLorebook('SharedLB1');
+      const lorebookId = createResp1.body.embeddedLorebook.id;
+
+      // Create a second character and link to the same lorebook
+      const createResp2 = await request(app)
+        .post('/api/characters')
+        .send({ name: 'AlsoShares' })
+        .expect(201);
+      await request(app)
+        .put(`/api/characters/${createResp2.body.id}`)
+        .send({ ursceal_lorebook_id: lorebookId })
+        .expect(200);
+
+      // Delete first character — lorebook is still referenced
+      const deleteResp = await request(app)
+        .delete(`/api/characters/${createResp1.body.id}`)
+        .expect(200);
+
+      expect(deleteResp.body.orphanedLorebookId).toBeFalsy();
+
+      // Lorebook still exists
+      await request(app)
+        .get(`/api/lorebooks/${lorebookId}`)
+        .expect(200);
+    });
+
+    it('should delete orphaned lorebook when confirmed', async () => {
+      const createResp = await createCharWithEmbeddedLorebook('ConfirmDelChar');
+      const lorebookId = createResp.body.embeddedLorebook.id;
+
+      await request(app)
+        .delete(`/api/characters/${createResp.body.id}?deleteLorebook=true`)
+        .expect(200);
+
+      // Verify lorebook is gone
+      await request(app)
+        .get(`/api/lorebooks/${lorebookId}`)
+        .expect(500);
+    });
+
+    it('should not warn if lorebook is referenced by another character', async () => {
+      // Create a character with embedded lorebook
+      const createResp1 = await createCharWithEmbeddedLorebook('RefTestChar');
+      const lorebookId = createResp1.body.embeddedLorebook.id;
+
+      // Create a second character and manually link it to the same lorebook
+      const createResp2 = await request(app)
+        .post('/api/characters')
+        .send({ name: 'CharWithRef', description: 'References same lorebook' })
+        .expect(201);
+
+      await request(app)
+        .put(`/api/characters/${createResp2.body.id}`)
+        .send({ ursceal_lorebook_id: lorebookId })
+        .expect(200);
+
+      // Delete first character — lorebook still referenced by second
+      const deleteResp = await request(app)
+        .delete(`/api/characters/${createResp1.body.id}`)
+        .expect(200);
+
+      expect(deleteResp.body.needsLorebookConfirmation).toBeFalsy();
+      expect(deleteResp.body.success).toBe(true);
+
+      // Lorebook still exists
+      await request(app)
+        .get(`/api/lorebooks/${lorebookId}`)
+        .expect(200);
+    });
+
+    it('should reuse existing lorebook when re-importing a character after delete-and-keep', async () => {
+      // Step 1: Import character with embedded lorebook
+      const createResp = await createCharWithEmbeddedLorebook('ReimportChar');
+      const firstLorebookId = createResp.body.embeddedLorebook.id;
+      const charId = createResp.body.id;
+
+      // Step 2: Delete character but keep lorebook
+      await request(app)
+        .delete(`/api/characters/${charId}?deleteLorebook=false`)
+        .expect(200);
+
+      // Lorebook should still exist
+      const lbResp = await request(app)
+        .get(`/api/lorebooks/${firstLorebookId}`)
+        .expect(200);
+
+      // Step 3: Re-import the same character
+      const reimportResp = await createCharWithEmbeddedLorebook('ReimportChar');
+
+      // The lorebook should be REUSED (same ID), not created new
+      expect(reimportResp.body.embeddedLorebook.id).toBe(firstLorebookId);
+      expect(reimportResp.body.embeddedLorebook.reused).toBe(true);
+
+      // There should be only 1 lorebook in the DB
+      const allLbResp = await request(app)
+        .get('/api/lorebooks')
+        .expect(200);
+
+      const matchingLorebooks = allLbResp.body.lorebooks.filter(
+        (lb) => lb.id === firstLorebookId
+      );
+      expect(matchingLorebooks.length).toBe(1);
     });
   });
 });

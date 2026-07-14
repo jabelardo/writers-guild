@@ -41,9 +41,7 @@ describe('Lorebooks API Routes', () => {
 
   describe('GET / - List Lorebooks', () => {
     it('should return lorebooks array', async () => {
-      const response = await request(app)
-        .get('/api/lorebooks')
-        .expect(200);
+      const response = await request(app).get('/api/lorebooks').expect(200);
 
       expect(response.body).toHaveProperty('lorebooks');
       expect(Array.isArray(response.body.lorebooks)).toBe(true);
@@ -113,18 +111,14 @@ describe('Lorebooks API Routes', () => {
         .send({ keys: ['castle'], content: 'A stone fortress' })
         .expect(200);
 
-      const response = await request(app)
-        .get(`/api/lorebooks/${lorebookId}`)
-        .expect(200);
+      const response = await request(app).get(`/api/lorebooks/${lorebookId}`).expect(200);
 
       expect(response.body.lorebook.name).toBe('Test Lorebook');
       expect(response.body.lorebook.entries).toHaveLength(2);
     });
 
     it('should return 500 for non-existent lorebook', async () => {
-      await request(app)
-        .get('/api/lorebooks/non-existent')
-        .expect(500);
+      await request(app).get('/api/lorebooks/non-existent').expect(500);
     });
   });
 
@@ -169,9 +163,7 @@ describe('Lorebooks API Routes', () => {
         .expect(200);
 
       // Verify by fetching lorebook
-      const getResponse = await request(app)
-        .get(`/api/lorebooks/${lorebookId}`)
-        .expect(200);
+      const getResponse = await request(app).get(`/api/lorebooks/${lorebookId}`).expect(200);
 
       expect(getResponse.body.lorebook.scanDepth).toBe(1000);
       expect(getResponse.body.lorebook.tokenBudget).toBe(500);
@@ -188,16 +180,12 @@ describe('Lorebooks API Routes', () => {
 
       const lorebookId = createResponse.body.id;
 
-      const response = await request(app)
-        .delete(`/api/lorebooks/${lorebookId}`)
-        .expect(200);
+      const response = await request(app).delete(`/api/lorebooks/${lorebookId}`).expect(200);
 
       expect(response.body.success).toBe(true);
 
       // Verify lorebook is deleted
-      await request(app)
-        .get(`/api/lorebooks/${lorebookId}`)
-        .expect(500);
+      await request(app).get(`/api/lorebooks/${lorebookId}`).expect(500);
     });
   });
 
@@ -384,11 +372,9 @@ describe('Lorebooks API Routes', () => {
           .expect(200);
 
         // Refetch to get current entry IDs (they change after each save)
-        const getResponse = await request(app)
-          .get(`/api/lorebooks/${lbId}`)
-          .expect(200);
+        const getResponse = await request(app).get(`/api/lorebooks/${lbId}`).expect(200);
 
-        const entryIds = getResponse.body.lorebook.entries.map(e => e.id);
+        const entryIds = getResponse.body.lorebook.entries.map((e) => e.id);
         return { lbId, entryIds };
       }
 
@@ -402,24 +388,18 @@ describe('Lorebooks API Routes', () => {
         expect(response.body.success).toBe(true);
 
         // Verify entry is deleted
-        const getResponse = await request(app)
-          .get(`/api/lorebooks/${lbId}`)
-          .expect(200);
+        const getResponse = await request(app).get(`/api/lorebooks/${lbId}`).expect(200);
 
         expect(getResponse.body.lorebook.entries).toHaveLength(2);
-        expect(getResponse.body.lorebook.entries.find(e => e.id === entryIds[1])).toBeUndefined();
+        expect(getResponse.body.lorebook.entries.find((e) => e.id === entryIds[1])).toBeUndefined();
       });
 
       it('should handle deleting first entry', async () => {
         const { lbId, entryIds } = await createLorebookWithEntries();
 
-        await request(app)
-          .delete(`/api/lorebooks/${lbId}/entries/${entryIds[0]}`)
-          .expect(200);
+        await request(app).delete(`/api/lorebooks/${lbId}/entries/${entryIds[0]}`).expect(200);
 
-        const getResponse = await request(app)
-          .get(`/api/lorebooks/${lbId}`)
-          .expect(200);
+        const getResponse = await request(app).get(`/api/lorebooks/${lbId}`).expect(200);
 
         expect(getResponse.body.lorebook.entries).toHaveLength(2);
       });
@@ -427,13 +407,9 @@ describe('Lorebooks API Routes', () => {
       it('should handle deleting last entry', async () => {
         const { lbId, entryIds } = await createLorebookWithEntries();
 
-        await request(app)
-          .delete(`/api/lorebooks/${lbId}/entries/${entryIds[2]}`)
-          .expect(200);
+        await request(app).delete(`/api/lorebooks/${lbId}/entries/${entryIds[2]}`).expect(200);
 
-        const getResponse = await request(app)
-          .get(`/api/lorebooks/${lbId}`)
-          .expect(200);
+        const getResponse = await request(app).get(`/api/lorebooks/${lbId}`).expect(200);
 
         expect(getResponse.body.lorebook.entries).toHaveLength(2);
       });
@@ -442,9 +418,7 @@ describe('Lorebooks API Routes', () => {
 
   describe('POST /import - Import Lorebook File', () => {
     it('should return 400 if no file provided', async () => {
-      const response = await request(app)
-        .post('/api/lorebooks/import')
-        .expect(400);
+      const response = await request(app).post('/api/lorebooks/import').expect(400);
 
       expect(response.body.error).toContain('No lorebook file provided');
     });
@@ -505,10 +479,7 @@ describe('Lorebooks API Routes', () => {
 
   describe('POST /import-url - Import from URL', () => {
     it('should return 400 if URL is missing', async () => {
-      const response = await request(app)
-        .post('/api/lorebooks/import-url')
-        .send({})
-        .expect(400);
+      const response = await request(app).post('/api/lorebooks/import-url').send({}).expect(400);
 
       expect(response.body.error).toContain('URL is required');
     });

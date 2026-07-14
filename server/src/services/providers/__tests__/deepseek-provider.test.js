@@ -166,10 +166,7 @@ describe('DeepSeekProvider', () => {
         })
       });
 
-      const result = await provider.generate(
-        'You are a helpful assistant',
-        'Hello, how are you?'
-      );
+      const result = await provider.generate('You are a helpful assistant', 'Hello, how are you?');
 
       expect(result.content).toBe('Generated response');
       expect(result.reasoning).toBe('Thinking process');
@@ -206,9 +203,7 @@ describe('DeepSeekProvider', () => {
     it('should throw error when API key is missing', async () => {
       const noKeyProvider = new DeepSeekProvider({ apiKey: '' });
 
-      await expect(
-        noKeyProvider.generate('System', 'User')
-      ).rejects.toThrow('API key not set');
+      await expect(noKeyProvider.generate('System', 'User')).rejects.toThrow('API key not set');
     });
 
     it('should handle API errors with error message', async () => {
@@ -220,9 +215,7 @@ describe('DeepSeekProvider', () => {
         })
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('Invalid request');
+      await expect(provider.generate('System', 'User')).rejects.toThrow('Invalid request');
     });
 
     it('should handle API errors without error message', async () => {
@@ -232,9 +225,9 @@ describe('DeepSeekProvider', () => {
         json: async () => ({})
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('API request failed: Internal Server Error');
+      await expect(provider.generate('System', 'User')).rejects.toThrow(
+        'API request failed: Internal Server Error'
+      );
     });
 
     it('should include optional sampling params when thinking is off', async () => {
@@ -278,9 +271,9 @@ describe('DeepSeekProvider', () => {
     it('should throw error when API key is missing', async () => {
       const noKeyProvider = new DeepSeekProvider({ apiKey: '' });
 
-      await expect(
-        noKeyProvider.generateStreaming('System', 'User')
-      ).rejects.toThrow('API key not set');
+      await expect(noKeyProvider.generateStreaming('System', 'User')).rejects.toThrow(
+        'API key not set'
+      );
     });
 
     it('should return stream object with abort function', async () => {
@@ -310,9 +303,7 @@ describe('DeepSeekProvider', () => {
         })
       });
 
-      await expect(
-        provider.generateStreaming('System', 'User')
-      ).rejects.toThrow('Server error');
+      await expect(provider.generateStreaming('System', 'User')).rejects.toThrow('Server error');
     });
 
     it('forwards thinking flag through streaming path', async () => {
@@ -321,7 +312,10 @@ describe('DeepSeekProvider', () => {
         body: { getReader: () => ({ read: async () => ({ done: true }) }) }
       });
 
-      await provider.generateStreaming('System', 'User', { thinking: true, reasoningEffort: 'max' });
+      await provider.generateStreaming('System', 'User', {
+        thinking: true,
+        reasoningEffort: 'max'
+      });
 
       const body = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(body.stream).toBe(true);

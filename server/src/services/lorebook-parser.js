@@ -26,8 +26,8 @@ export class LorebookParser {
       scanDepth: json.scan_depth || json.scanDepth || null, // Global setting
       tokenBudget: json.token_budget || json.tokenBudget || null,
       recursiveScanning: json.recursive_scanning !== undefined ? json.recursive_scanning : true,
-      entries: entriesArray.map(entry => this.normalizeEntry(entry, 'standalone')),
-      extensions: json.extensions || {},
+      entries: entriesArray.map((entry) => this.normalizeEntry(entry, 'standalone')),
+      extensions: json.extensions || {}
     };
   }
 
@@ -46,9 +46,10 @@ export class LorebookParser {
       description: characterBook.description || '',
       scanDepth: characterBook.scan_depth || characterBook.scanDepth || null,
       tokenBudget: characterBook.token_budget || characterBook.tokenBudget || null,
-      recursiveScanning: characterBook.recursive_scanning !== undefined ? characterBook.recursive_scanning : true,
-      entries: characterBook.entries.map(entry => this.normalizeEntry(entry, 'v2')),
-      extensions: characterBook.extensions || {},
+      recursiveScanning:
+        characterBook.recursive_scanning !== undefined ? characterBook.recursive_scanning : true,
+      entries: characterBook.entries.map((entry) => this.normalizeEntry(entry, 'v2')),
+      extensions: characterBook.extensions || {}
     };
   }
 
@@ -64,7 +65,11 @@ export class LorebookParser {
       return {
         id: entry.uid || entry.id || 0,
         keys: Array.isArray(entry.key) ? entry.key : [entry.key || ''],
-        secondaryKeys: Array.isArray(entry.keysecondary) ? entry.keysecondary : (entry.keysecondary ? [entry.keysecondary] : []),
+        secondaryKeys: Array.isArray(entry.keysecondary)
+          ? entry.keysecondary
+          : entry.keysecondary
+            ? [entry.keysecondary]
+            : [],
         content: entry.content || '',
         comment: entry.comment || '',
         enabled: !entry.disable,
@@ -84,21 +89,26 @@ export class LorebookParser {
         preventRecursion: entry.preventRecursion || entry.excludeRecursion || false,
         delayUntilRecursion: entry.delayUntilRecursion || false,
         displayIndex: entry.displayIndex !== undefined ? entry.displayIndex : entry.id || 0,
-        extensions: entry.extensions || {},
+        extensions: entry.extensions || {}
       };
     } else {
       // V2 format uses: keys, content, enabled, insertion_order, etc.
       return {
         id: entry.id || 0,
         keys: Array.isArray(entry.keys) ? entry.keys : [entry.keys || ''],
-        secondaryKeys: Array.isArray(entry.secondary_keys) ? entry.secondary_keys : (entry.secondary_keys ? [entry.secondary_keys] : []),
+        secondaryKeys: Array.isArray(entry.secondary_keys)
+          ? entry.secondary_keys
+          : entry.secondary_keys
+            ? [entry.secondary_keys]
+            : [],
         content: entry.content || '',
         comment: entry.comment || entry.name || '',
         enabled: entry.enabled !== undefined ? entry.enabled : true,
         constant: entry.constant || false,
         selective: entry.selective || false,
         selectiveLogic: entry.selective_logic !== undefined ? entry.selective_logic : 0,
-        insertionOrder: entry.insertion_order !== undefined ? entry.insertion_order : (entry.priority || 100),
+        insertionOrder:
+          entry.insertion_order !== undefined ? entry.insertion_order : entry.priority || 100,
         position: this.normalizePosition(entry.position),
         caseSensitive: entry.case_sensitive || false,
         matchWholeWords: entry.match_whole_words || false,
@@ -111,7 +121,7 @@ export class LorebookParser {
         preventRecursion: entry.prevent_recursion || entry.excludeRecursion || false,
         delayUntilRecursion: entry.delay_until_recursion || false,
         displayIndex: entry.display_index !== undefined ? entry.display_index : entry.id || 0,
-        extensions: entry.extensions || {},
+        extensions: entry.extensions || {}
       };
     }
   }
@@ -127,14 +137,14 @@ export class LorebookParser {
     // For now, we only support one insertion position (after character profiles)
     // But we'll store the original position for future compatibility
     const positionMap = {
-      'before_char': 0,
-      'after_char': 1,
-      'before_example': 2,
-      'after_example': 3,
-      'top_an': 4,
-      'bottom_an': 5,
-      'at_depth': 6,
-      'outlet': 7,
+      before_char: 0,
+      after_char: 1,
+      before_example: 2,
+      after_example: 3,
+      top_an: 4,
+      bottom_an: 5,
+      at_depth: 6,
+      outlet: 7
     };
 
     return positionMap[position] || 1; // Default to after_char
@@ -172,7 +182,7 @@ export class LorebookParser {
         excludeRecursion: entry.preventRecursion,
         delayUntilRecursion: entry.delayUntilRecursion,
         displayIndex: entry.displayIndex,
-        extensions: entry.extensions,
+        extensions: entry.extensions
       };
     });
 
@@ -183,7 +193,7 @@ export class LorebookParser {
       token_budget: lorebook.tokenBudget,
       recursive_scanning: lorebook.recursiveScanning,
       entries,
-      extensions: lorebook.extensions,
+      extensions: lorebook.extensions
     };
   }
 

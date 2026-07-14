@@ -8,7 +8,7 @@
         <input
           ref="fileInput"
           type="file"
-          accept="image/png,image/jpeg"
+          accept="image/png,image/jpeg,application/json"
           @change="handleFileSelect"
           class="file-input"
         />
@@ -53,7 +53,9 @@
       <!-- Import from URL -->
       <section class="import-section">
         <h3><i class="fas fa-link"></i> Import from URL</h3>
-        <p class="help-text">Paste a character URL from CHUB or a direct image URL (PNG, JPEG, WebP)</p>
+        <p class="help-text">
+          Paste a character URL from CHUB or a direct image URL (PNG, JPEG, WebP)
+        </p>
         <input
           v-model="characterUrl"
           type="text"
@@ -76,97 +78,99 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import Modal from './Modal.vue'
-import { charactersAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
+import { ref } from 'vue';
+import Modal from './Modal.vue';
+import { charactersAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
 
-const emit = defineEmits(['close', 'imported'])
-const toast = useToast()
+const emit = defineEmits(['close', 'imported']);
+const toast = useToast();
 
-const selectedFile = ref(null)
-const fileInput = ref(null)
-const selectedStorageFile = ref(null)
-const storageFileInput = ref(null)
-const characterUrl = ref('')
-const importing = ref(null) // null | 'photo' | 'storage' | 'url'
+const selectedFile = ref(null);
+const fileInput = ref(null);
+const selectedStorageFile = ref(null);
+const storageFileInput = ref(null);
+const characterUrl = ref('');
+const importing = ref(null); // null | 'photo' | 'storage' | 'url'
 
 function handleFileSelect(event) {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    selectedFile.value = file
+    selectedFile.value = file;
   }
 }
 
 function handleStorageFileSelect(event) {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    selectedStorageFile.value = file
+    selectedStorageFile.value = file;
   }
 }
 
 async function importFromPhoto() {
-  if (!selectedFile.value || importing.value) return
+  if (!selectedFile.value || importing.value) return;
 
   try {
-    importing.value = 'photo'
-    const result = await charactersAPI.importPNG(selectedFile.value)
+    importing.value = 'photo';
+    const result = await charactersAPI.importPNG(selectedFile.value);
 
-    toast.success(`Successfully imported "${result.name}"!`)
-    emit('imported', result)
-    emit('close')
+    toast.success(`Successfully imported "${result.name}"!`);
+    emit('imported', result);
+    emit('close');
   } catch (error) {
-    console.error('Failed to import photo:', error)
-    toast.error('Failed to import character: ' + error.message)
+    console.error('Failed to import photo:', error);
+    toast.error('Failed to import character: ' + error.message);
   } finally {
-    importing.value = false
+    importing.value = false;
   }
 }
 
 async function importFromURL() {
-  if (!characterUrl.value.trim() || importing.value) return
+  if (!characterUrl.value.trim() || importing.value) return;
 
   try {
-    importing.value = 'url'
-    const result = await charactersAPI.importFromURL(characterUrl.value.trim())
+    importing.value = 'url';
+    const result = await charactersAPI.importFromURL(characterUrl.value.trim());
 
-    toast.success(`Successfully imported "${result.name}"!`)
-    emit('imported', result)
-    emit('close')
+    toast.success(`Successfully imported "${result.name}"!`);
+    emit('imported', result);
+    emit('close');
   } catch (error) {
-    console.error('Failed to import from URL:', error)
-    toast.error('Failed to import character: ' + error.message)
+    console.error('Failed to import from URL:', error);
+    toast.error('Failed to import character: ' + error.message);
   } finally {
-    importing.value = false
+    importing.value = false;
   }
 }
 
 async function importFromStorage() {
-  if (!selectedStorageFile.value || importing.value) return
+  if (!selectedStorageFile.value || importing.value) return;
 
   try {
-    importing.value = 'storage'
+    importing.value = 'storage';
 
     // Detect if it's an image file (PNG/JPEG) and route accordingly
-    const file = selectedStorageFile.value
-    const isImage = file.type === 'image/png' || file.type === 'image/jpeg' ||
-      file.name.match(/\.(png|jpg|jpeg|webp)$/i)
+    const file = selectedStorageFile.value;
+    const isImage =
+      file.type === 'image/png' ||
+      file.type === 'image/jpeg' ||
+      file.name.match(/\.(png|jpg|jpeg|webp)$/i);
 
-    let result
+    let result;
     if (isImage) {
-      result = await charactersAPI.importPNG(file)
+      result = await charactersAPI.importPNG(file);
     } else {
-      result = await charactersAPI.importJSON(file)
+      result = await charactersAPI.importJSON(file);
     }
 
-    toast.success(`Successfully imported "${result.name}"!`)
-    emit('imported', result)
-    emit('close')
+    toast.success(`Successfully imported "${result.name}"!`);
+    emit('imported', result);
+    emit('close');
   } catch (error) {
-    console.error('Failed to import character from storage:', error)
-    toast.error('Failed to import character: ' + error.message)
+    console.error('Failed to import character from storage:', error);
+    toast.error('Failed to import character: ' + error.message);
   } finally {
-    importing.value = false
+    importing.value = false;
   }
 }
 </script>

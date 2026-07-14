@@ -2,10 +2,7 @@
   <!-- Multi-character mode -->
   <div v-if="isMultiMode" class="character-avatar-group">
     <!-- Show empty avatar if no characters -->
-    <div
-      v-if="displayedCharacters.length === 0"
-      class="character-avatar stacked empty"
-    >
+    <div v-if="displayedCharacters.length === 0" class="character-avatar stacked empty">
       <i class="fas fa-user"></i>
     </div>
     <!-- Show character avatars -->
@@ -31,13 +28,17 @@
 
   <!-- Single character mode -->
   <div v-else class="character-avatar" :class="{ empty: !getImageUrl(singleCharacter) }">
-    <img v-if="getImageUrl(singleCharacter)" :src="getImageUrl(singleCharacter)" :alt="singleCharacter?.name" />
+    <img
+      v-if="getImageUrl(singleCharacter)"
+      :src="getImageUrl(singleCharacter)"
+      :alt="singleCharacter?.name"
+    />
     <i v-else class="fas fa-user"></i>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 const props = defineProps({
   // Single character (legacy mode)
@@ -55,31 +56,31 @@ const props = defineProps({
     type: Number,
     default: 3
   }
-})
+});
 
 const isMultiMode = computed(() => {
-  return props.characters !== null && Array.isArray(props.characters)
-})
+  return props.characters !== null && Array.isArray(props.characters);
+});
 
 const singleCharacter = computed(() => {
-  return props.character
-})
+  return props.character;
+});
 
 const displayedCharacters = computed(() => {
-  if (!isMultiMode.value) return []
-  return props.characters.slice(0, props.maxDisplay)
-})
+  if (!isMultiMode.value) return [];
+  return props.characters.slice(0, props.maxDisplay);
+});
 
 const remainingCount = computed(() => {
-  if (!isMultiMode.value) return 0
-  const total = props.characters.length
-  return Math.max(0, total - props.maxDisplay)
-})
+  if (!isMultiMode.value) return 0;
+  const total = props.characters.length;
+  return Math.max(0, total - props.maxDisplay);
+});
 
 // Prefer thumbnailUrl for avatars, fall back to imageUrl
 function getImageUrl(character) {
-  if (!character) return null
-  return character.thumbnailUrl || character.imageUrl || null
+  if (!character) return null;
+  return character.thumbnailUrl || character.imageUrl || null;
 }
 </script>
 

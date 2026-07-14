@@ -14,7 +14,7 @@ export class PromptBuilder {
       instructionTemplates: config.instructionTemplates || {
         continue: DEFAULT_PROMPT_TEMPLATES.continue,
         character: DEFAULT_PROMPT_TEMPLATES.character,
-        custom: "Continue the story."
+        custom: 'Continue the story.'
       },
 
       // Whether to always filter asterisks (core feature)
@@ -22,13 +22,13 @@ export class PromptBuilder {
 
       // Section headers
       sectionHeaders: config.sectionHeaders || {
-        characterProfiles: "=== CHARACTER PROFILES ===",
-        characterProfile: "=== CHARACTER PROFILE ===",
-        dialogueExamples: "=== DIALOGUE STYLE EXAMPLES ===",
-        worldInfo: "=== WORLD INFORMATION ===",
-        persona: "=== USER CHARACTER (PERSONA) ===",
-        instructions: "=== INSTRUCTIONS ===",
-        perspective: "=== PERSPECTIVE ==="
+        characterProfiles: '=== CHARACTER PROFILES ===',
+        characterProfile: '=== CHARACTER PROFILE ===',
+        dialogueExamples: '=== DIALOGUE STYLE EXAMPLES ===',
+        worldInfo: '=== WORLD INFORMATION ===',
+        persona: '=== USER CHARACTER (PERSONA) ===',
+        instructions: '=== INSTRUCTIONS ===',
+        perspective: '=== PERSPECTIVE ==='
       }
     };
   }
@@ -42,11 +42,11 @@ export class PromptBuilder {
     let result = text;
 
     // Replace {{user}} with persona name
-    const userName = persona?.name || "User";
+    const userName = persona?.name || 'User';
     result = result.replace(/\{\{user\}\}/gi, userName);
 
     // Replace {{char}} and {{character}} with character name
-    const charName = characterCard?.data?.name || "Character";
+    const charName = characterCard?.data?.name || 'Character';
     result = result.replace(/\{\{char\}\}/gi, charName);
     result = result.replace(/\{\{character\}\}/gi, charName);
 
@@ -58,7 +58,7 @@ export class PromptBuilder {
    */
   filterAsterisks(text, shouldFilter) {
     if (!text || !shouldFilter) return text;
-    return text.replace(/\*/g, "");
+    return text.replace(/\*/g, '');
   }
 
   /**
@@ -86,12 +86,22 @@ export class PromptBuilder {
     prompt += `Name: ${char.name}\n`;
 
     if (char.description) {
-      const processed = this.processContent(char.description, characterCard, persona, macroProcessor);
+      const processed = this.processContent(
+        char.description,
+        characterCard,
+        persona,
+        macroProcessor
+      );
       prompt += `Description: ${processed}\n`;
     }
 
     if (char.personality) {
-      const processed = this.processContent(char.personality, characterCard, persona, macroProcessor);
+      const processed = this.processContent(
+        char.personality,
+        characterCard,
+        persona,
+        macroProcessor
+      );
       prompt += `Personality: ${processed}\n`;
     }
 
@@ -102,7 +112,12 @@ export class PromptBuilder {
 
     // Add dialogue examples if enabled
     if (char.mes_example && settings.includeDialogueExamples !== false) {
-      const processed = this.processContent(char.mes_example, characterCard, persona, macroProcessor);
+      const processed = this.processContent(
+        char.mes_example,
+        characterCard,
+        persona,
+        macroProcessor
+      );
       prompt += `\n${headers.dialogueExamples}\n${processed}\n`;
     }
 
@@ -121,7 +136,7 @@ export class PromptBuilder {
     characterCards.forEach((card, index) => {
       const char = card.data;
 
-      if (index > 0) prompt += "\n---\n\n";
+      if (index > 0) prompt += '\n---\n\n';
 
       prompt += `Character ${index + 1}: ${char.name}\n`;
 
@@ -142,7 +157,7 @@ export class PromptBuilder {
       }
     });
 
-    prompt += "\n";
+    prompt += '\n';
     return prompt;
   }
 
@@ -186,12 +201,22 @@ export class PromptBuilder {
     prompt += `Name: ${persona.name}\n`;
 
     if (persona.description) {
-      const processed = this.processContent(persona.description, characterCard, persona, macroProcessor);
+      const processed = this.processContent(
+        persona.description,
+        characterCard,
+        persona,
+        macroProcessor
+      );
       prompt += `Description: ${processed}\n`;
     }
 
     if (persona.writingStyle) {
-      const processed = this.processContent(persona.writingStyle, characterCard, persona, macroProcessor);
+      const processed = this.processContent(
+        persona.writingStyle,
+        characterCard,
+        persona,
+        macroProcessor
+      );
       prompt += `Writing Style: ${processed}\n`;
     }
 
@@ -244,7 +269,11 @@ export class PromptBuilder {
     // Initialize macro processor with context
     const macroProcessor = new MacroProcessor({
       userName: persona?.name || 'User',
-      charName: characterCard?.data?.name || (allCharacterCards && allCharacterCards.length > 0 ? allCharacterCards[0].data?.name : 'Character')
+      charName:
+        characterCard?.data?.name ||
+        (allCharacterCards && allCharacterCards.length > 0
+          ? allCharacterCards[0].data?.name
+          : 'Character')
     });
 
     // Prepare granular template data
@@ -256,34 +285,76 @@ export class PromptBuilder {
       // Character data
       has_single_character: !!characterCard,
       has_multiple_characters: !!allCharacterCards,
-      character: characterCard ? {
-        name: characterCard.data.name || '',
-        description: this.processContent(characterCard.data.description, characterCard, persona, macroProcessor),
-        personality: this.processContent(characterCard.data.personality, characterCard, persona, macroProcessor),
-        scenario: this.processContent(characterCard.data.scenario, characterCard, persona, macroProcessor),
-        mes_example: this.processContent(characterCard.data.mes_example, characterCard, persona, macroProcessor)
-      } : null,
-      characters: allCharacterCards ? allCharacterCards.map(card => ({
-        name: card.data.name || '',
-        description: this.processContent(card.data.description, card, persona, macroProcessor),
-        personality: this.processContent(card.data.personality, card, persona, macroProcessor),
-        scenario: this.processContent(card.data.scenario, card, persona, macroProcessor)
-      })) : [],
+      character: characterCard
+        ? {
+            name: characterCard.data.name || '',
+            description: this.processContent(
+              characterCard.data.description,
+              characterCard,
+              persona,
+              macroProcessor
+            ),
+            personality: this.processContent(
+              characterCard.data.personality,
+              characterCard,
+              persona,
+              macroProcessor
+            ),
+            scenario: this.processContent(
+              characterCard.data.scenario,
+              characterCard,
+              persona,
+              macroProcessor
+            ),
+            mes_example: this.processContent(
+              characterCard.data.mes_example,
+              characterCard,
+              persona,
+              macroProcessor
+            )
+          }
+        : null,
+      characters: allCharacterCards
+        ? allCharacterCards.map((card) => ({
+            name: card.data.name || '',
+            description: this.processContent(card.data.description, card, persona, macroProcessor),
+            personality: this.processContent(card.data.personality, card, persona, macroProcessor),
+            scenario: this.processContent(card.data.scenario, card, persona, macroProcessor)
+          }))
+        : [],
 
       // Lorebook data
       has_lorebook: !!(activatedLorebooks && activatedLorebooks.length > 0),
-      lorebook_entries: activatedLorebooks ? activatedLorebooks.map(entry => ({
-        content: this.filterAsterisks(macroProcessor.process(entry.content), this.config.filterAsterisks),
-        comment: entry.comment || ''
-      })) : [],
+      lorebook_entries: activatedLorebooks
+        ? activatedLorebooks.map((entry) => ({
+            content: this.filterAsterisks(
+              macroProcessor.process(entry.content),
+              this.config.filterAsterisks
+            ),
+            comment: entry.comment || ''
+          }))
+        : [],
 
       // Persona data
       has_persona: !!(persona && persona.name),
-      persona: persona && persona.name ? {
-        name: persona.name,
-        description: this.processContent(persona.description, characterCard, persona, macroProcessor),
-        writing_style: this.processContent(persona.writingStyle, characterCard, persona, macroProcessor)
-      } : null,
+      persona:
+        persona && persona.name
+          ? {
+              name: persona.name,
+              description: this.processContent(
+                persona.description,
+                characterCard,
+                persona,
+                macroProcessor
+              ),
+              writing_style: this.processContent(
+                persona.writingStyle,
+                characterCard,
+                persona,
+                macroProcessor
+              )
+            }
+          : null,
 
       // Settings
       include_dialogue_examples: settings.includeDialogueExamples !== false
@@ -310,9 +381,8 @@ export class PromptBuilder {
       throw new Error('maxChars must be provided and greater than 0');
     }
 
-    const contentToInclude = storyContent.length > maxChars
-      ? "..." + storyContent.slice(-maxChars)
-      : storyContent;
+    const contentToInclude =
+      storyContent.length > maxChars ? '...' + storyContent.slice(-maxChars) : storyContent;
 
     return `Here is the current story so far:\n\n${contentToInclude}\n\n---\n\n`;
   }
@@ -321,10 +391,18 @@ export class PromptBuilder {
    * Build generation prompt based on type
    */
   buildGenerationPrompt(type, params) {
-    const { storyContent, characterName, customInstruction, templateText, maxChars, userName, imagePreserver } = params;
+    const {
+      storyContent,
+      characterName,
+      customInstruction,
+      templateText,
+      maxChars,
+      userName,
+      imagePreserver
+    } = params;
 
-    let storyContext = "";
-    let instruction = "";
+    let storyContext = '';
+    let instruction = '';
 
     // Determine the actual template to use:
     // 1. Use templateText if explicitly provided (and not null)
@@ -344,7 +422,9 @@ export class PromptBuilder {
       }
       if (storyContent) {
         // Preserve images before replacing into template
-        const preservedStoryContent = imagePreserver ? imagePreserver.preserve(storyContent) : storyContent;
+        const preservedStoryContent = imagePreserver
+          ? imagePreserver.preserve(storyContent)
+          : storyContent;
         instruction = instruction.replace(/\{\{storyContent\}\}/g, preservedStoryContent);
       }
       instruction = instruction.replace(/\{\{user\}\}/gi, userName || 'the user');
@@ -362,25 +442,25 @@ export class PromptBuilder {
       // Get the default template based on type
       let defaultTemplate;
       switch (type) {
-        case "continue":
+        case 'continue':
           defaultTemplate = DEFAULT_PROMPT_TEMPLATES.continue;
           break;
-        case "character":
+        case 'character':
           defaultTemplate = DEFAULT_PROMPT_TEMPLATES.character;
           break;
-        case "instruction":
+        case 'instruction':
           defaultTemplate = DEFAULT_PROMPT_TEMPLATES.instruction;
           break;
-        case "rewriteThirdPerson":
+        case 'rewriteThirdPerson':
           defaultTemplate = DEFAULT_PROMPT_TEMPLATES.rewriteThirdPerson;
           break;
-        case "ideate":
+        case 'ideate':
           defaultTemplate = DEFAULT_PROMPT_TEMPLATES.ideate;
           break;
-        case "storyStarter":
+        case 'storyStarter':
           defaultTemplate = DEFAULT_PROMPT_TEMPLATES.storyStarter;
           break;
-        case "custom":
+        case 'custom':
           defaultTemplate = templates.custom;
           break;
         default:
@@ -399,7 +479,9 @@ export class PromptBuilder {
       }
       if (storyContent) {
         // Preserve images before replacing into template
-        const preservedStoryContent = imagePreserver ? imagePreserver.preserve(storyContent) : storyContent;
+        const preservedStoryContent = imagePreserver
+          ? imagePreserver.preserve(storyContent)
+          : storyContent;
         instruction = instruction.replace(/\{\{storyContent\}\}/g, preservedStoryContent);
       }
       instruction = instruction.replace(/\{\{user\}\}/gi, userName || 'the user');
@@ -412,9 +494,10 @@ export class PromptBuilder {
       }
     }
 
-      // For rewriteThirdPerson: append image preservation note so the prompt-aware placeholders survive
+    // For rewriteThirdPerson: append image preservation note so the prompt-aware placeholders survive
     if (imagePreserver && imagePreserver.saved.length > 0) {
-      instruction += '\n\nIMPORTANT: Preserve any markers like [WG_IMAGE_0], [WG_IMAGE_1] etc. (image references) exactly as they appear in the text above. Do not remove or modify them.';
+      instruction +=
+        '\n\nIMPORTANT: Preserve any markers like [WG_IMAGE_0], [WG_IMAGE_1] etc. (image references) exactly as they appear in the text above. Do not remove or modify them.';
       console.log(`[ImagePreserver] Appended image-preservation note for ${type}`);
     }
 

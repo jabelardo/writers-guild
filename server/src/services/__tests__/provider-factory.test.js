@@ -79,23 +79,23 @@ describe('Provider Factory', () => {
     });
 
     it('should throw error for null preset', () => {
-      expect(() => getProvider(null))
-        .toThrow('Preset configuration is required');
+      expect(() => getProvider(null)).toThrow('Preset configuration is required');
     });
 
     it('should throw error for undefined preset', () => {
-      expect(() => getProvider(undefined))
-        .toThrow('Preset configuration is required');
+      expect(() => getProvider(undefined)).toThrow('Preset configuration is required');
     });
 
     it('should throw error for missing provider', () => {
-      expect(() => getProvider({ apiConfig: { apiKey: 'test' } }))
-        .toThrow('Provider type is required in preset');
+      expect(() => getProvider({ apiConfig: { apiKey: 'test' } })).toThrow(
+        'Provider type is required in preset'
+      );
     });
 
     it('should throw error for unknown provider', () => {
-      expect(() => getProvider({ provider: 'unknown-provider', apiConfig: {} }))
-        .toThrow('Unknown provider: unknown-provider');
+      expect(() => getProvider({ provider: 'unknown-provider', apiConfig: {} })).toThrow(
+        'Unknown provider: unknown-provider'
+      );
     });
 
     it('should include available providers in error message', () => {
@@ -114,8 +114,7 @@ describe('Provider Factory', () => {
         apiConfig: { apiKey: '' } // Empty API key is invalid
       };
 
-      expect(() => getProvider(preset))
-        .toThrow('Provider configuration invalid');
+      expect(() => getProvider(preset)).toThrow('Provider configuration invalid');
     });
 
     it('should handle preset with API key in apiConfig', () => {
@@ -183,8 +182,7 @@ describe('Provider Factory', () => {
     });
 
     it('should throw error for unknown provider', () => {
-      expect(() => getProviderCapabilities('unknown'))
-        .toThrow('Unknown provider: unknown');
+      expect(() => getProviderCapabilities('unknown')).toThrow('Unknown provider: unknown');
     });
   });
 

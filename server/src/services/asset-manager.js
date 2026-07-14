@@ -91,7 +91,7 @@ export class AssetManager {
 
   async addImageMetadata(entityId, entry) {
     const meta = await this.readMetadata(entityId);
-    const existing = meta.images.find(i => i.originalUrl === entry.originalUrl);
+    const existing = meta.images.find((i) => i.originalUrl === entry.originalUrl);
     if (existing) {
       Object.assign(existing, entry);
     } else {
@@ -112,7 +112,7 @@ export class AssetManager {
       originalUrl,
       hash: path.parse(filename).name,
       filename,
-      mimeType,
+      mimeType
     });
   }
 
@@ -139,7 +139,7 @@ export class AssetManager {
     const dir = this.entityDir(entityId);
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
-      return entries.filter(e => e.isFile() && e.name !== 'metadata.json').map(e => e.name);
+      return entries.filter((e) => e.isFile() && e.name !== 'metadata.json').map((e) => e.name);
     } catch {
       return [];
     }

@@ -10,7 +10,11 @@
  */
 
 // Import shared regex patterns
-import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE, WG_PLACEHOLDER_RE } from '../../../shared/regex-patterns.js';
+import {
+  MARKDOWN_IMAGE_RE,
+  HTML_IMAGE_RE,
+  WG_PLACEHOLDER_RE
+} from '../../../shared/regex-patterns.js';
 
 // Placeholder template — uses a dedicated marker.
 // HTML comments (<!-- -->) get stripped by LLMs, so use plain text markers.
@@ -106,7 +110,7 @@ export class ImagePreserver {
     });
 
     // Detect missing: placeholders that were saved but not found in response
-    const missing = this.saved.filter(item => !foundPlaceholders.has(item.placeholder));
+    const missing = this.saved.filter((item) => !foundPlaceholders.has(item.placeholder));
 
     return { text: result, missing };
   }
@@ -139,10 +143,12 @@ export class ImagePreserver {
     // Build final content with missing images appended at the end
     let finalContent = restoredContent;
     if (missing.length > 0) {
-      finalContent += '\n\n' + missing.map(m => m.original).join('\n');
+      finalContent += '\n\n' + missing.map((m) => m.original).join('\n');
     }
 
-    console.log(`[ImagePreserver] Restored ${this.saved.length} image(s), ${missing.length} missing`);
+    console.log(
+      `[ImagePreserver] Restored ${this.saved.length} image(s), ${missing.length} missing`
+    );
     return {
       finalContent,
       imagesRestored: true,

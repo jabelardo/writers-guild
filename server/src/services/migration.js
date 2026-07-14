@@ -37,7 +37,11 @@ async function importCharacterFromFile(storage, filePath) {
     // Check for embedded lorebook
     let embeddedLorebook = null;
     let lorebookId = null;
-    if (cardData.data?.character_book && cardData.data.character_book.entries && cardData.data.character_book.entries.length > 0) {
+    if (
+      cardData.data?.character_book &&
+      cardData.data.character_book.entries &&
+      cardData.data.character_book.entries.length > 0
+    ) {
       try {
         // Parse embedded lorebook
         const lorebookData = LorebookParser.parseEmbeddedLorebook(cardData.data.character_book);
@@ -56,7 +60,9 @@ async function importCharacterFromFile(storage, filePath) {
           entryCount: lorebookData.entries.length
         };
 
-        console.log(`✓ Extracted embedded lorebook from ${cardData.data.name}: ${lorebookData.entries.length} entries`);
+        console.log(
+          `✓ Extracted embedded lorebook from ${cardData.data.name}: ${lorebookData.entries.length} entries`
+        );
       } catch (error) {
         console.error('Failed to parse embedded lorebook:', error);
       }
@@ -95,7 +101,7 @@ async function importDefaultCharacters(storage) {
 
   try {
     const files = await readdir(defaultsDir);
-    const pngFiles = files.filter(file => extname(file).toLowerCase() === '.png');
+    const pngFiles = files.filter((file) => extname(file).toLowerCase() === '.png');
 
     console.log(`Found ${pngFiles.length} character cards in defaults directory`);
 
@@ -233,8 +239,12 @@ async function generateMissingThumbnails(storage) {
       try {
         const imageBuffer = await storage.getCharacterImage(char.id);
         const [small, medium] = await Promise.all([
-          hasSmall ? storage.getCharacterThumbnail(char.id) : storage.generateThumbnail(imageBuffer),
-          hasMedium ? storage.getCharacterThumbnailMedium(char.id) : storage.generateMediumThumbnail(imageBuffer)
+          hasSmall
+            ? storage.getCharacterThumbnail(char.id)
+            : storage.generateThumbnail(imageBuffer),
+          hasMedium
+            ? storage.getCharacterThumbnailMedium(char.id)
+            : storage.generateMediumThumbnail(imageBuffer)
         ]);
 
         await storage.setCharacterThumbnails(char.id, small, medium);

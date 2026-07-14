@@ -345,9 +345,7 @@ describe('ImagePreserver', () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       preserver.preserve('![a](1.png) ![b](2.png)');
       preserver.restoreImages('[WG_IMAGE_0] only');
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[ImagePreserver] Restored 2 image(s), 1 missing'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('[ImagePreserver] Restored 2 image(s), 1 missing');
       consoleSpy.mockRestore();
     });
   });

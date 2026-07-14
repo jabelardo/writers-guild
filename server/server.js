@@ -69,30 +69,36 @@ if (!fs.existsSync(DATA_ROOT)) {
 })();
 
 // Security middleware
-app.use(helmet({
-  contentSecurityPolicy: false, // Disable CSP for now (can enable later)
-  crossOriginEmbedderPolicy: false
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disable CSP for now (can enable later)
+    crossOriginEmbedderPolicy: false
+  })
+);
 
 // CORS configuration
-app.use(cors({
-  origin: config.security.cors.origins,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: config.security.cors.origins,
+    credentials: true
+  })
+);
 
 // Optional HTTP Basic Authentication
 app.use(basicAuth());
 
 // Body parsing middleware
 // Disable compression for SSE (text/event-stream)
-app.use(compression({
-  filter: (req, res) => {
-    if (res.getHeader('Content-Type') === 'text/event-stream') {
-      return false;
+app.use(
+  compression({
+    filter: (req, res) => {
+      if (res.getHeader('Content-Type') === 'text/event-stream') {
+        return false;
+      }
+      return compression.filter(req, res);
     }
-    return compression.filter(req, res);
-  }
-}));
+  })
+);
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 

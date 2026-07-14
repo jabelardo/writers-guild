@@ -23,6 +23,7 @@ So I decided to make Writers Guild, which uses the same character cards and lore
 ### Local Development (Recommended)
 
 **Run both server and client with one command:**
+
 ```bash
 # Install dependencies (first time only)
 npm install
@@ -34,12 +35,14 @@ npm run dev
 ```
 
 This will start:
+
 - **Server** on http://localhost:8000 (API)
 - **Vue Client** on http://localhost:5173 (Dev UI with hot-reload)
 
 Open http://localhost:5173 in your browser.
 
 **Or run separately:**
+
 ```bash
 # Terminal 1 - Server
 cd server
@@ -90,6 +93,7 @@ writers-guild/
 ## API
 
 The server runs on port 8000 and provides:
+
 - `/api/stories` - Story management
 - `/api/characters` - Character library
 - `/api/lorebooks` - Lorebook management
@@ -97,6 +101,7 @@ The server runs on port 8000 and provides:
 - `/` - Serves the Vue client (production) or forwards to Vite (dev)
 
 ## Community & Discussion
+
 - Discuss Writers Guild [on Libera.Chat IRC](https://web.libera.chat/#writers-guild) in #writers-guild
 - Or, in [The Eye of Providence Discord](https://discord.gg/rpSKvGp2uY) in #writers-guild
 - Or, on [The Eye of Providence Discourse](https://discuss.bradroot.me/tags/c/projects/13/writers-guild/12) under the writers-guild tag

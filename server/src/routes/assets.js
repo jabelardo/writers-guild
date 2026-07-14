@@ -10,7 +10,7 @@
 import express from 'express';
 import { asyncHandler, AppError } from '../middleware/error-handler.js';
 import { AssetManager } from '../services/asset-manager.js';
-import { mimeTypeFromExt } from '../../../shared/mime-types.js'
+import { mimeTypeFromExt } from '../../../shared/mime-types.js';
 import path from 'path';
 
 const router = express.Router();
@@ -29,23 +29,28 @@ router.use((req, res, next) => {
  * Serve a cached asset file. Filename is content-hashed so we use
  * immutable caching: files never change once created.
  */
-router.get('/characters/:characterId/:filename', asyncHandler(async (req, res) => {
-  const { characterId, filename } = req.params;
-  return getAsset(characterId, filename);
-}));
+router.get(
+  '/characters/:characterId/:filename',
+  asyncHandler(async (req, res) => {
+    const { characterId, filename } = req.params;
+    return getAsset(characterId, filename);
+  })
+);
 
 /**
  * GET /api/assets/lorebooks/:lorebookId/:filename
  *
  * Serve a cached lorebook asset file (same immutable caching strategy).
  */
-router.get('/lorebooks/:lorebookId/:filename', asyncHandler(async (req, res) => {
-  const { lorebookId, filename } = req.params;
-  return getAsset(lorebookId, filename);
-}));
+router.get(
+  '/lorebooks/:lorebookId/:filename',
+  asyncHandler(async (req, res) => {
+    const { lorebookId, filename } = req.params;
+    return getAsset(lorebookId, filename);
+  })
+);
 
 const getAsset = async (assetId, filename) => {
-
   // Basic security: prevent directory traversal in filename
   if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
     throw new AppError('Invalid filename', 400);

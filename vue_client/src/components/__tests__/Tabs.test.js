@@ -146,7 +146,7 @@ describe('Tabs', () => {
       });
 
       const buttons = wrapper.findAll('.tab-button');
-      buttons.forEach(button => {
+      buttons.forEach((button) => {
         expect(button.classes()).not.toContain('active');
       });
     });
@@ -234,9 +234,7 @@ describe('Tabs', () => {
     });
 
     it('should handle empty label', () => {
-      const emptyLabelTabs = [
-        { key: 'empty', label: '' }
-      ];
+      const emptyLabelTabs = [{ key: 'empty', label: '' }];
 
       const wrapper = mount(Tabs, {
         props: {
@@ -249,9 +247,7 @@ describe('Tabs', () => {
     });
 
     it('should handle very long labels', () => {
-      const longLabelTabs = [
-        { key: 'long', label: 'a'.repeat(100) }
-      ];
+      const longLabelTabs = [{ key: 'long', label: 'a'.repeat(100) }];
 
       const wrapper = mount(Tabs, {
         props: {
@@ -264,9 +260,7 @@ describe('Tabs', () => {
     });
 
     it('should handle special characters in labels', () => {
-      const specialTabs = [
-        { key: 'special', label: 'Tab with "quotes" & symbols!' }
-      ];
+      const specialTabs = [{ key: 'special', label: 'Tab with "quotes" & symbols!' }];
 
       const wrapper = mount(Tabs, {
         props: {

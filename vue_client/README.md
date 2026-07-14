@@ -79,6 +79,7 @@ The crown jewel! One reusable table component handles ALL tables:
 ```
 
 **Benefits:**
+
 - ✅ **ONE component** for all sortable tables
 - ✅ All columns sortable by default (just set `sortable: true`)
 - ✅ Custom cell rendering via slots
@@ -87,6 +88,7 @@ The crown jewel! One reusable table component handles ALL tables:
 - ✅ Add a new table type in minutes
 
 **Component Hierarchy:**
+
 - `DataTable.vue` - Generic, reusable table with sorting (100 lines)
 - `StoriesTable.vue` - Stories-specific configuration (45 lines)
 - `CharactersTable.vue` - Characters-specific configuration (50 lines)
@@ -95,11 +97,13 @@ The crown jewel! One reusable table component handles ALL tables:
 Compare this to the vanilla JS where each table was 150+ lines with duplicated sorting logic!
 
 ### Reactive State Management
+
 - Automatic UI updates when data changes
 - No manual DOM manipulation required
 - Clean separation of data and presentation
 
 ### Modern Patterns
+
 - Composition API with `<script setup>`
 - Props and emits for component communication
 - Slots for flexible custom rendering
@@ -108,39 +112,38 @@ Compare this to the vanilla JS where each table was 150+ lines with duplicated s
 ## Comparison with Vanilla JS Client
 
 **Before (Vanilla JS):**
+
 ```javascript
 // Manual DOM manipulation
-container.innerHTML = stories.map(story => `...`).join('')
+container.innerHTML = stories.map((story) => `...`).join('');
 
 // Manual event listener management
-document.querySelectorAll('.btn').forEach(btn => {
-  btn.addEventListener('click', handler)
-})
+document.querySelectorAll('.btn').forEach((btn) => {
+  btn.addEventListener('click', handler);
+});
 
 // State sync across multiple places
-this.renderStories()
-this.renderCharacters()
-this.attachListeners()  // Remember to reattach!
+this.renderStories();
+this.renderCharacters();
+this.attachListeners(); // Remember to reattach!
 ```
 
 **After (Vue):**
+
 ```vue
 <template>
   <!-- Declarative rendering -->
-  <StoriesTable
-    :stories="stories"
-    @delete="deleteStory"
-  />
+  <StoriesTable :stories="stories" @delete="deleteStory" />
 </template>
 
 <script setup>
 // Reactive state
-const stories = ref([])
+const stories = ref([]);
 
 // Automatic UI updates
 async function deleteStory(id) {
-  await api.delete(id)
-  stories.value = stories.value.filter(s => s.id !== id)
+  await api.delete(id);
+  stories.value = stories.value.filter((s) => s.id !== id);
   // UI automatically updates!
 }
 </script>
@@ -158,6 +161,7 @@ async function deleteStory(id) {
 ## Next Steps
 
 To complete the migration:
+
 - [ ] Add Vue Router for story editor route
 - [ ] Implement story editor component
 - [ ] Add character/lorebook management modals

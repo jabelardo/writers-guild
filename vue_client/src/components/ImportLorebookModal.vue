@@ -51,59 +51,59 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import Modal from './Modal.vue'
-import { lorebooksAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
+import { ref } from 'vue';
+import Modal from './Modal.vue';
+import { lorebooksAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
 
-const emit = defineEmits(['close', 'imported'])
-const toast = useToast()
+const emit = defineEmits(['close', 'imported']);
+const toast = useToast();
 
-const selectedFile = ref(null)
-const fileInput = ref(null)
-const lorebookUrl = ref('')
-const importing = ref(false)
+const selectedFile = ref(null);
+const fileInput = ref(null);
+const lorebookUrl = ref('');
+const importing = ref(false);
 
 function handleFileSelect(event) {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    selectedFile.value = file
+    selectedFile.value = file;
   }
 }
 
 async function importFromJSON() {
-  if (!selectedFile.value || importing.value) return
+  if (!selectedFile.value || importing.value) return;
 
   try {
-    importing.value = true
-    const result = await lorebooksAPI.importJSON(selectedFile.value)
+    importing.value = true;
+    const result = await lorebooksAPI.importJSON(selectedFile.value);
 
-    toast.success(`Successfully imported "${result.name}"!`)
-    emit('imported', result)
-    emit('close')
+    toast.success(`Successfully imported "${result.name}"!`);
+    emit('imported', result);
+    emit('close');
   } catch (error) {
-    console.error('Failed to import lorebook:', error)
-    toast.error('Failed to import lorebook: ' + error.message)
+    console.error('Failed to import lorebook:', error);
+    toast.error('Failed to import lorebook: ' + error.message);
   } finally {
-    importing.value = false
+    importing.value = false;
   }
 }
 
 async function importFromURL() {
-  if (!lorebookUrl.value.trim() || importing.value) return
+  if (!lorebookUrl.value.trim() || importing.value) return;
 
   try {
-    importing.value = true
-    const result = await lorebooksAPI.importFromURL(lorebookUrl.value.trim())
+    importing.value = true;
+    const result = await lorebooksAPI.importFromURL(lorebookUrl.value.trim());
 
-    toast.success(`Successfully imported "${result.name}"!`)
-    emit('imported', result)
-    emit('close')
+    toast.success(`Successfully imported "${result.name}"!`);
+    emit('imported', result);
+    emit('close');
   } catch (error) {
-    console.error('Failed to import from URL:', error)
-    toast.error('Failed to import lorebook: ' + error.message)
+    console.error('Failed to import from URL:', error);
+    toast.error('Failed to import lorebook: ' + error.message);
   } finally {
-    importing.value = false
+    importing.value = false;
   }
 }
 </script>

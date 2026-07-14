@@ -7,30 +7,28 @@
       </button>
     </div>
     <div ref="contentRef" class="reasoning-content">
-      <div v-if="!reasoning" class="reasoning-empty">
-        Thinking...
-      </div>
+      <div v-if="!reasoning" class="reasoning-empty">Thinking...</div>
       <div v-else class="reasoning-text" v-html="formattedReasoning"></div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue';
 
 const props = defineProps({
   reasoning: {
     type: String,
     default: ''
   }
-})
+});
 
-defineEmits(['close'])
+defineEmits(['close']);
 
-const contentRef = ref(null)
+const contentRef = ref(null);
 
 const formattedReasoning = computed(() => {
-  if (!props.reasoning) return ''
+  if (!props.reasoning) return '';
 
   // Convert markdown-style formatting to HTML
   let formatted = props.reasoning
@@ -43,18 +41,21 @@ const formattedReasoning = computed(() => {
     // Bold text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     // Italic text
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>');
 
-  return formatted
-})
+  return formatted;
+});
 
 // Auto-scroll when reasoning updates
-watch(() => props.reasoning, async () => {
-  await nextTick()
-  if (contentRef.value) {
-    contentRef.value.scrollTop = contentRef.value.scrollHeight
+watch(
+  () => props.reasoning,
+  async () => {
+    await nextTick();
+    if (contentRef.value) {
+      contentRef.value.scrollTop = contentRef.value.scrollHeight;
+    }
   }
-})
+);
 </script>
 
 <style scoped>
@@ -89,7 +90,9 @@ watch(() => props.reasoning, async () => {
   padding-left: max(2rem, calc((100% - 700px) / 2));
   padding-right: max(2rem, calc((100% - 700px) / 2));
   overflow-y: auto;
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Fira Mono', 'Roboto Mono', 'Courier New', monospace;
+  font-family:
+    'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Fira Mono', 'Roboto Mono', 'Courier New',
+    monospace;
   font-size: 0.875rem;
   line-height: 1.6;
   color: var(--text-secondary);

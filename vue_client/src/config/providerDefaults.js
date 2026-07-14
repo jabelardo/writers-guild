@@ -371,7 +371,7 @@ export const PROVIDERS = {
       }
     }
   }
-}
+};
 
 /**
  * Get default configuration for a specific provider
@@ -379,14 +379,14 @@ export const PROVIDERS = {
  * @returns {object} Default configuration object
  */
 export function getProviderDefaults(provider) {
-  const providerConfig = PROVIDERS[provider]
+  const providerConfig = PROVIDERS[provider];
   if (!providerConfig) {
-    console.warn(`No defaults found for provider: ${provider}`)
-    return JSON.parse(JSON.stringify(PROVIDERS.deepseek.defaults)) // Fallback to deepseek
+    console.warn(`No defaults found for provider: ${provider}`);
+    return JSON.parse(JSON.stringify(PROVIDERS.deepseek.defaults)); // Fallback to deepseek
   }
 
   // Deep clone to avoid mutations
-  return JSON.parse(JSON.stringify(providerConfig.defaults))
+  return JSON.parse(JSON.stringify(providerConfig.defaults));
 }
 
 /**
@@ -395,16 +395,16 @@ export function getProviderDefaults(provider) {
  * @returns {object} Provider info object
  */
 export function getProviderInfo(provider) {
-  const providerConfig = PROVIDERS[provider]
+  const providerConfig = PROVIDERS[provider];
   if (!providerConfig) {
-    return { name: provider, description: '', icon: 'fa-robot' }
+    return { name: provider, description: '', icon: 'fa-robot' };
   }
 
   return {
     name: providerConfig.name,
     description: providerConfig.description,
     icon: providerConfig.icon
-  }
+  };
 }
 
 /**
@@ -420,4 +420,4 @@ export const PROVIDER_INFO = Object.fromEntries(
       icon: config.icon
     }
   ])
-)
+);

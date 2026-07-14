@@ -9,14 +9,10 @@
     <!-- Lorebooks Table -->
     <div v-else-if="lorebooks.length > 0">
       <p class="instruction-text">
-        Select lorebooks to include in this story. Lorebook entries will be automatically injected when their keywords are detected.
+        Select lorebooks to include in this story. Lorebook entries will be automatically injected
+        when their keywords are detected.
       </p>
-      <DataTable
-        :columns="columns"
-        :data="lorebooks"
-        default-sort="name"
-        row-key="id"
-      >
+      <DataTable :columns="columns" :data="lorebooks" default-sort="name" row-key="id">
         <!-- Checkbox column -->
         <template #cell-selected="{ row }">
           <div class="checkbox-cell">
@@ -40,25 +36,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import Modal from './Modal.vue'
-import DataTable from './DataTable.vue'
-import { lorebooksAPI, storiesAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
+import { ref, onMounted } from 'vue';
+import Modal from './Modal.vue';
+import DataTable from './DataTable.vue';
+import { lorebooksAPI, storiesAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
 
 const props = defineProps({
   story: {
     type: Object,
     required: true
   }
-})
+});
 
-const emit = defineEmits(['close', 'updated'])
+const emit = defineEmits(['close', 'updated']);
 
-const toast = useToast()
-const loading = ref(true)
-const lorebooks = ref([])
-const actionInProgress = ref(null)
+const toast = useToast();
+const loading = ref(true);
+const lorebooks = ref([]);
+const actionInProgress = ref(null);
 
 const columns = [
   {
@@ -88,51 +84,51 @@ const columns = [
     cellClass: 'count-cell',
     format: (value) => value || 0
   }
-]
+];
 
 onMounted(async () => {
-  await loadLorebooks()
-})
+  await loadLorebooks();
+});
 
 async function loadLorebooks() {
   try {
-    loading.value = true
-    const { lorebooks: allLorebooks } = await lorebooksAPI.list()
-    lorebooks.value = allLorebooks || []
+    loading.value = true;
+    const { lorebooks: allLorebooks } = await lorebooksAPI.list();
+    lorebooks.value = allLorebooks || [];
   } catch (error) {
-    console.error('Failed to load lorebooks:', error)
-    toast.error('Failed to load lorebooks: ' + error.message)
+    console.error('Failed to load lorebooks:', error);
+    toast.error('Failed to load lorebooks: ' + error.message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 function isLorebookSelected(lorebookId) {
-  return props.story.lorebookIds?.includes(lorebookId) || false
+  return props.story.lorebookIds?.includes(lorebookId) || false;
 }
 
 async function toggleLorebook(lorebookId) {
-  if (actionInProgress.value) return
+  if (actionInProgress.value) return;
 
   try {
-    actionInProgress.value = lorebookId
+    actionInProgress.value = lorebookId;
 
     if (isLorebookSelected(lorebookId)) {
       // Remove lorebook
-      await storiesAPI.removeLorebookFromStory(props.story.id, lorebookId)
-      toast.success('Lorebook removed from story')
+      await storiesAPI.removeLorebookFromStory(props.story.id, lorebookId);
+      toast.success('Lorebook removed from story');
     } else {
       // Add lorebook
-      await storiesAPI.addLorebookToStory(props.story.id, lorebookId)
-      toast.success('Lorebook added to story')
+      await storiesAPI.addLorebookToStory(props.story.id, lorebookId);
+      toast.success('Lorebook added to story');
     }
 
-    emit('updated')
+    emit('updated');
   } catch (error) {
-    console.error('Failed to toggle lorebook:', error)
-    toast.error('Failed to update lorebook: ' + error.message)
+    console.error('Failed to toggle lorebook:', error);
+    toast.error('Failed to update lorebook: ' + error.message);
   } finally {
-    actionInProgress.value = null
+    actionInProgress.value = null;
   }
 }
 </script>
@@ -168,7 +164,9 @@ async function toggleLorebook(lorebookId) {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-state {
@@ -193,13 +191,13 @@ async function toggleLorebook(lorebookId) {
   justify-content: center;
 }
 
-.checkbox-cell input[type="checkbox"] {
+.checkbox-cell input[type='checkbox'] {
   width: 18px;
   height: 18px;
   cursor: pointer;
 }
 
-.checkbox-cell input[type="checkbox"]:disabled {
+.checkbox-cell input[type='checkbox']:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }

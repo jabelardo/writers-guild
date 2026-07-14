@@ -11,12 +11,16 @@
 import crypto from 'crypto';
 import sharp from 'sharp';
 import { AssetManager } from './asset-manager.js';
-import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE, IMAGE_EXTENSIONS } from '../../../shared/regex-patterns.js';
-import { IMAGE_MIME_TYPES_MAP, mimeTypeToExt } from '../../../shared/mime-types.js'
+import {
+  MARKDOWN_IMAGE_RE,
+  HTML_IMAGE_RE,
+  IMAGE_EXTENSIONS
+} from '../../../shared/regex-patterns.js';
+import { IMAGE_MIME_TYPES_MAP, mimeTypeToExt } from '../../../shared/mime-types.js';
 
 // ── Configuration ─────────────────────────────────────────────────────
 
-const DOWNLOAD_TIMEOUT_MS = 15_000;       // 15 s per image
+const DOWNLOAD_TIMEOUT_MS = 15_000; // 15 s per image
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_CONCURRENT_DOWNLOADS = 3;
 
@@ -81,7 +85,7 @@ function collectAllImageUrls(cardData) {
     data.creator_notes,
     data.system_prompt,
     data.post_history_instructions,
-    ...(Array.isArray(data.alternate_greetings) ? data.alternate_greetings : []),
+    ...(Array.isArray(data.alternate_greetings) ? data.alternate_greetings : [])
   ];
 
   const all = new Set();
@@ -183,8 +187,8 @@ async function downloadImage(url) {
       signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; WritersGuild/2.0)',
-        'Accept': 'image/*',
-      },
+        Accept: 'image/*'
+      }
     });
 
     if (!response.ok) {
@@ -195,7 +199,7 @@ async function downloadImage(url) {
     // Validate Content-Type
     const contentType = response.headers.get('content-type') || '';
     const mimeType = contentType.split(';')[0].trim().toLowerCase();
-    
+
     if (!IMAGE_MIME_TYPES_MAP[mimeType]) {
       console.warn(`[ImageCacher] Skipping non-image Content-Type "${mimeType}": ${url}`);
       return null;
@@ -254,10 +258,12 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
     return new Map();
   }
 
-  console.log(`[ImageCacher] Found ${urls.size} external image(s) in ${entityType.slice(0, -1)} "${label || entityId}"`);
+  console.log(
+    `[ImageCacher] Found ${urls.size} external image(s) in ${entityType.slice(0, -1)} "${label || entityId}"`
+  );
 
   const meta = await assetManager.readMetadata(entityId);
-  const cachedUrls = new Set(meta.images.map(i => i.originalUrl));
+  const cachedUrls = new Set(meta.images.map((i) => i.originalUrl));
   const newEntries = [];
   const urlArray = [...urls];
   const imageMap = new Map();
@@ -267,7 +273,7 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
     const results = await Promise.allSettled(
       batch.map(async (url) => {
         if (cachedUrls.has(url)) {
-          const existing = meta.images.find(img => img.originalUrl === url);
+          const existing = meta.images.find((img) => img.originalUrl === url);
           if (existing) {
             imageMap.set(url, `/api/assets/${entityType}/${entityId}/${existing.filename}`);
           }
@@ -316,7 +322,9 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
     await assetManager.writeMetadata(entityId, { images: allImages });
   }
 
-  console.log(`[ImageCacher] Cached ${imageMap.size}/${urls.size} image(s) for ${entityType.slice(0, -1)} "${label || entityId}"`);
+  console.log(
+    `[ImageCacher] Cached ${imageMap.size}/${urls.size} image(s) for ${entityType.slice(0, -1)} "${label || entityId}"`
+  );
   return imageMap;
 }
 
@@ -355,21 +363,27 @@ export async function cacheCharacterImages(characterId, cardData, dataRoot, opti
  * @returns {Promise<Map<string, string>>}
  *   Map where key = original URL, value = local path (e.g. "/api/assets/lorebooks/{id}/{hash}.webp")
  */
-export async function cacheLorebookImages(storage, lorebookId, lorebookData, dataRoot, options = {}) {
-    try {
-      const urls = collectLorebookImageUrls(lorebookData);
-      const label = lorebookData.name || lorebookId;
-      const imageMap = await cacheImageSet(lorebookId, urls, dataRoot, 'lorebooks', label, options);
-      if (imageMap.size > 0) {
-        rewriteLorebookImageUrls(lorebookData, imageMap);
-        const saved = await storage.saveLorebook(lorebookId, lorebookData);
-        console.log(`[Lorebooks] Rewrote ${imageMap.size} image URL(s) in lorebook ${lorebookId}`);
-        return imageMap;
-      }
-    } catch (error) {
-      console.error(`[Lorebooks] Failed to cache images for lorebook ${lorebookId}:`, error);
+export async function cacheLorebookImages(
+  storage,
+  lorebookId,
+  lorebookData,
+  dataRoot,
+  options = {}
+) {
+  try {
+    const urls = collectLorebookImageUrls(lorebookData);
+    const label = lorebookData.name || lorebookId;
+    const imageMap = await cacheImageSet(lorebookId, urls, dataRoot, 'lorebooks', label, options);
+    if (imageMap.size > 0) {
+      rewriteLorebookImageUrls(lorebookData, imageMap);
+      const saved = await storage.saveLorebook(lorebookId, lorebookData);
+      console.log(`[Lorebooks] Rewrote ${imageMap.size} image URL(s) in lorebook ${lorebookId}`);
+      return imageMap;
     }
-    return null;
+  } catch (error) {
+    console.error(`[Lorebooks] Failed to cache images for lorebook ${lorebookId}:`, error);
+  }
+  return null;
 }
 
 function replaceUrls(text, imageMap) {
@@ -406,7 +420,7 @@ export function rewriteCharacterImageUrls(cardData, imageMap) {
     'mes_example',
     'creator_notes',
     'system_prompt',
-    'post_history_instructions',
+    'post_history_instructions'
   ];
 
   for (const field of fields) {
@@ -417,7 +431,7 @@ export function rewriteCharacterImageUrls(cardData, imageMap) {
 
   // Alternate greetings (array of strings)
   if (Array.isArray(data.alternate_greetings)) {
-    data.alternate_greetings = data.alternate_greetings.map(g => replaceUrls(g, imageMap));
+    data.alternate_greetings = data.alternate_greetings.map((g) => replaceUrls(g, imageMap));
   }
 
   return cardData;
@@ -454,7 +468,7 @@ export function rewriteLorebookImageUrls(lorebookData, imageMap) {
   if (!imageMap || imageMap.size === 0) return lorebookData;
   if (!lorebookData?.entries || !Array.isArray(lorebookData.entries)) return lorebookData;
 
- // Rewrite in each entry's content and comment
+  // Rewrite in each entry's content and comment
   for (const entry of lorebookData.entries) {
     if (entry.content) {
       entry.content = replaceUrls(entry.content, imageMap);

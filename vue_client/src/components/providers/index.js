@@ -3,17 +3,17 @@
  * Maps provider names to their configuration components
  */
 
-import DeepSeekConfig from './DeepSeekConfig.vue'
-import AIHordeConfig from './AIHordeConfig.vue'
-import OpenAIConfig from './OpenAIConfig.vue'
-import AnthropicConfig from './AnthropicConfig.vue'
-import OpenRouterConfig from './OpenRouterConfig.vue'
-import KoboldCppConfig from './KoboldCppConfig.vue'
-import OllamaConfig from './OllamaConfig.vue'
-import OpenAICompatibleConfig from './OpenAICompatibleConfig.vue'
+import DeepSeekConfig from './DeepSeekConfig.vue';
+import AIHordeConfig from './AIHordeConfig.vue';
+import OpenAIConfig from './OpenAIConfig.vue';
+import AnthropicConfig from './AnthropicConfig.vue';
+import OpenRouterConfig from './OpenRouterConfig.vue';
+import KoboldCppConfig from './KoboldCppConfig.vue';
+import OllamaConfig from './OllamaConfig.vue';
+import OpenAICompatibleConfig from './OpenAICompatibleConfig.vue';
 
 // Re-export consolidated provider metadata from config
-export { PROVIDERS } from '../../config/providerDefaults'
+export { PROVIDERS } from '../../config/providerDefaults';
 
 export const PROVIDER_COMPONENTS = {
   deepseek: DeepSeekConfig,
@@ -24,7 +24,7 @@ export const PROVIDER_COMPONENTS = {
   koboldcpp: KoboldCppConfig,
   ollama: OllamaConfig,
   openaicompatible: OpenAICompatibleConfig
-}
+};
 
 /**
  * Get the configuration component for a provider
@@ -32,5 +32,5 @@ export const PROVIDER_COMPONENTS = {
  * @returns {Component|null} Vue component or null if not found
  */
 export function getProviderComponent(provider) {
-  return PROVIDER_COMPONENTS[provider] || null
+  return PROVIDER_COMPONENTS[provider] || null;
 }

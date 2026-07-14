@@ -11,9 +11,9 @@ export class AnthropicProvider extends LLMProvider {
     // Anthropic-specific defaults
     const anthropicConfig = {
       ...config,
-      baseURL: config.baseURL || "https://api.anthropic.com/v1",
-      model: config.model || "claude-3-5-sonnet-20241022",
-      anthropicVersion: config.anthropicVersion || "2023-06-01"
+      baseURL: config.baseURL || 'https://api.anthropic.com/v1',
+      model: config.model || 'claude-3-5-sonnet-20241022',
+      anthropicVersion: config.anthropicVersion || '2023-06-01'
     };
 
     super(anthropicConfig);
@@ -27,7 +27,7 @@ export class AnthropicProvider extends LLMProvider {
     return {
       streaming: true,
       reasoning: false, // Anthropic doesn't expose reasoning tokens
-      visionAPI: true,  // Claude 3+ supports vision
+      visionAPI: true, // Claude 3+ supports vision
       maxContextWindow: 200000 // Claude 3.5 Sonnet context window
     };
   }
@@ -51,9 +51,9 @@ export class AnthropicProvider extends LLMProvider {
    */
   buildHeaders() {
     return {
-      "Content-Type": "application/json",
-      "x-api-key": this.apiKey,
-      "anthropic-version": this.anthropicVersion
+      'Content-Type': 'application/json',
+      'x-api-key': this.apiKey,
+      'anthropic-version': this.anthropicVersion
     };
   }
 
@@ -62,7 +62,7 @@ export class AnthropicProvider extends LLMProvider {
    */
   async generate(systemPrompt, userPrompt, options = {}) {
     if (!this.apiKey) {
-      throw new Error("API key not set");
+      throw new Error('API key not set');
     }
 
     // Validate and clamp temperature to Anthropic's range (0-1.0)
@@ -75,11 +75,9 @@ export class AnthropicProvider extends LLMProvider {
     const requestBody = {
       model: this.model,
       system: systemPrompt,
-      messages: [
-        { role: "user", content: userPrompt }
-      ],
+      messages: [{ role: 'user', content: userPrompt }],
       max_tokens: options.maxTokens || 4000,
-      temperature: temperature,
+      temperature: temperature
     };
 
     // Add optional sampling parameters if provided
@@ -94,31 +92,29 @@ export class AnthropicProvider extends LLMProvider {
     }
 
     const response = await fetch(`${this.baseURL}/messages`, {
-      method: "POST",
+      method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(requestBody),
-      signal: options.signal,
+      signal: options.signal
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error?.message || `API request failed: ${response.statusText}`
-      );
+      throw new Error(errorData.error?.message || `API request failed: ${response.statusText}`);
     }
 
     const data = await response.json();
 
     // Anthropic returns content as an array of content blocks
     const content = data.content
-      .filter(block => block.type === 'text')
-      .map(block => block.text)
+      .filter((block) => block.type === 'text')
+      .map((block) => block.text)
       .join('');
 
     return {
-      content: content || "",
-      reasoning: "", // Anthropic doesn't provide reasoning tokens
-      usage: data.usage,
+      content: content || '',
+      reasoning: '', // Anthropic doesn't provide reasoning tokens
+      usage: data.usage
     };
   }
 
@@ -127,7 +123,7 @@ export class AnthropicProvider extends LLMProvider {
    */
   async generateStreaming(systemPrompt, userPrompt, options = {}) {
     if (!this.apiKey) {
-      throw new Error("API key not set");
+      throw new Error('API key not set');
     }
 
     const controller = new AbortController();
@@ -142,12 +138,10 @@ export class AnthropicProvider extends LLMProvider {
     const requestBody = {
       model: this.model,
       system: systemPrompt,
-      messages: [
-        { role: "user", content: userPrompt }
-      ],
+      messages: [{ role: 'user', content: userPrompt }],
       max_tokens: options.maxTokens || 4000,
       temperature: temperature,
-      stream: true,
+      stream: true
     };
 
     // Add optional sampling parameters if provided
@@ -162,17 +156,15 @@ export class AnthropicProvider extends LLMProvider {
     }
 
     const response = await fetch(`${this.baseURL}/messages`, {
-      method: "POST",
+      method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(requestBody),
-      signal: options.signal || controller.signal,
+      signal: options.signal || controller.signal
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error?.message || `API request failed: ${response.statusText}`
-      );
+      throw new Error(errorData.error?.message || `API request failed: ${response.statusText}`);
     }
 
     return {
@@ -191,7 +183,7 @@ export class AnthropicProvider extends LLMProvider {
   async *parseStreamResponse(body) {
     const reader = body.getReader();
     const decoder = new TextDecoder();
-    let buffer = "";
+    let buffer = '';
 
     try {
       while (true) {
@@ -200,15 +192,15 @@ export class AnthropicProvider extends LLMProvider {
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
+        const lines = buffer.split('\n');
 
         // Keep the last incomplete line in buffer
-        buffer = lines.pop() || "";
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
           const trimmed = line.trim();
 
-          if (trimmed === "" || !trimmed.startsWith("data: ")) {
+          if (trimmed === '' || !trimmed.startsWith('data: ')) {
             continue;
           }
 
@@ -222,18 +214,18 @@ export class AnthropicProvider extends LLMProvider {
                 yield {
                   reasoning: null,
                   content: data.delta.text || null,
-                  finished: false,
+                  finished: false
                 };
               }
             } else if (data.type === 'message_stop') {
               yield {
                 reasoning: null,
                 content: null,
-                finished: true,
+                finished: true
               };
             }
           } catch (e) {
-            console.warn("Failed to parse SSE line:", e);
+            console.warn('Failed to parse SSE line:', e);
           }
         }
       }
@@ -285,7 +277,7 @@ export class AnthropicProvider extends LLMProvider {
   async getAvailableModels() {
     try {
       const response = await fetch(`${this.baseURL}/models`, {
-        method: "GET",
+        method: 'GET',
         headers: this.buildHeaders()
       });
 
@@ -296,19 +288,20 @@ export class AnthropicProvider extends LLMProvider {
       const data = await response.json();
 
       // Transform Anthropic model data
-      return data.data.map(model => ({
-        id: model.id,
-        name: model.display_name || this.formatModelName(model.id),
-        description: this.getModelDescription(model.id),
-        contextLength: this.getContextLength(model.id),
-        pricing: {
-          prompt: 0, // Pricing not provided by API
-          completion: 0
-        },
-        created: model.created_at,
-        type: model.type
-      }))
-      .sort((a, b) => new Date(b.created) - new Date(a.created)); // Most recent first
+      return data.data
+        .map((model) => ({
+          id: model.id,
+          name: model.display_name || this.formatModelName(model.id),
+          description: this.getModelDescription(model.id),
+          contextLength: this.getContextLength(model.id),
+          pricing: {
+            prompt: 0, // Pricing not provided by API
+            completion: 0
+          },
+          created: model.created_at,
+          type: model.type
+        }))
+        .sort((a, b) => new Date(b.created) - new Date(a.created)); // Most recent first
     } catch (error) {
       console.error('Failed to fetch Anthropic models:', error);
       return [];
@@ -322,8 +315,13 @@ export class AnthropicProvider extends LLMProvider {
     // Convert model IDs like "claude-3-5-sonnet-20241022" to "Claude 3.5 Sonnet"
     const parts = modelId.split('-');
     if (parts[0] === 'claude') {
-      const version = parts.slice(1, parts.findIndex(p => /^\d{8}$/.test(p))).join('.');
-      const variant = parts.find(p => ['opus', 'sonnet', 'haiku'].includes(p));
+      const version = parts
+        .slice(
+          1,
+          parts.findIndex((p) => /^\d{8}$/.test(p))
+        )
+        .join('.');
+      const variant = parts.find((p) => ['opus', 'sonnet', 'haiku'].includes(p));
       if (variant) {
         return `Claude ${version} ${variant.charAt(0).toUpperCase() + variant.slice(1)}`;
       }

@@ -92,9 +92,7 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [
-            { type: 'text', text: 'Generated response' }
-          ],
+          content: [{ type: 'text', text: 'Generated response' }],
           usage: {
             input_tokens: 100,
             output_tokens: 50
@@ -102,10 +100,7 @@ describe('AnthropicProvider', () => {
         })
       });
 
-      const result = await provider.generate(
-        'You are a helpful assistant',
-        'Hello, how are you?'
-      );
+      const result = await provider.generate('You are a helpful assistant', 'Hello, how are you?');
 
       expect(result.content).toBe('Generated response');
       expect(result.reasoning).toBe('');
@@ -130,9 +125,7 @@ describe('AnthropicProvider', () => {
 
       expect(requestBody.model).toBe('claude-3-5-sonnet-20241022');
       expect(requestBody.system).toBe('System prompt');
-      expect(requestBody.messages).toEqual([
-        { role: 'user', content: 'User prompt' }
-      ]);
+      expect(requestBody.messages).toEqual([{ role: 'user', content: 'User prompt' }]);
       expect(requestBody.max_tokens).toBe(2000);
       expect(requestBody.temperature).toBe(0.7);
     });
@@ -212,9 +205,7 @@ describe('AnthropicProvider', () => {
     it('should throw error when API key is missing', async () => {
       const noKeyProvider = new AnthropicProvider({ apiKey: '' });
 
-      await expect(
-        noKeyProvider.generate('System', 'User')
-      ).rejects.toThrow('API key not set');
+      await expect(noKeyProvider.generate('System', 'User')).rejects.toThrow('API key not set');
     });
 
     it('should handle API errors', async () => {
@@ -226,9 +217,7 @@ describe('AnthropicProvider', () => {
         })
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('Invalid request');
+      await expect(provider.generate('System', 'User')).rejects.toThrow('Invalid request');
     });
 
     it('should handle API errors without error message', async () => {
@@ -238,9 +227,9 @@ describe('AnthropicProvider', () => {
         json: async () => ({})
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('API request failed: Internal Server Error');
+      await expect(provider.generate('System', 'User')).rejects.toThrow(
+        'API request failed: Internal Server Error'
+      );
     });
 
     it('should handle malformed error response', async () => {
@@ -252,9 +241,9 @@ describe('AnthropicProvider', () => {
         }
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('API request failed: Bad Request');
+      await expect(provider.generate('System', 'User')).rejects.toThrow(
+        'API request failed: Bad Request'
+      );
     });
 
     it('should pass abort signal to fetch', async () => {
@@ -335,9 +324,7 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [
-            { type: 'image', data: 'base64...' }
-          ]
+          content: [{ type: 'image', data: 'base64...' }]
         })
       });
 

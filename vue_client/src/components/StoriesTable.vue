@@ -1,10 +1,5 @@
 <template>
-  <DataTable
-    :columns="columns"
-    :data="stories"
-    default-sort="modified"
-    row-key="id"
-  >
+  <DataTable :columns="columns" :data="stories" default-sort="modified" row-key="id">
     <!-- Avatar column -->
     <template #cell-avatar="{ row }">
       <CharacterAvatar :characters="getStoryCharacters(row)" />
@@ -16,7 +11,11 @@
         <button class="btn btn-small btn-primary" @click="$emit('open', row.id)">
           <i class="fas fa-folder-open"></i> Open
         </button>
-        <button class="btn btn-small btn-secondary" @click="$emit('duplicate', row)" title="Duplicate story">
+        <button
+          class="btn btn-small btn-secondary"
+          @click="$emit('duplicate', row)"
+          title="Duplicate story"
+        >
           <i class="fas fa-copy"></i>
         </button>
         <button class="btn btn-small btn-secondary" @click="$emit('delete', row)">
@@ -28,8 +27,8 @@
 </template>
 
 <script setup>
-import DataTable from './DataTable.vue'
-import CharacterAvatar from './CharacterAvatar.vue'
+import DataTable from './DataTable.vue';
+import CharacterAvatar from './CharacterAvatar.vue';
 
 const props = defineProps({
   stories: {
@@ -40,9 +39,9 @@ const props = defineProps({
     type: Array,
     default: () => []
   }
-})
+});
 
-defineEmits(['open', 'duplicate', 'delete'])
+defineEmits(['open', 'duplicate', 'delete']);
 
 const columns = [
   {
@@ -87,29 +86,29 @@ const columns = [
     sortable: false,
     headerClass: 'actions-col'
   }
-]
+];
 
 function getStoryCharacters(story) {
-  const characters = []
+  const characters = [];
 
   // Add all characters from characterIds
   if (story.characterIds && story.characterIds.length > 0) {
     for (const charId of story.characterIds) {
-      const character = props.characters.find(c => c.id === charId)
-      if (character && !characters.find(c => c.id === character.id)) {
-        characters.push(character)
+      const character = props.characters.find((c) => c.id === charId);
+      if (character && !characters.find((c) => c.id === character.id)) {
+        characters.push(character);
       }
     }
   }
 
   // Add persona character if it exists and isn't already included
   if (story.personaCharacterId) {
-    const personaChar = props.characters.find(c => c.id === story.personaCharacterId)
-    if (personaChar && !characters.find(c => c.id === personaChar.id)) {
-      characters.push(personaChar)
+    const personaChar = props.characters.find((c) => c.id === story.personaCharacterId);
+    if (personaChar && !characters.find((c) => c.id === personaChar.id)) {
+      characters.push(personaChar);
     }
   }
 
-  return characters
+  return characters;
 }
 </script>

@@ -40,9 +40,7 @@
                 <input type="checkbox" v-model="settings.autoSave" />
                 <span>Auto-save document</span>
               </label>
-              <p class="help-text">
-                Automatically save your work every 30 seconds.
-              </p>
+              <p class="help-text">Automatically save your work every 30 seconds.</p>
             </div>
           </div>
         </section>
@@ -55,17 +53,9 @@
           <div class="section-content">
             <div class="form-group">
               <label for="defaultPersona">Default Persona Character</label>
-              <select
-                id="defaultPersona"
-                v-model="settings.defaultPersonaId"
-                class="select-input"
-              >
+              <select id="defaultPersona" v-model="settings.defaultPersonaId" class="select-input">
                 <option :value="null">None</option>
-                <option
-                  v-for="char in characters"
-                  :key="char.id"
-                  :value="char.id"
-                >
+                <option v-for="char in characters" :key="char.id" :value="char.id">
                   {{ char.name }}
                 </option>
               </select>
@@ -93,7 +83,8 @@
                 max="8000"
               />
               <p class="help-text">
-                How many tokens to scan for lorebook keywords. Higher values check more content but may be slower. Default: 2000 (~8000 chars).
+                How many tokens to scan for lorebook keywords. Higher values check more content but
+                may be slower. Default: 2000 (~8000 chars).
               </p>
             </div>
 
@@ -108,7 +99,8 @@
                 max="4000"
               />
               <p class="help-text">
-                Maximum tokens for lorebook content in each generation. Higher values allow more context but reduce space for generation. Default: 1800.
+                Maximum tokens for lorebook content in each generation. Higher values allow more
+                context but reduce space for generation. Default: 1800.
               </p>
             </div>
 
@@ -123,7 +115,8 @@
                 max="10"
               />
               <p class="help-text">
-                Maximum cascading activation depth (how many levels of entries can trigger other entries). Default: 3.
+                Maximum cascading activation depth (how many levels of entries can trigger other
+                entries). Default: 3.
               </p>
             </div>
 
@@ -133,34 +126,34 @@
                 <span>Enable recursive activation</span>
               </label>
               <p class="help-text">
-                Allow lorebook entries to trigger other entries (cascading activation). Disable for simpler, more predictable behavior.
+                Allow lorebook entries to trigger other entries (cascading activation). Disable for
+                simpler, more predictable behavior.
               </p>
             </div>
           </div>
         </section>
-
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted, nextTick } from 'vue'
-import { settingsAPI, charactersAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
-import { useNavigation } from '../composables/useNavigation'
+import { ref, watch, onMounted, nextTick } from 'vue';
+import { settingsAPI, charactersAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
+import { useNavigation } from '../composables/useNavigation';
 
-const toast = useToast()
-const { goBack } = useNavigation()
+const toast = useToast();
+const { goBack } = useNavigation();
 
 // State
-const loading = ref(true)
-const saving = ref(false)
-const saveTimeout = ref(null)
-const isInitialLoad = ref(true)
-const originalApiKey = ref('')
-const apiKeyChanged = ref(false)
-const characters = ref([])
+const loading = ref(true);
+const saving = ref(false);
+const saveTimeout = ref(null);
+const isInitialLoad = ref(true);
+const originalApiKey = ref('');
+const apiKeyChanged = ref(false);
+const characters = ref([]);
 const settings = ref({
   defaultPersonaId: null,
   apiKey: '',
@@ -172,46 +165,53 @@ const settings = ref({
   lorebookScanDepth: 2000,
   lorebookTokenBudget: 1800,
   lorebookRecursionDepth: 3,
-  lorebookEnableRecursion: true,
-})
+  lorebookEnableRecursion: true
+});
 
 onMounted(async () => {
-  await Promise.all([loadSettings(), loadCharacters()])
-})
+  await Promise.all([loadSettings(), loadCharacters()]);
+});
 
 // Watch for API key changes specifically
-watch(() => settings.value.apiKey, (newValue, oldValue) => {
-  if (!isInitialLoad.value && newValue !== originalApiKey.value) {
-    apiKeyChanged.value = true
+watch(
+  () => settings.value.apiKey,
+  (newValue, oldValue) => {
+    if (!isInitialLoad.value && newValue !== originalApiKey.value) {
+      apiKeyChanged.value = true;
+    }
   }
-})
+);
 
 // Watch for settings changes and auto-save with debounce
-watch(settings, () => {
-  // Skip saving during initial load
-  if (isInitialLoad.value) return
+watch(
+  settings,
+  () => {
+    // Skip saving during initial load
+    if (isInitialLoad.value) return;
 
-  // Clear existing timeout
-  if (saveTimeout.value) {
-    clearTimeout(saveTimeout.value)
-  }
+    // Clear existing timeout
+    if (saveTimeout.value) {
+      clearTimeout(saveTimeout.value);
+    }
 
-  // Set new timeout to save after 500ms of no changes
-  saveTimeout.value = setTimeout(() => {
-    saveSettings()
-  }, 500)
-}, { deep: true })
+    // Set new timeout to save after 500ms of no changes
+    saveTimeout.value = setTimeout(() => {
+      saveSettings();
+    }, 500);
+  },
+  { deep: true }
+);
 
 async function loadSettings() {
   try {
-    loading.value = true
-    const response = await settingsAPI.get()
+    loading.value = true;
+    const response = await settingsAPI.get();
 
     // Access the settings object from the response
-    const serverSettings = response.settings || response
+    const serverSettings = response.settings || response;
 
     // Store original API key (or empty if none exists)
-    originalApiKey.value = serverSettings.apiKey || ''
+    originalApiKey.value = serverSettings.apiKey || '';
 
     // Merge server settings with defaults
     settings.value = {
@@ -225,41 +225,41 @@ async function loadSettings() {
       lorebookScanDepth: serverSettings.lorebookScanDepth ?? 2000,
       lorebookTokenBudget: serverSettings.lorebookTokenBudget ?? 1800,
       lorebookRecursionDepth: serverSettings.lorebookRecursionDepth ?? 3,
-      lorebookEnableRecursion: serverSettings.lorebookEnableRecursion ?? true,
-    }
+      lorebookEnableRecursion: serverSettings.lorebookEnableRecursion ?? true
+    };
   } catch (error) {
-    console.error('Failed to load settings:', error)
-    toast.error('Failed to load settings: ' + error.message)
+    console.error('Failed to load settings:', error);
+    toast.error('Failed to load settings: ' + error.message);
   } finally {
-    loading.value = false
+    loading.value = false;
     // Wait for next tick to ensure watch has processed initial load
-    await nextTick()
+    await nextTick();
     // Enable auto-save after initial load
-    isInitialLoad.value = false
+    isInitialLoad.value = false;
   }
 }
 
 async function loadCharacters() {
   try {
-    const { characters: allChars } = await charactersAPI.list()
-    characters.value = allChars || []
+    const { characters: allChars } = await charactersAPI.list();
+    characters.value = allChars || [];
   } catch (error) {
-    console.error('Failed to load characters:', error)
+    console.error('Failed to load characters:', error);
   }
 }
 
 async function saveSettings() {
-  if (saving.value) return
+  if (saving.value) return;
 
   try {
-    saving.value = true
-    await settingsAPI.update(settings.value)
-    toast.success('Settings saved')
+    saving.value = true;
+    await settingsAPI.update(settings.value);
+    toast.success('Settings saved');
   } catch (error) {
-    console.error('Failed to save settings:', error)
-    toast.error('Failed to save settings')
+    console.error('Failed to save settings:', error);
+    toast.error('Failed to save settings');
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
 </script>
@@ -315,7 +315,9 @@ async function saveSettings() {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .detail-content {
@@ -420,7 +422,7 @@ async function saveSettings() {
   font-size: 0.875rem;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   width: 18px;
   height: 18px;
   cursor: pointer;

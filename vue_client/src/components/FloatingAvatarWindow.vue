@@ -6,12 +6,7 @@
     @mouseenter="showControls = true"
     @mouseleave="showControls = false"
   >
-    <button
-      v-if="showControls"
-      class="close-btn"
-      @click="$emit('close')"
-      title="Close"
-    >
+    <button v-if="showControls" class="close-btn" @click="$emit('close')" title="Close">
       <i class="fas fa-times"></i>
     </button>
 
@@ -41,21 +36,15 @@
     </div>
 
     <!-- Drag handle -->
-    <div
-      class="drag-handle"
-      @mousedown="startDrag"
-    ></div>
+    <div class="drag-handle" @mousedown="startDrag"></div>
 
     <!-- Resize handle -->
-    <div
-      class="resize-handle"
-      @mousedown="startResize"
-    ></div>
+    <div class="resize-handle" @mousedown="startResize"></div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 
 const props = defineProps({
   characters: {
@@ -78,54 +67,54 @@ const props = defineProps({
     type: Object,
     default: () => ({ width: 300, height: 400 })
   }
-})
+});
 
-const emit = defineEmits(['close', 'update'])
+const emit = defineEmits(['close', 'update']);
 
 // Minimum visible pixels when window is partially off-screen
-const MIN_VISIBLE_PIXELS = 100
+const MIN_VISIBLE_PIXELS = 100;
 
-const windowRef = ref(null)
-const showControls = ref(false)
+const windowRef = ref(null);
+const showControls = ref(false);
 
 // Window position and size
-const position = ref({ ...props.initialPosition })
-const size = ref({ ...props.initialSize })
+const position = ref({ ...props.initialPosition });
+const size = ref({ ...props.initialSize });
 
 // Character selection
-const selectedCharacterId = ref(props.initialCharacterId || (props.characters[0]?.id ?? null))
+const selectedCharacterId = ref(props.initialCharacterId || (props.characters[0]?.id ?? null));
 
 // Computed properties
 const currentIndex = computed(() => {
-  const index = props.characters.findIndex(c => c.id === selectedCharacterId.value)
-  return index >= 0 ? index : 0
-})
+  const index = props.characters.findIndex((c) => c.id === selectedCharacterId.value);
+  return index >= 0 ? index : 0;
+});
 
 const currentCharacter = computed(() => {
-  return props.characters[currentIndex.value] || props.characters[0] || null
-})
+  return props.characters[currentIndex.value] || props.characters[0] || null;
+});
 
 const currentCharacterImageUrl = computed(() => {
-  const char = currentCharacter.value
-  if (!char) return null
-  return char.thumbnailMediumUrl || char.imageUrl || null
-})
+  const char = currentCharacter.value;
+  if (!char) return null;
+  return char.thumbnailMediumUrl || char.imageUrl || null;
+});
 
 // Cycle to next character
 function cycleCharacter() {
-  if (props.characters.length <= 1) return
-  const newIndex = (currentIndex.value + 1) % props.characters.length
-  selectedCharacterId.value = props.characters[newIndex].id
-  emitUpdate()
+  if (props.characters.length <= 1) return;
+  const newIndex = (currentIndex.value + 1) % props.characters.length;
+  selectedCharacterId.value = props.characters[newIndex].id;
+  emitUpdate();
 }
 
 // Dragging state
-const isDragging = ref(false)
-const dragStart = ref({ x: 0, y: 0 })
+const isDragging = ref(false);
+const dragStart = ref({ x: 0, y: 0 });
 
 // Resizing state
-const isResizing = ref(false)
-const resizeStart = ref({ x: 0, y: 0, width: 0, height: 0 })
+const isResizing = ref(false);
+const resizeStart = ref({ x: 0, y: 0, width: 0, height: 0 });
 
 // Emit update to parent for server sync
 function emitUpdate() {
@@ -136,7 +125,7 @@ function emitUpdate() {
     y: position.value.y,
     width: size.value.width,
     height: size.value.height
-  })
+  });
 }
 
 const windowStyle = computed(() => ({
@@ -144,26 +133,26 @@ const windowStyle = computed(() => ({
   top: `${position.value.y}px`,
   width: `${size.value.width}px`,
   height: `${size.value.height}px`
-}))
+}));
 
 function startDrag(e) {
-  isDragging.value = true
+  isDragging.value = true;
   dragStart.value = {
     x: e.clientX - position.value.x,
     y: e.clientY - position.value.y
-  }
-  e.preventDefault()
+  };
+  e.preventDefault();
 }
 
 function startResize(e) {
-  isResizing.value = true
+  isResizing.value = true;
   resizeStart.value = {
     x: e.clientX,
     y: e.clientY,
     width: size.value.width,
     height: size.value.height
-  }
-  e.preventDefault()
+  };
+  e.preventDefault();
 }
 
 function onMouseMove(e) {
@@ -171,23 +160,23 @@ function onMouseMove(e) {
     position.value = {
       x: e.clientX - dragStart.value.x,
       y: e.clientY - dragStart.value.y
-    }
+    };
   } else if (isResizing.value) {
-    const deltaX = e.clientX - resizeStart.value.x
-    const deltaY = e.clientY - resizeStart.value.y
+    const deltaX = e.clientX - resizeStart.value.x;
+    const deltaY = e.clientY - resizeStart.value.y;
 
     size.value = {
       width: Math.max(200, resizeStart.value.width + deltaX),
       height: Math.max(200, resizeStart.value.height + deltaY)
-    }
+    };
   }
 }
 
 function onMouseUp() {
   if (isDragging.value || isResizing.value) {
-    isDragging.value = false
-    isResizing.value = false
-    emitUpdate()
+    isDragging.value = false;
+    isResizing.value = false;
+    emitUpdate();
   }
 }
 
@@ -200,81 +189,84 @@ function onMouseUp() {
  * 3. Partial off-screen positioning is allowed for flexibility
  */
 function ensureWithinViewport() {
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
-  const padding = 20
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const padding = 20;
 
-  let { x, y } = position.value
-  let { width, height } = size.value
-  let changed = false
+  let { x, y } = position.value;
+  let { width, height } = size.value;
+  let changed = false;
 
   // Ensure size fits in viewport
   if (width > viewportWidth - padding * 2) {
-    width = viewportWidth - padding * 2
-    changed = true
+    width = viewportWidth - padding * 2;
+    changed = true;
   }
   if (height > viewportHeight - padding * 2) {
-    height = viewportHeight - padding * 2
-    changed = true
+    height = viewportHeight - padding * 2;
+    changed = true;
   }
 
   // Ensure at least MIN_VISIBLE_PIXELS remains visible on each edge
   // Right edge: window must not extend too far left (off left side of screen)
   if (x + width < MIN_VISIBLE_PIXELS) {
-    x = MIN_VISIBLE_PIXELS - width
-    changed = true
+    x = MIN_VISIBLE_PIXELS - width;
+    changed = true;
   }
   // Left edge: window must not extend too far right (off right side of screen)
   if (x > viewportWidth - MIN_VISIBLE_PIXELS) {
-    x = viewportWidth - MIN_VISIBLE_PIXELS
-    changed = true
+    x = viewportWidth - MIN_VISIBLE_PIXELS;
+    changed = true;
   }
   // Bottom edge: window must not extend too far up (off top of screen)
   if (y + height < MIN_VISIBLE_PIXELS) {
-    y = MIN_VISIBLE_PIXELS - height
-    changed = true
+    y = MIN_VISIBLE_PIXELS - height;
+    changed = true;
   }
   // Top edge: window must not extend too far down (off bottom of screen)
   if (y > viewportHeight - MIN_VISIBLE_PIXELS) {
-    y = viewportHeight - MIN_VISIBLE_PIXELS
-    changed = true
+    y = viewportHeight - MIN_VISIBLE_PIXELS;
+    changed = true;
   }
 
   if (changed) {
-    size.value = { width, height }
-    position.value = { x, y }
-    emitUpdate()
+    size.value = { width, height };
+    position.value = { x, y };
+    emitUpdate();
   }
 }
 
 function onWindowResize() {
-  ensureWithinViewport()
+  ensureWithinViewport();
 }
 
 onMounted(() => {
-  document.addEventListener('mousemove', onMouseMove)
-  document.addEventListener('mouseup', onMouseUp)
-  window.addEventListener('resize', onWindowResize)
-  ensureWithinViewport()
-})
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+  window.addEventListener('resize', onWindowResize);
+  ensureWithinViewport();
+});
 
 onUnmounted(() => {
-  document.removeEventListener('mousemove', onMouseMove)
-  document.removeEventListener('mouseup', onMouseUp)
-  window.removeEventListener('resize', onWindowResize)
-})
+  document.removeEventListener('mousemove', onMouseMove);
+  document.removeEventListener('mouseup', onMouseUp);
+  window.removeEventListener('resize', onWindowResize);
+});
 
 // Watch for character list changes - use computed IDs to avoid deep watch performance issues
-const characterIds = computed(() => props.characters.map(c => c.id))
+const characterIds = computed(() => props.characters.map((c) => c.id));
 watch(characterIds, () => {
-  if (props.characters.length > 0 && !props.characters.some(c => c.id === selectedCharacterId.value)) {
-    selectedCharacterId.value = props.characters[0].id
-    emitUpdate()
+  if (
+    props.characters.length > 0 &&
+    !props.characters.some((c) => c.id === selectedCharacterId.value)
+  ) {
+    selectedCharacterId.value = props.characters[0].id;
+    emitUpdate();
   } else if (props.characters.length === 0) {
     // Just update local state; don't emit update as the window will be closed by parent
-    selectedCharacterId.value = null
+    selectedCharacterId.value = null;
   }
-})
+});
 </script>
 
 <style scoped>

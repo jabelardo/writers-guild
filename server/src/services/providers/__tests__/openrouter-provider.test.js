@@ -152,10 +152,7 @@ describe('OpenRouterProvider', () => {
         })
       });
 
-      const result = await provider.generate(
-        'You are a helpful assistant',
-        'Hello, how are you?'
-      );
+      const result = await provider.generate('You are a helpful assistant', 'Hello, how are you?');
 
       expect(result.content).toBe('Generated response');
       expect(result.reasoning).toBe('Thinking process');
@@ -191,9 +188,7 @@ describe('OpenRouterProvider', () => {
     it('should throw error when API key is missing', async () => {
       const noKeyProvider = new OpenRouterProvider({ apiKey: '' });
 
-      await expect(
-        noKeyProvider.generate('System', 'User')
-      ).rejects.toThrow('API key not set');
+      await expect(noKeyProvider.generate('System', 'User')).rejects.toThrow('API key not set');
     });
 
     it('should handle API errors', async () => {
@@ -205,9 +200,7 @@ describe('OpenRouterProvider', () => {
         })
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('Invalid request');
+      await expect(provider.generate('System', 'User')).rejects.toThrow('Invalid request');
     });
 
     it('should include optional parameters', async () => {
@@ -260,9 +253,9 @@ describe('OpenRouterProvider', () => {
     it('should throw error when API key is missing', async () => {
       const noKeyProvider = new OpenRouterProvider({ apiKey: '' });
 
-      await expect(
-        noKeyProvider.generateStreaming('System', 'User')
-      ).rejects.toThrow('API key not set');
+      await expect(noKeyProvider.generateStreaming('System', 'User')).rejects.toThrow(
+        'API key not set'
+      );
     });
 
     it('should return stream object with abort function', async () => {
@@ -293,9 +286,7 @@ describe('OpenRouterProvider', () => {
         })
       });
 
-      await expect(
-        provider.generateStreaming('System', 'User')
-      ).rejects.toThrow('Server error');
+      await expect(provider.generateStreaming('System', 'User')).rejects.toThrow('Server error');
     });
   });
 

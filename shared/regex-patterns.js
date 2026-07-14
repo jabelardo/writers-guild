@@ -10,7 +10,8 @@ export const MARKDOWN_IMAGE_RE = /!\[([^\]]*)\][ \t]*\(([^\s()]*(?:\([^\s()]*\)[
 
 // Regex pattern for normalizing markdown image spacing: ![alt] (url) -> ![alt](url)
 // Only matches when there's horizontal whitespace between ] and ( (requires at least one space)
-export const MARKDOWN_IMAGE_NORMALIZE_RE = /!\[([^\]]*)\][ \t]+\(([^\s()]*(?:\([^\s()]*\)[^\s()]*)*)\)/g;
+export const MARKDOWN_IMAGE_NORMALIZE_RE =
+  /!\[([^\]]*)\][ \t]+\(([^\s()]*(?:\([^\s()]*\)[^\s()]*)*)\)/g;
 
 // Regex pattern for HTML <img ...> tags
 export const HTML_IMAGE_RE = /<img[^>]+>/gi;

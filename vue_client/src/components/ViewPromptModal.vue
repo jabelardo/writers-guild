@@ -17,7 +17,7 @@
 </template>
 
 <script setup>
-import Modal from './Modal.vue'
+import Modal from './Modal.vue';
 
 defineProps({
   systemPrompt: {
@@ -28,9 +28,9 @@ defineProps({
     type: String,
     default: ''
   }
-})
+});
 
-defineEmits(['close'])
+defineEmits(['close']);
 </script>
 
 <style scoped>

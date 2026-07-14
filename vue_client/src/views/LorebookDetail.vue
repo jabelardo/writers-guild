@@ -44,14 +44,8 @@
               placeholder="Lorebook name..."
             />
             <div class="section-actions">
-              <button class="btn btn-secondary" @click="cancelEdit('name')">
-                Cancel
-              </button>
-              <button
-                class="btn btn-primary"
-                :disabled="!editedName.trim()"
-                @click="saveName"
-              >
+              <button class="btn btn-secondary" @click="cancelEdit('name')">Cancel</button>
+              <button class="btn btn-primary" :disabled="!editedName.trim()" @click="saveName">
                 <i class="fas fa-save"></i> Save
               </button>
             </div>
@@ -81,9 +75,7 @@
               rows="4"
             ></textarea>
             <div class="section-actions">
-              <button class="btn btn-secondary" @click="cancelEdit('description')">
-                Cancel
-              </button>
+              <button class="btn btn-secondary" @click="cancelEdit('description')">Cancel</button>
               <button class="btn btn-primary" @click="saveDescription">
                 <i class="fas fa-save"></i> Save
               </button>
@@ -100,16 +92,14 @@
         <section class="edit-section">
           <div class="section-header">
             <h2>Entries</h2>
-            <button
-              class="btn btn-small btn-primary"
-              @click="addEntry"
-            >
+            <button class="btn btn-small btn-primary" @click="addEntry">
               <i class="fas fa-plus"></i> Add Entry
             </button>
           </div>
           <div class="section-content">
             <p class="help-text">
-              Lorebook entries are automatically injected into story context when their keywords are detected.
+              Lorebook entries are automatically injected into story context when their keywords are
+              detected.
             </p>
 
             <div v-if="!lorebook.entries || lorebook.entries.length === 0" class="empty-entries">
@@ -117,27 +107,18 @@
             </div>
 
             <div v-else class="entries-list">
-              <div
-                v-for="entry in sortedEntries"
-                :key="entry.id"
-                class="entry-card"
-              >
+              <div v-for="entry in sortedEntries" :key="entry.id" class="entry-card">
                 <div class="entry-header">
                   <span class="entry-comment">{{ entry.comment || 'Untitled Entry' }}</span>
                   <div class="entry-actions">
-                    <button
-                      class="btn btn-small btn-secondary"
-                      @click="editEntry(entry)"
-                    >
+                    <button class="btn btn-small btn-secondary" @click="editEntry(entry)">
                       <i class="fas fa-edit"></i> Edit
                     </button>
                   </div>
                 </div>
 
                 <div class="entry-body">
-                  <div class="entry-keys">
-                    <strong>Keys:</strong> {{ entry.keys.join(', ') }}
-                  </div>
+                  <div class="entry-keys"><strong>Keys:</strong> {{ entry.keys.join(', ') }}</div>
                   <div class="entry-content-preview">
                     {{ getContentPreview(entry.content) }}
                   </div>
@@ -145,8 +126,12 @@
                     <span v-if="!entry.enabled" class="badge badge-disabled">Disabled</span>
                     <span v-if="entry.constant" class="badge badge-constant">Always Active</span>
                     <span v-if="entry.useRegex" class="badge badge-regex">Regex</span>
-                    <span v-if="entry.useProbability" class="badge badge-probability">{{ entry.probability }}%</span>
-                    <span v-if="entry.group" class="badge badge-group">Group: {{ entry.group }}</span>
+                    <span v-if="entry.useProbability" class="badge badge-probability"
+                      >{{ entry.probability }}%</span
+                    >
+                    <span v-if="entry.group" class="badge badge-group"
+                      >Group: {{ entry.group }}</span
+                    >
                     <span class="badge badge-order">Order: {{ entry.insertionOrder }}</span>
                   </div>
                 </div>
@@ -175,91 +160,91 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { lorebooksAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
-import { useNavigation } from '../composables/useNavigation'
-import { useConfirm } from '../composables/useConfirm'
-import { setPageTitle } from '../router'
-import EntryEditorModal from '../components/EntryEditorModal.vue'
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { lorebooksAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
+import { useNavigation } from '../composables/useNavigation';
+import { useConfirm } from '../composables/useConfirm';
+import { setPageTitle } from '../router';
+import EntryEditorModal from '../components/EntryEditorModal.vue';
 
 const props = defineProps({
   lorebookId: {
     type: String,
     required: true
   }
-})
+});
 
-const router = useRouter()
-const toast = useToast()
-const { goBack } = useNavigation()
-const { confirm } = useConfirm()
+const router = useRouter();
+const toast = useToast();
+const { goBack } = useNavigation();
+const { confirm } = useConfirm();
 
 // State
-const loading = ref(true)
-const lorebook = ref(null)
+const loading = ref(true);
+const lorebook = ref(null);
 
 // Editing states
-const editingName = ref(false)
-const editingDescription = ref(false)
+const editingName = ref(false);
+const editingDescription = ref(false);
 
 // Edited values
-const editedName = ref('')
-const editedDescription = ref('')
+const editedName = ref('');
+const editedDescription = ref('');
 
 // Entry editor state
-const showEntryEditor = ref(false)
-const currentEntry = ref(null)
+const showEntryEditor = ref(false);
+const currentEntry = ref(null);
 
 // Load lorebook data
 onMounted(async () => {
-  await loadLorebook()
-})
+  await loadLorebook();
+});
 
 async function loadLorebook() {
   try {
-    loading.value = true
-    const response = await lorebooksAPI.get(props.lorebookId)
+    loading.value = true;
+    const response = await lorebooksAPI.get(props.lorebookId);
     lorebook.value = {
       id: props.lorebookId,
       name: response.lorebook.name,
       description: response.lorebook.description || '',
       entries: response.lorebook.entries || []
-    }
+    };
     // Update page title with lorebook name
-    setPageTitle(lorebook.value.name || 'Lorebook')
+    setPageTitle(lorebook.value.name || 'Lorebook');
   } catch (error) {
-    console.error('Failed to load lorebook:', error)
-    toast.error('Failed to load lorebook: ' + error.message)
+    console.error('Failed to load lorebook:', error);
+    toast.error('Failed to load lorebook: ' + error.message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 const sortedEntries = computed(() => {
-  if (!lorebook.value?.entries) return []
+  if (!lorebook.value?.entries) return [];
   // Sort by insertion order (descending) for display
-  return [...lorebook.value.entries].sort((a, b) => b.insertionOrder - a.insertionOrder)
-})
+  return [...lorebook.value.entries].sort((a, b) => b.insertionOrder - a.insertionOrder);
+});
 
 function startEdit(section) {
   if (section === 'name') {
-    editedName.value = lorebook.value.name || ''
-    editingName.value = true
+    editedName.value = lorebook.value.name || '';
+    editingName.value = true;
   } else if (section === 'description') {
-    editedDescription.value = lorebook.value.description || ''
-    editingDescription.value = true
+    editedDescription.value = lorebook.value.description || '';
+    editingDescription.value = true;
   }
 }
 
 function cancelEdit(section) {
   if (section === 'name') {
-    editingName.value = false
-    editedName.value = ''
+    editingName.value = false;
+    editedName.value = '';
   } else if (section === 'description') {
-    editingDescription.value = false
-    editedDescription.value = ''
+    editingDescription.value = false;
+    editedDescription.value = '';
   }
 }
 
@@ -267,15 +252,15 @@ async function saveName() {
   try {
     await lorebooksAPI.update(props.lorebookId, {
       name: editedName.value.trim()
-    })
-    lorebook.value.name = editedName.value.trim()
-    editingName.value = false
-    editedName.value = ''
+    });
+    lorebook.value.name = editedName.value.trim();
+    editingName.value = false;
+    editedName.value = '';
     // Update page title with new name
-    setPageTitle(lorebook.value.name)
+    setPageTitle(lorebook.value.name);
   } catch (error) {
-    console.error('Failed to update name:', error)
-    toast.error('Failed to update name: ' + error.message)
+    console.error('Failed to update name:', error);
+    toast.error('Failed to update name: ' + error.message);
   }
 }
 
@@ -283,13 +268,13 @@ async function saveDescription() {
   try {
     await lorebooksAPI.update(props.lorebookId, {
       description: editedDescription.value
-    })
-    lorebook.value.description = editedDescription.value
-    editingDescription.value = false
-    editedDescription.value = ''
+    });
+    lorebook.value.description = editedDescription.value;
+    editingDescription.value = false;
+    editedDescription.value = '';
   } catch (error) {
-    console.error('Failed to update description:', error)
-    toast.error('Failed to update description: ' + error.message)
+    console.error('Failed to update description:', error);
+    toast.error('Failed to update description: ' + error.message);
   }
 }
 
@@ -298,43 +283,43 @@ async function deleteLorebook() {
     message: `Are you sure you want to delete "${lorebook.value.name}"? This cannot be undone.`,
     confirmText: 'Delete Lorebook',
     variant: 'danger'
-  })
+  });
 
-  if (!confirmed) return
+  if (!confirmed) return;
 
   try {
-    await lorebooksAPI.delete(props.lorebookId)
-    toast.success('Lorebook deleted successfully')
-    router.push('/')
+    await lorebooksAPI.delete(props.lorebookId);
+    toast.success('Lorebook deleted successfully');
+    router.push('/');
   } catch (error) {
-    console.error('Failed to delete lorebook:', error)
-    toast.error('Failed to delete lorebook: ' + error.message)
+    console.error('Failed to delete lorebook:', error);
+    toast.error('Failed to delete lorebook: ' + error.message);
   }
 }
 
 function getContentPreview(content) {
-  if (!content) return 'No content'
-  return content.length > 100 ? content.substring(0, 100) + '...' : content
+  if (!content) return 'No content';
+  return content.length > 100 ? content.substring(0, 100) + '...' : content;
 }
 
 function addEntry() {
-  currentEntry.value = null
-  showEntryEditor.value = true
+  currentEntry.value = null;
+  showEntryEditor.value = true;
 }
 
 function editEntry(entry) {
-  currentEntry.value = entry
-  showEntryEditor.value = true
+  currentEntry.value = entry;
+  showEntryEditor.value = true;
 }
 
 function closeEntryEditor() {
-  showEntryEditor.value = false
-  currentEntry.value = null
+  showEntryEditor.value = false;
+  currentEntry.value = null;
 }
 
 async function handleEntrySaved() {
-  closeEntryEditor()
-  await loadLorebook()
+  closeEntryEditor();
+  await loadLorebook();
 }
 </script>
 
@@ -396,7 +381,9 @@ async function handleEntrySaved() {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-container i {

@@ -12,8 +12,8 @@ export class OpenAIProvider extends LLMProvider {
     // OpenAI-specific defaults
     const openaiConfig = {
       ...config,
-      baseURL: config.baseURL || "https://api.openai.com/v1",
-      model: config.model || "gpt-4-turbo-preview"
+      baseURL: config.baseURL || 'https://api.openai.com/v1',
+      model: config.model || 'gpt-4-turbo-preview'
     };
 
     super(openaiConfig);
@@ -26,7 +26,7 @@ export class OpenAIProvider extends LLMProvider {
     return {
       streaming: true,
       reasoning: false, // OpenAI doesn't expose reasoning tokens like DeepSeek
-      visionAPI: true,  // GPT-4 Vision support
+      visionAPI: true, // GPT-4 Vision support
       maxContextWindow: 128000 // GPT-4 Turbo context window
     };
   }
@@ -51,10 +51,12 @@ export class OpenAIProvider extends LLMProvider {
    */
   usesMaxCompletionTokens() {
     const model = this.model.toLowerCase();
-    return model.includes('gpt-5') ||
-           model.includes('o1') ||
-           model.includes('o3') ||
-           model.startsWith('chatgpt-');
+    return (
+      model.includes('gpt-5') ||
+      model.includes('o1') ||
+      model.includes('o3') ||
+      model.startsWith('chatgpt-')
+    );
   }
 
   /**
@@ -64,7 +66,7 @@ export class OpenAIProvider extends LLMProvider {
     const body = {
       model: this.model,
       messages: messages,
-      temperature: options.temperature !== undefined ? options.temperature : 1.0,
+      temperature: options.temperature !== undefined ? options.temperature : 1.0
     };
 
     // Use correct token parameter based on model
@@ -96,41 +98,39 @@ export class OpenAIProvider extends LLMProvider {
    */
   async generate(systemPrompt, userPrompt, options = {}) {
     if (!this.apiKey) {
-      throw new Error("API key not set");
+      throw new Error('API key not set');
     }
 
     const messages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
     ];
 
     const body = this.buildRequestBody(messages, options);
     body.stream = false;
 
     const response = await fetch(`${this.baseURL}/chat/completions`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.apiKey}`
       },
       body: JSON.stringify(body),
-      signal: options.signal,
+      signal: options.signal
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error?.message || `API request failed: ${response.statusText}`
-      );
+      throw new Error(errorData.error?.message || `API request failed: ${response.statusText}`);
     }
 
     const data = await response.json();
     const choice = data.choices[0];
 
     return {
-      content: choice.message.content || "",
-      reasoning: "", // OpenAI doesn't provide reasoning tokens
-      usage: data.usage,
+      content: choice.message.content || '',
+      reasoning: '', // OpenAI doesn't provide reasoning tokens
+      usage: data.usage
     };
   }
 
@@ -139,12 +139,12 @@ export class OpenAIProvider extends LLMProvider {
    */
   async generateStreaming(systemPrompt, userPrompt, options = {}) {
     if (!this.apiKey) {
-      throw new Error("API key not set");
+      throw new Error('API key not set');
     }
 
     const messages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
     ];
 
     const controller = new AbortController();
@@ -153,20 +153,18 @@ export class OpenAIProvider extends LLMProvider {
     body.stream = true;
 
     const response = await fetch(`${this.baseURL}/chat/completions`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.apiKey}`
       },
       body: JSON.stringify(body),
-      signal: options.signal || controller.signal,
+      signal: options.signal || controller.signal
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error?.message || `API request failed: ${response.statusText}`
-      );
+      throw new Error(errorData.error?.message || `API request failed: ${response.statusText}`);
     }
 
     return {
@@ -259,9 +257,9 @@ export class OpenAIProvider extends LLMProvider {
   async getAvailableModels() {
     try {
       const response = await fetch(`${this.baseURL}/models`, {
-        method: "GET",
+        method: 'GET',
         headers: {
-          "Authorization": `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`
         }
       });
 
@@ -273,8 +271,8 @@ export class OpenAIProvider extends LLMProvider {
 
       // Filter and transform OpenAI model data to include only chat completion models
       return data.data
-        .filter(model => this.isChatModel(model.id))
-        .map(model => ({
+        .filter((model) => this.isChatModel(model.id))
+        .map((model) => ({
           id: model.id,
           name: this.formatModelName(model.id),
           description: this.getModelDescription(model.id),

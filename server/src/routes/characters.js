@@ -158,10 +158,7 @@ function checkCharacterImport(storageInstance, cardData, originChecksum, interna
   // 1. Collision check: internal checksum matches any existing character current_checksum
   const collisionMatches = storageInstance.findCharacterByCurrentChecksum(internalChecksum);
   if (collisionMatches.length > 0) {
-    throw new AppError(
-      'A character with identical content already exists. Import rejected.',
-      409
-    );
+    throw new AppError('A character with identical content already exists. Import rejected.', 409);
   }
 
   // 2. Duplicate check: origin checksum matches AND existing current == internal
@@ -169,10 +166,7 @@ function checkCharacterImport(storageInstance, cardData, originChecksum, interna
     const originMatches = storageInstance.findCharacterByOriginChecksum(originChecksum);
     for (const match of originMatches) {
       if (match.current_checksum === internalChecksum) {
-        throw new AppError(
-          'This character has already been imported (same source content).',
-          409
-        );
+        throw new AppError('This character has already been imported (same source content).', 409);
       }
     }
   }

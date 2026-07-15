@@ -34,10 +34,7 @@ function checkLorebookImport(storageInstance, parsed, internalChecksum) {
   // 1. Collision check: internal checksum matches any existing lorebook current_checksum
   const collisionMatches = storageInstance.findLorebookByCurrentChecksum(internalChecksum);
   if (collisionMatches.length > 0) {
-    throw new AppError(
-      'A lorebook with identical content already exists. Import rejected.',
-      409
-    );
+    throw new AppError('A lorebook with identical content already exists. Import rejected.', 409);
   }
 
   // 2. Duplicate check: origin checksum matches AND existing current == internal
@@ -47,10 +44,7 @@ function checkLorebookImport(storageInstance, parsed, internalChecksum) {
   const originMatches = storageInstance.findLorebookByOriginChecksum(originChecksum);
   for (const match of originMatches) {
     if (match.current_checksum === internalChecksum) {
-      throw new AppError(
-        'This lorebook has already been imported (same source content).',
-        409
-      );
+      throw new AppError('This lorebook has already been imported (same source content).', 409);
     }
   }
 

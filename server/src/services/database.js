@@ -364,18 +364,30 @@ function migrateSchema(db, fromVersion) {
       db.exec(`ALTER TABLE characters ADD COLUMN import_internal_checksum TEXT`);
       db.exec(`ALTER TABLE characters ADD COLUMN current_checksum TEXT NOT NULL DEFAULT ''`);
 
-      db.exec(`CREATE INDEX IF NOT EXISTS idx_characters_import_origin_checksum ON characters(import_origin_checksum)`);
-      db.exec(`CREATE INDEX IF NOT EXISTS idx_characters_import_internal_checksum ON characters(import_internal_checksum)`);
-      db.exec(`CREATE INDEX IF NOT EXISTS idx_characters_current_checksum ON characters(current_checksum)`);
+      db.exec(
+        `CREATE INDEX IF NOT EXISTS idx_characters_import_origin_checksum ON characters(import_origin_checksum)`
+      );
+      db.exec(
+        `CREATE INDEX IF NOT EXISTS idx_characters_import_internal_checksum ON characters(import_internal_checksum)`
+      );
+      db.exec(
+        `CREATE INDEX IF NOT EXISTS idx_characters_current_checksum ON characters(current_checksum)`
+      );
 
       // Lorebooks checksums
       db.exec(`ALTER TABLE lorebooks ADD COLUMN import_origin_checksum TEXT`);
       db.exec(`ALTER TABLE lorebooks ADD COLUMN import_internal_checksum TEXT`);
       db.exec(`ALTER TABLE lorebooks ADD COLUMN current_checksum TEXT NOT NULL DEFAULT ''`);
 
-      db.exec(`CREATE INDEX IF NOT EXISTS idx_lorebooks_import_origin_checksum ON lorebooks(import_origin_checksum)`);
-      db.exec(`CREATE INDEX IF NOT EXISTS idx_lorebooks_import_internal_checksum ON lorebooks(import_internal_checksum)`);
-      db.exec(`CREATE INDEX IF NOT EXISTS idx_lorebooks_current_checksum ON lorebooks(current_checksum)`);
+      db.exec(
+        `CREATE INDEX IF NOT EXISTS idx_lorebooks_import_origin_checksum ON lorebooks(import_origin_checksum)`
+      );
+      db.exec(
+        `CREATE INDEX IF NOT EXISTS idx_lorebooks_import_internal_checksum ON lorebooks(import_internal_checksum)`
+      );
+      db.exec(
+        `CREATE INDEX IF NOT EXISTS idx_lorebooks_current_checksum ON lorebooks(current_checksum)`
+      );
 
       console.log('Added checksum columns and indexes');
     }
@@ -401,65 +413,79 @@ export function backfillChecksums(db) {
   } catch {}
 
   // Use dynamic import since database.js is an ES module
-  import('./checksum-service.js').then(({ computeCharacterChecksum, computeLorebookChecksum }) => {
-    // Characters
-    const chars = db.prepare('SELECT id, data FROM characters WHERE current_checksum IS NULL OR current_checksum = ?').all('');
-    const updateChar = db.prepare('UPDATE characters SET current_checksum = ? WHERE id = ?');
-    for (const row of chars) {
-      try {
-        const cardData = JSON.parse(row.data);
-        const checksum = computeCharacterChecksum(cardData);
-        updateChar.run(checksum, row.id);
-      } catch (e) {
-        console.error(`Failed to backfill checksum for character ${row.id}:`, e.message);
+  import('./checksum-service.js')
+    .then(({ computeCharacterChecksum, computeLorebookChecksum }) => {
+      // Characters
+      const chars = db
+        .prepare(
+          'SELECT id, data FROM characters WHERE current_checksum IS NULL OR current_checksum = ?'
+        )
+        .all('');
+      const updateChar = db.prepare('UPDATE characters SET current_checksum = ? WHERE id = ?');
+      for (const row of chars) {
+        try {
+          const cardData = JSON.parse(row.data);
+          const checksum = computeCharacterChecksum(cardData);
+          updateChar.run(checksum, row.id);
+        } catch (e) {
+          console.error(`Failed to backfill checksum for character ${row.id}:`, e.message);
+        }
       }
-    }
 
-    // Lorebooks
-    const lorebooks = db.prepare('SELECT id, name, description, scan_depth, token_budget, recursive_scanning, extensions FROM lorebooks WHERE current_checksum IS NULL OR current_checksum = ?').all('');
-    const updateLore = db.prepare('UPDATE lorebooks SET current_checksum = ? WHERE id = ?');
-    for (const row of lorebooks) {
-      try {
-        const entries = db.prepare('SELECT * FROM lorebook_entries WHERE lorebook_id = ? ORDER BY display_index').all(row.id);
-        const lorebookData = {
-          name: row.name,
-          description: row.description || '',
-          scanDepth: row.scan_depth,
-          tokenBudget: row.token_budget,
-          recursiveScanning: !!row.recursive_scanning,
-          extensions: JSON.parse(row.extensions || '{}'),
-          entries: entries.map((e) => ({
-            keys: JSON.parse(e.keys || '[]'),
-            secondaryKeys: JSON.parse(e.secondary_keys || '[]'),
-            content: e.content,
-            constant: !!e.constant,
-            position: e.position,
-            caseSensitive: !!e.case_sensitive,
-            matchWholeWords: !!e.match_whole_words,
-            useRegex: !!e.use_regex,
-            probability: e.probability,
-            useProbability: !!e.use_probability,
-            depth: e.depth,
-            scanDepth: e.scan_depth,
-            selective: !!e.selective,
-            selectiveLogic: e.selective_logic,
-            insertionOrder: e.insertion_order,
-            group: e.entry_group,
-            preventRecursion: !!e.prevent_recursion,
-            delayUntilRecursion: !!e.delay_until_recursion
-          }))
-        };
-        const checksum = computeLorebookChecksum(lorebookData);
-        updateLore.run(checksum, row.id);
-      } catch (e) {
-        console.error(`Failed to backfill checksum for lorebook ${row.id}:`, e.message);
+      // Lorebooks
+      const lorebooks = db
+        .prepare(
+          'SELECT id, name, description, scan_depth, token_budget, recursive_scanning, extensions FROM lorebooks WHERE current_checksum IS NULL OR current_checksum = ?'
+        )
+        .all('');
+      const updateLore = db.prepare('UPDATE lorebooks SET current_checksum = ? WHERE id = ?');
+      for (const row of lorebooks) {
+        try {
+          const entries = db
+            .prepare('SELECT * FROM lorebook_entries WHERE lorebook_id = ? ORDER BY display_index')
+            .all(row.id);
+          const lorebookData = {
+            name: row.name,
+            description: row.description || '',
+            scanDepth: row.scan_depth,
+            tokenBudget: row.token_budget,
+            recursiveScanning: !!row.recursive_scanning,
+            extensions: JSON.parse(row.extensions || '{}'),
+            entries: entries.map((e) => ({
+              keys: JSON.parse(e.keys || '[]'),
+              secondaryKeys: JSON.parse(e.secondary_keys || '[]'),
+              content: e.content,
+              constant: !!e.constant,
+              position: e.position,
+              caseSensitive: !!e.case_sensitive,
+              matchWholeWords: !!e.match_whole_words,
+              useRegex: !!e.use_regex,
+              probability: e.probability,
+              useProbability: !!e.use_probability,
+              depth: e.depth,
+              scanDepth: e.scan_depth,
+              selective: !!e.selective,
+              selectiveLogic: e.selective_logic,
+              insertionOrder: e.insertion_order,
+              group: e.entry_group,
+              preventRecursion: !!e.prevent_recursion,
+              delayUntilRecursion: !!e.delay_until_recursion
+            }))
+          };
+          const checksum = computeLorebookChecksum(lorebookData);
+          updateLore.run(checksum, row.id);
+        } catch (e) {
+          console.error(`Failed to backfill checksum for lorebook ${row.id}:`, e.message);
+        }
       }
-    }
 
-    if (chars.length || lorebooks.length) {
-      console.log(`Backfilled checksums for ${chars.length} characters and ${lorebooks.length} lorebooks`);
-    }
-  }).catch((err) => {
-    console.error('Failed to backfill checksums:', err.message);
-  });
+      if (chars.length || lorebooks.length) {
+        console.log(
+          `Backfilled checksums for ${chars.length} characters and ${lorebooks.length} lorebooks`
+        );
+      }
+    })
+    .catch((err) => {
+      console.error('Failed to backfill checksums:', err.message);
+    });
 }

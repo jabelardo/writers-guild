@@ -167,6 +167,7 @@ import { useToast } from '../composables/useToast';
 import { useNavigation } from '../composables/useNavigation';
 import { useConfirm } from '../composables/useConfirm';
 import { setPageTitle } from '../router';
+import { useDataCache } from '../composables/useDataCache';
 import EntryEditorModal from '../components/EntryEditorModal.vue';
 
 const props = defineProps({
@@ -180,6 +181,7 @@ const router = useRouter();
 const toast = useToast();
 const { goBack } = useNavigation();
 const { confirm } = useConfirm();
+const { removeLorebookLocally } = useDataCache();
 
 // State
 const loading = ref(true);
@@ -289,6 +291,7 @@ async function deleteLorebook() {
 
   try {
     await lorebooksAPI.delete(props.lorebookId);
+    removeLorebookLocally(props.lorebookId);
     toast.success('Lorebook deleted successfully');
     router.push('/');
   } catch (error) {

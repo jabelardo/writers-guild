@@ -101,7 +101,9 @@ export class SqliteStorageService {
       `),
       deleteCharacter: this.db.prepare('DELETE FROM characters WHERE id = ?'),
       characterExists: this.db.prepare('SELECT 1 FROM characters WHERE id = ?'),
-      characterChecksums: this.db.prepare('SELECT current_checksum, import_origin_checksum, import_internal_checksum FROM characters WHERE id = ?'),
+      characterChecksums: this.db.prepare(
+        'SELECT current_checksum, import_origin_checksum, import_internal_checksum FROM characters WHERE id = ?'
+      ),
 
       // Story-Character relationships
       getStoryCharacterIds: this.db.prepare(
@@ -154,16 +156,32 @@ export class SqliteStorageService {
       updateLorebookCurrentChecksum: this.db.prepare(`
         UPDATE lorebooks SET current_checksum = ? WHERE id = ?
       `),
-      findCharacterByOriginChecksum: this.db.prepare('SELECT id, name, current_checksum, import_origin_checksum, import_internal_checksum FROM characters WHERE import_origin_checksum = ?'),
-      findCharacterByCurrentChecksum: this.db.prepare('SELECT id, name, current_checksum, import_origin_checksum, import_internal_checksum FROM characters WHERE current_checksum = ?'),
-      findLorebookByOriginChecksum: this.db.prepare('SELECT id, name, current_checksum, import_origin_checksum, import_internal_checksum FROM lorebooks WHERE import_origin_checksum = ?'),
-      findLorebookByCurrentChecksum: this.db.prepare('SELECT id, name, current_checksum, import_origin_checksum, import_internal_checksum FROM lorebooks WHERE current_checksum = ?'),
-      findCharacterByName: this.db.prepare('SELECT id, name FROM characters WHERE name = ? ORDER BY name'),
-      findLorebookByName: this.db.prepare('SELECT id, name FROM lorebooks WHERE name = ? ORDER BY name'),
-      getLorebookCharacterReferences: this.db.prepare("SELECT id, name, json_extract(data, '$.data.extensions.ursceal_lorebook_id') as lorebook_id FROM characters WHERE json_extract(data, '$.data.extensions.ursceal_lorebook_id') = ?"),
+      findCharacterByOriginChecksum: this.db.prepare(
+        'SELECT id, name, current_checksum, import_origin_checksum, import_internal_checksum FROM characters WHERE import_origin_checksum = ?'
+      ),
+      findCharacterByCurrentChecksum: this.db.prepare(
+        'SELECT id, name, current_checksum, import_origin_checksum, import_internal_checksum FROM characters WHERE current_checksum = ?'
+      ),
+      findLorebookByOriginChecksum: this.db.prepare(
+        'SELECT id, name, current_checksum, import_origin_checksum, import_internal_checksum FROM lorebooks WHERE import_origin_checksum = ?'
+      ),
+      findLorebookByCurrentChecksum: this.db.prepare(
+        'SELECT id, name, current_checksum, import_origin_checksum, import_internal_checksum FROM lorebooks WHERE current_checksum = ?'
+      ),
+      findCharacterByName: this.db.prepare(
+        'SELECT id, name FROM characters WHERE name = ? ORDER BY name'
+      ),
+      findLorebookByName: this.db.prepare(
+        'SELECT id, name FROM lorebooks WHERE name = ? ORDER BY name'
+      ),
+      getLorebookCharacterReferences: this.db.prepare(
+        "SELECT id, name, json_extract(data, '$.data.extensions.ursceal_lorebook_id') as lorebook_id FROM characters WHERE json_extract(data, '$.data.extensions.ursceal_lorebook_id') = ?"
+      ),
       deleteLorebook: this.db.prepare('DELETE FROM lorebooks WHERE id = ?'),
       lorebookExists: this.db.prepare('SELECT 1 FROM lorebooks WHERE id = ?'),
-      lorebookChecksums: this.db.prepare('SELECT current_checksum, import_origin_checksum, import_internal_checksum FROM lorebooks WHERE id = ?'),
+      lorebookChecksums: this.db.prepare(
+        'SELECT current_checksum, import_origin_checksum, import_internal_checksum FROM lorebooks WHERE id = ?'
+      ),
 
       // Lorebook entries
       insertLorebookEntry: this.db.prepare(`
@@ -654,15 +672,16 @@ export class SqliteStorageService {
     let importOriginChecksum, importInternalChecksum, currentChecksum;
     if (existing) {
       const existingChecksums = this.stmts.characterChecksums.get(characterId);
-      importOriginChecksum = 'importOriginChecksum' in options
-        ? options.importOriginChecksum
-        : existingChecksums.import_origin_checksum;
-      importInternalChecksum = 'importInternalChecksum' in options
-        ? options.importInternalChecksum
-        : existingChecksums.import_internal_checksum;
-      currentChecksum = 'currentChecksum' in options
-        ? options.currentChecksum
-        : existingChecksums.current_checksum;
+      importOriginChecksum =
+        'importOriginChecksum' in options
+          ? options.importOriginChecksum
+          : existingChecksums.import_origin_checksum;
+      importInternalChecksum =
+        'importInternalChecksum' in options
+          ? options.importInternalChecksum
+          : existingChecksums.import_internal_checksum;
+      currentChecksum =
+        'currentChecksum' in options ? options.currentChecksum : existingChecksums.current_checksum;
     } else {
       importOriginChecksum = options.importOriginChecksum ?? null;
       importInternalChecksum = options.importInternalChecksum ?? null;
@@ -938,15 +957,16 @@ export class SqliteStorageService {
     let importOriginChecksum, importInternalChecksum, currentChecksum;
     if (existing) {
       const existingChecksums = this.stmts.lorebookChecksums.get(lorebookId);
-      importOriginChecksum = 'importOriginChecksum' in options
-        ? options.importOriginChecksum
-        : existingChecksums.import_origin_checksum;
-      importInternalChecksum = 'importInternalChecksum' in options
-        ? options.importInternalChecksum
-        : existingChecksums.import_internal_checksum;
-      currentChecksum = 'currentChecksum' in options
-        ? options.currentChecksum
-        : existingChecksums.current_checksum;
+      importOriginChecksum =
+        'importOriginChecksum' in options
+          ? options.importOriginChecksum
+          : existingChecksums.import_origin_checksum;
+      importInternalChecksum =
+        'importInternalChecksum' in options
+          ? options.importInternalChecksum
+          : existingChecksums.import_internal_checksum;
+      currentChecksum =
+        'currentChecksum' in options ? options.currentChecksum : existingChecksums.current_checksum;
     } else {
       importOriginChecksum = options.importOriginChecksum ?? null;
       importInternalChecksum = options.importInternalChecksum ?? null;

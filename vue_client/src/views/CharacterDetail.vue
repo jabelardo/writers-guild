@@ -424,6 +424,7 @@ import { useToast } from '../composables/useToast';
 import { useNavigation } from '../composables/useNavigation';
 import { useConfirm } from '../composables/useConfirm';
 import { setPageTitle } from '../router';
+import { useDataCache } from '../composables/useDataCache';
 import CharacterCard from '../components/CharacterCard.vue';
 import GreetingSelectorModal from '../components/GreetingSelectorModal.vue';
 
@@ -438,6 +439,7 @@ const router = useRouter();
 const toast = useToast();
 const { goBack } = useNavigation();
 const { confirm } = useConfirm();
+const { removeCharacterLocally, removeLorebookLocally } = useDataCache();
 
 // State
 const loading = ref(true);
@@ -764,6 +766,7 @@ async function deleteCharacter() {
 
   try {
     const result = await charactersAPI.delete(props.characterId);
+    removeCharacterLocally(props.characterId);
     toast.success('Character deleted successfully');
 
     if (result.orphanedLorebookId) {
@@ -776,6 +779,7 @@ async function deleteCharacter() {
       });
       if (deleteLorebook) {
         await lorebooksAPI.delete(result.orphanedLorebookId);
+        removeLorebookLocally(result.orphanedLorebookId);
         toast.success('Lorebook deleted');
       }
     }

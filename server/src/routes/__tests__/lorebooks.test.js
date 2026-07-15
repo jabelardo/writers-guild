@@ -557,7 +557,9 @@ describe('Lorebooks API Routes', () => {
         .send({ name: 'CSLBCreate' })
         .expect(200);
 
-      const row = storage.db.prepare('SELECT current_checksum FROM lorebooks WHERE id = ?').get(resp.body.id);
+      const row = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
       expect(row.current_checksum).toBeTruthy();
       expect(row.current_checksum.length).toBe(64);
 
@@ -572,14 +574,18 @@ describe('Lorebooks API Routes', () => {
         .send({ name: 'CSLBUpdate' })
         .expect(200);
 
-      const before = storage.db.prepare('SELECT current_checksum FROM lorebooks WHERE id = ?').get(resp.body.id);
+      const before = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
 
       await request(app)
         .put(`/api/lorebooks/${resp.body.id}`)
         .send({ name: 'CSLBUpdate Modified', description: 'Changed' })
         .expect(200);
 
-      const after = storage.db.prepare('SELECT current_checksum FROM lorebooks WHERE id = ?').get(resp.body.id);
+      const after = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
 
       expect(after.current_checksum).not.toBe(before.current_checksum);
 
@@ -610,7 +616,7 @@ describe('Lorebooks API Routes', () => {
         .expect(200);
 
       const listResp = await request(app).get('/api/lorebooks').expect(200);
-      const names = listResp.body.lorebooks.map(l => l.name).sort();
+      const names = listResp.body.lorebooks.map((l) => l.name).sort();
       expect(names).toContain('DupLBName');
       expect(names).toContain('DupLBName (2)');
       expect(names).toContain('DupLBName (3)');
@@ -626,14 +632,18 @@ describe('Lorebooks API Routes', () => {
         .send({ name: 'EntryCS' })
         .expect(200);
 
-      const before = storage.db.prepare('SELECT current_checksum FROM lorebooks WHERE id = ?').get(resp.body.id);
+      const before = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
 
       await request(app)
         .post(`/api/lorebooks/${resp.body.id}/entries`)
         .send({ keys: ['newkey'], content: 'New content' })
         .expect(200);
 
-      const after = storage.db.prepare('SELECT current_checksum FROM lorebooks WHERE id = ?').get(resp.body.id);
+      const after = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
 
       expect(after.current_checksum).not.toBe(before.current_checksum);
 
@@ -653,17 +663,19 @@ describe('Lorebooks API Routes', () => {
         .send({ keys: ['delkey'], content: 'Delete me' })
         .expect(200);
 
-      const before = storage.db.prepare('SELECT current_checksum FROM lorebooks WHERE id = ?').get(resp.body.id);
+      const before = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
 
       // Get the entry
       const getResp = await request(app).get(`/api/lorebooks/${resp.body.id}`).expect(200);
       const entryId = getResp.body.lorebook.entries[0].id;
 
-      await request(app)
-        .delete(`/api/lorebooks/${resp.body.id}/entries/${entryId}`)
-        .expect(200);
+      await request(app).delete(`/api/lorebooks/${resp.body.id}/entries/${entryId}`).expect(200);
 
-      const after = storage.db.prepare('SELECT current_checksum FROM lorebooks WHERE id = ?').get(resp.body.id);
+      const after = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
 
       expect(after.current_checksum).not.toBe(before.current_checksum);
 

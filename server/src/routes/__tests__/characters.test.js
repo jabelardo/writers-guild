@@ -4,7 +4,12 @@ import request from 'supertest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { createTestPng, createTestCharacterPng, createTestCharacterJson, PNG_SIGNATURE } from './test-helpers.js';
+import {
+  createTestPng,
+  createTestCharacterPng,
+  createTestCharacterJson,
+  PNG_SIGNATURE
+} from './test-helpers.js';
 
 // Import the routers
 import charactersRouter from '../characters.js';
@@ -1359,7 +1364,9 @@ describe('Characters API Routes', () => {
       expect(charData).toBeDefined();
 
       // The checksum is stored in the DB, not the card data
-      const dbChar = storage.db.prepare('SELECT current_checksum FROM characters WHERE id = ?').get(createResp.body.id);
+      const dbChar = storage.db
+        .prepare('SELECT current_checksum FROM characters WHERE id = ?')
+        .get(createResp.body.id);
       expect(dbChar.current_checksum).toBeTruthy();
       expect(dbChar.current_checksum.length).toBe(64); // SHA-256 hex
     });
@@ -1370,14 +1377,18 @@ describe('Characters API Routes', () => {
         .send({ name: 'UpdateCS Char' })
         .expect(201);
 
-      const before = storage.db.prepare('SELECT current_checksum FROM characters WHERE id = ?').get(createResp.body.id);
+      const before = storage.db
+        .prepare('SELECT current_checksum FROM characters WHERE id = ?')
+        .get(createResp.body.id);
 
       await request(app)
         .put(`/api/characters/${createResp.body.id}`)
         .send({ name: 'UpdateCS Char Changed', description: 'Modified' })
         .expect(200);
 
-      const after = storage.db.prepare('SELECT current_checksum FROM characters WHERE id = ?').get(createResp.body.id);
+      const after = storage.db
+        .prepare('SELECT current_checksum FROM characters WHERE id = ?')
+        .get(createResp.body.id);
 
       expect(after.current_checksum).not.toBe(before.current_checksum);
     });
@@ -1388,23 +1399,41 @@ describe('Characters API Routes', () => {
       // Import first character
       await request(app)
         .post('/api/characters/import-json')
-        .attach('character', Buffer.from(JSON.stringify(createTestCharacterJson({ name: 'DupName', description: 'First' }))), 'char.json')
+        .attach(
+          'character',
+          Buffer.from(
+            JSON.stringify(createTestCharacterJson({ name: 'DupName', description: 'First' }))
+          ),
+          'char.json'
+        )
         .expect(201);
 
       // Second import with different content but same name
       await request(app)
         .post('/api/characters/import-json')
-        .attach('character', Buffer.from(JSON.stringify(createTestCharacterJson({ name: 'DupName', description: 'Second' }))), 'char.json')
+        .attach(
+          'character',
+          Buffer.from(
+            JSON.stringify(createTestCharacterJson({ name: 'DupName', description: 'Second' }))
+          ),
+          'char.json'
+        )
         .expect(201);
 
       // Third
       await request(app)
         .post('/api/characters/import-json')
-        .attach('character', Buffer.from(JSON.stringify(createTestCharacterJson({ name: 'DupName', description: 'Third' }))), 'char.json')
+        .attach(
+          'character',
+          Buffer.from(
+            JSON.stringify(createTestCharacterJson({ name: 'DupName', description: 'Third' }))
+          ),
+          'char.json'
+        )
         .expect(201);
 
       const listResp = await request(app).get('/api/characters').expect(200);
-      const names = listResp.body.characters.map(c => c.name).sort();
+      const names = listResp.body.characters.map((c) => c.name).sort();
       expect(names).toContain('DupName');
       expect(names).toContain('DupName (2)');
       expect(names).toContain('DupName (3)');
@@ -1448,9 +1477,7 @@ describe('Characters API Routes', () => {
       expect(deleteResp.body.orphanedLorebookName).toBeTruthy();
 
       // Character should be deleted
-      await request(app)
-        .get(`/api/characters/${createResp.body.id}/data`)
-        .expect(500);
+      await request(app).get(`/api/characters/${createResp.body.id}/data`).expect(500);
     });
 
     it('should delete character and lorebook when ?deleteLorebook=true', async () => {
@@ -1462,9 +1489,7 @@ describe('Characters API Routes', () => {
         .expect(200);
 
       // Lorebook should be deleted
-      await request(app)
-        .get(`/api/lorebooks/${lorebookId}`)
-        .expect(500);
+      await request(app).get(`/api/lorebooks/${lorebookId}`).expect(500);
     });
 
     it('should delete character and keep lorebook when ?deleteLorebook=false', async () => {
@@ -1476,9 +1501,7 @@ describe('Characters API Routes', () => {
         .expect(200);
 
       // Lorebook should still exist
-      await request(app)
-        .get(`/api/lorebooks/${lorebookId}`)
-        .expect(200);
+      await request(app).get(`/api/lorebooks/${lorebookId}`).expect(200);
     });
 
     it('should not report orphaned lorebook if referenced by another character', async () => {
@@ -1503,9 +1526,7 @@ describe('Characters API Routes', () => {
       expect(deleteResp.body.orphanedLorebookId).toBeFalsy();
 
       // Lorebook still exists
-      await request(app)
-        .get(`/api/lorebooks/${lorebookId}`)
-        .expect(200);
+      await request(app).get(`/api/lorebooks/${lorebookId}`).expect(200);
     });
 
     it('should delete orphaned lorebook when confirmed', async () => {
@@ -1517,9 +1538,7 @@ describe('Characters API Routes', () => {
         .expect(200);
 
       // Verify lorebook is gone
-      await request(app)
-        .get(`/api/lorebooks/${lorebookId}`)
-        .expect(500);
+      await request(app).get(`/api/lorebooks/${lorebookId}`).expect(500);
     });
 
     it('should not warn if lorebook is referenced by another character', async () => {
@@ -1547,9 +1566,7 @@ describe('Characters API Routes', () => {
       expect(deleteResp.body.success).toBe(true);
 
       // Lorebook still exists
-      await request(app)
-        .get(`/api/lorebooks/${lorebookId}`)
-        .expect(200);
+      await request(app).get(`/api/lorebooks/${lorebookId}`).expect(200);
     });
 
     it('should reuse existing lorebook when re-importing a character after delete-and-keep', async () => {
@@ -1559,14 +1576,10 @@ describe('Characters API Routes', () => {
       const charId = createResp.body.id;
 
       // Step 2: Delete character but keep lorebook
-      await request(app)
-        .delete(`/api/characters/${charId}?deleteLorebook=false`)
-        .expect(200);
+      await request(app).delete(`/api/characters/${charId}?deleteLorebook=false`).expect(200);
 
       // Lorebook should still exist
-      const lbResp = await request(app)
-        .get(`/api/lorebooks/${firstLorebookId}`)
-        .expect(200);
+      const lbResp = await request(app).get(`/api/lorebooks/${firstLorebookId}`).expect(200);
 
       // Step 3: Re-import the same character
       const reimportResp = await createCharWithEmbeddedLorebook('ReimportChar');
@@ -1576,13 +1589,9 @@ describe('Characters API Routes', () => {
       expect(reimportResp.body.embeddedLorebook.reused).toBe(true);
 
       // There should be only 1 lorebook in the DB
-      const allLbResp = await request(app)
-        .get('/api/lorebooks')
-        .expect(200);
+      const allLbResp = await request(app).get('/api/lorebooks').expect(200);
 
-      const matchingLorebooks = allLbResp.body.lorebooks.filter(
-        (lb) => lb.id === firstLorebookId
-      );
+      const matchingLorebooks = allLbResp.body.lorebooks.filter((lb) => lb.id === firstLorebookId);
       expect(matchingLorebooks.length).toBe(1);
     });
 
@@ -1592,14 +1601,10 @@ describe('Characters API Routes', () => {
       const charId = createResp.body.id;
 
       // Delete the lorebook directly
-      await request(app)
-        .delete(`/api/lorebooks/${lorebookId}`)
-        .expect(200);
+      await request(app).delete(`/api/lorebooks/${lorebookId}`).expect(200);
 
       // Now delete the character — should NOT report orphaned lorebook
-      const deleteResp = await request(app)
-        .delete(`/api/characters/${charId}`)
-        .expect(200);
+      const deleteResp = await request(app).delete(`/api/characters/${charId}`).expect(200);
 
       expect(deleteResp.body.orphanedLorebookId).toBeUndefined();
       expect(deleteResp.body.orphanedLorebookName).toBeUndefined();

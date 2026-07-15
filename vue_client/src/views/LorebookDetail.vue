@@ -181,7 +181,7 @@ const router = useRouter();
 const toast = useToast();
 const { goBack } = useNavigation();
 const { confirm } = useConfirm();
-const { removeLorebookLocally } = useDataCache();
+const { removeLorebookLocally, updateLorebookLocally } = useDataCache();
 
 // State
 const loading = ref(true);
@@ -252,10 +252,12 @@ function cancelEdit(section) {
 
 async function saveName() {
   try {
+    const newName = editedName.value.trim();
     await lorebooksAPI.update(props.lorebookId, {
-      name: editedName.value.trim()
+      name: newName
     });
-    lorebook.value.name = editedName.value.trim();
+    lorebook.value.name = newName;
+    updateLorebookLocally(props.lorebookId, { name: newName });
     editingName.value = false;
     editedName.value = '';
     // Update page title with new name

@@ -434,7 +434,7 @@ const router = useRouter();
 const toast = useToast();
 const { goBack } = useNavigation();
 const { confirm } = useConfirm();
-const { removeCharacterLocally, removeLorebookLocally } = useDataCache();
+const { removeCharacterLocally, removeLorebookLocally, updateCharacterLocally } = useDataCache();
 
 // State
 const loading = ref(true);
@@ -588,10 +588,12 @@ function cancelEdit(section) {
 
 async function saveName() {
   try {
+    const newName = editedName.value.trim();
     await charactersAPI.update(props.characterId, {
-      name: editedName.value.trim()
+      name: newName
     });
-    character.value.name = editedName.value.trim();
+    character.value.name = newName;
+    updateCharacterLocally(props.characterId, { name: newName });
     editingName.value = false;
     editedName.value = '';
     // Update page title with new name

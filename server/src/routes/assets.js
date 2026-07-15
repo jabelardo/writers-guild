@@ -16,14 +16,6 @@ import path from 'path';
 const router = express.Router();
 
 /**
- * Middleware to attach an AssetManager instance per request.
- */
-router.use((req, res, next) => {
-  req.assetManager = new AssetManager(req.app.locals.dataRoot);
-  next();
-});
-
-/**
  * GET /api/assets/characters/:characterId/:filename
  *
  * Serve a cached asset file. Filename is content-hashed so we use
@@ -33,7 +25,7 @@ router.get(
   '/characters/:characterId/:filename',
   asyncHandler(async (req, res) => {
     const { characterId, filename } = req.params;
-    return getAsset(characterId, filename);
+    return getAsset(req, res, characterId, filename, 'characters');
   })
 );
 
@@ -46,11 +38,11 @@ router.get(
   '/lorebooks/:lorebookId/:filename',
   asyncHandler(async (req, res) => {
     const { lorebookId, filename } = req.params;
-    return getAsset(lorebookId, filename);
+    return getAsset(req, res, lorebookId, filename, 'lorebooks');
   })
 );
 
-const getAsset = async (assetId, filename) => {
+const getAsset = async (req, res, assetId, filename, entityType) => {
   // Basic security: prevent directory traversal in filename
   if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
     throw new AppError('Invalid filename', 400);
@@ -63,7 +55,8 @@ const getAsset = async (assetId, filename) => {
     throw new AppError(`Unsupported file type ${ext}`, 400);
   }
 
-  const buffer = await req.assetManager.readAsset(assetId, filename);
+  const assetManager = new AssetManager(req.app.locals.dataRoot, entityType);
+  const buffer = await assetManager.readAsset(assetId, filename);
 
   if (!buffer) {
     throw new AppError('Asset not found', 404);

@@ -557,7 +557,8 @@ function editPreset(presetId) {
 
 async function duplicatePreset(presetId) {
   try {
-    const originalPreset = presets.value.find((p) => p.id === presetId);
+    // Fetch full preset data from the server (list cache only has partial fields)
+    const { preset: originalPreset } = await presetsAPI.get(presetId);
     if (!originalPreset) {
       throw new Error('Preset not found');
     }

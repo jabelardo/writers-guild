@@ -896,6 +896,9 @@ router.delete(
     if (orphanedLorebookId && deleteLorebook === 'true') {
       try {
         await storage.deleteLorebook(orphanedLorebookId);
+        // Clean up lorebook's cached assets
+        const lorebookAssetManager = new AssetManager(req.app.locals.dataRoot, 'lorebooks');
+        await lorebookAssetManager.deleteDir(orphanedLorebookId);
       } catch (e) {
         console.error(`Failed to delete orphaned lorebook ${orphanedLorebookId}:`, e.message);
       }

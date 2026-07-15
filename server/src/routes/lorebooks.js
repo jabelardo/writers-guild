@@ -10,6 +10,7 @@ import { SqliteStorageService } from '../services/sqliteStorage.js';
 import { LorebookParser } from '../services/lorebook-parser.js';
 import { cacheLorebookImages, rewriteLorebookImageUrls } from '../services/image-cacher.js';
 import { computeLorebookChecksum } from '../services/checksum-service.js';
+import { AssetManager } from '../services/asset-manager.js';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -313,6 +314,15 @@ router.delete(
   asyncHandler(async (req, res) => {
     const { lorebookId } = req.params;
     await storage.deleteLorebook(lorebookId);
+
+    // Clean up cached asset files
+    try {
+      const assetManager = new AssetManager(req.app.locals.dataRoot, 'lorebooks');
+      await assetManager.deleteDir(lorebookId);
+    } catch (error) {
+      console.error(`Failed to clean up assets for lorebook ${lorebookId}:`, error);
+    }
+
     res.json({ success: true });
   })
 );

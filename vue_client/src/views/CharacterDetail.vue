@@ -949,6 +949,7 @@ async function setAsDefaultPersona() {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   background-color: var(--bg-primary);
 }
 
@@ -1016,6 +1017,7 @@ async function setAsDefaultPersona() {
   flex: 1;
   overflow-y: auto;
   padding: 2rem;
+  padding-bottom: 4rem;
 }
 
 .detail-layout {
@@ -1207,6 +1209,10 @@ async function setAsDefaultPersona() {
   .card-column {
     max-width: 300px;
     margin: 0 auto;
+  }
+
+  .detail-content {
+    padding-bottom: 6rem;
   }
 }
 

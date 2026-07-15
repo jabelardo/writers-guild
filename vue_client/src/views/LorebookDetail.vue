@@ -331,6 +331,7 @@ async function handleEntrySaved() {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   background-color: var(--bg-primary);
 }
 
@@ -398,6 +399,7 @@ async function handleEntrySaved() {
   flex: 1;
   overflow-y: auto;
   padding: 2rem;
+  padding-bottom: 4rem;
 }
 
 .sections-container {

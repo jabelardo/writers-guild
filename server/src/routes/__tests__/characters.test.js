@@ -1585,5 +1585,25 @@ describe('Characters API Routes', () => {
       );
       expect(matchingLorebooks.length).toBe(1);
     });
+
+    it('should not report orphaned lorebook if lorebook was already deleted', async () => {
+      const createResp = await createCharWithEmbeddedLorebook('AlreadyDeletedLB');
+      const lorebookId = createResp.body.embeddedLorebook.id;
+      const charId = createResp.body.id;
+
+      // Delete the lorebook directly
+      await request(app)
+        .delete(`/api/lorebooks/${lorebookId}`)
+        .expect(200);
+
+      // Now delete the character — should NOT report orphaned lorebook
+      const deleteResp = await request(app)
+        .delete(`/api/characters/${charId}`)
+        .expect(200);
+
+      expect(deleteResp.body.orphanedLorebookId).toBeUndefined();
+      expect(deleteResp.body.orphanedLorebookName).toBeUndefined();
+      expect(deleteResp.body.success).toBe(true);
+    });
   });
 });

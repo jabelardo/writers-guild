@@ -883,11 +883,13 @@ router.delete(
       if (lorebookId) {
         const otherRefs = storage.getCharactersReferencingLorebook(lorebookId, characterId);
         if (otherRefs.length === 0) {
-          orphanedLorebookId = lorebookId;
           try {
             const lb = await storage.getLorebook(lorebookId);
+            orphanedLorebookId = lorebookId;
             orphanedLorebookName = lb.name;
-          } catch {}
+          } catch {
+            // Lorebook was already deleted — not orphaned
+          }
         }
       }
     } catch (e) {

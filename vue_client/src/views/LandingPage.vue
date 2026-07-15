@@ -451,6 +451,7 @@ async function deleteCharacter(character) {
       if (deleteLorebook) {
         try {
           await lorebooksAPI.delete(result.orphanedLorebookId);
+          removeLorebookLocally(result.orphanedLorebookId);
           toast.success('Lorebook deleted');
         } catch (e) {
           toast.error('Failed to delete lorebook: ' + e.message);

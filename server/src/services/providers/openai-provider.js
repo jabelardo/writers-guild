@@ -6,6 +6,7 @@
 
 import { LLMProvider } from './base-provider.js';
 import { parseSSEStream, transformers } from './shared/stream-parser.js';
+import { logLLMRequest, logLLMResponse, logLLMChunk, isLLMDebugEnabled } from '../llm-debug.js';
 
 export class OpenAIProvider extends LLMProvider {
   constructor(config) {
@@ -109,7 +110,11 @@ export class OpenAIProvider extends LLMProvider {
     const body = this.buildRequestBody(messages, options);
     body.stream = false;
 
-    const response = await fetch(`${this.baseURL}/chat/completions`, {
+    const endpoint = `${this.baseURL}/chat/completions`;
+    const startTime = Date.now();
+    logLLMRequest(this.constructor.name, endpoint, body);
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -126,12 +131,13 @@ export class OpenAIProvider extends LLMProvider {
 
     const data = await response.json();
     const choice = data.choices[0];
-
-    return {
+    const result = {
       content: choice.message.content || '',
-      reasoning: '', // OpenAI doesn't provide reasoning tokens
+      reasoning: '',
       usage: data.usage
     };
+    logLLMResponse(this.constructor.name, result, Date.now() - startTime);
+    return result;
   }
 
   /**
@@ -152,7 +158,10 @@ export class OpenAIProvider extends LLMProvider {
     const body = this.buildRequestBody(messages, options);
     body.stream = true;
 
-    const response = await fetch(`${this.baseURL}/chat/completions`, {
+    const endpoint = `${this.baseURL}/chat/completions`;
+    logLLMRequest(this.constructor.name, endpoint, body);
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -168,7 +177,9 @@ export class OpenAIProvider extends LLMProvider {
     }
 
     return {
-      stream: this.parseStreamResponse(response.body),
+      stream: isLLMDebugEnabled()
+        ? this.parseStreamResponseWithDebug(response.body)
+        : this.parseStreamResponse(response.body),
       abort: () => controller.abort(),
       metadata: {
         userPrompt,
@@ -182,6 +193,20 @@ export class OpenAIProvider extends LLMProvider {
    */
   async *parseStreamResponse(body) {
     yield* parseSSEStream(body, transformers.openai, 'OpenAI');
+  }
+
+  /**
+   * Parse SSE stream with debug logging of each chunk
+   */
+  async *parseStreamResponseWithDebug(body) {
+    const startTime = Date.now();
+    let chunkCount = 0;
+    for await (const chunk of parseSSEStream(body, transformers.openai, 'OpenAI')) {
+      chunkCount++;
+      logLLMChunk(this.constructor.name, chunk);
+      yield chunk;
+    }
+    logLLMResponse(this.constructor.name, { chunks: chunkCount }, Date.now() - startTime);
   }
 
   /**

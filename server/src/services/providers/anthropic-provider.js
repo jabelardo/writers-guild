@@ -5,6 +5,7 @@
  */
 
 import { LLMProvider } from './base-provider.js';
+import { logLLMRequest, logLLMResponse, logLLMChunk, isLLMDebugEnabled } from '../llm-debug.js';
 
 export class AnthropicProvider extends LLMProvider {
   constructor(config) {
@@ -91,7 +92,11 @@ export class AnthropicProvider extends LLMProvider {
       requestBody.stop_sequences = options.stop_sequences;
     }
 
-    const response = await fetch(`${this.baseURL}/messages`, {
+    const endpoint = `${this.baseURL}/messages`;
+    const startTime = Date.now();
+    logLLMRequest(this.constructor.name, endpoint, requestBody);
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(requestBody),
@@ -111,11 +116,13 @@ export class AnthropicProvider extends LLMProvider {
       .map((block) => block.text)
       .join('');
 
-    return {
+    const result = {
       content: content || '',
-      reasoning: '', // Anthropic doesn't provide reasoning tokens
+      reasoning: '',
       usage: data.usage
     };
+    logLLMResponse(this.constructor.name, result, Date.now() - startTime);
+    return result;
   }
 
   /**
@@ -155,7 +162,10 @@ export class AnthropicProvider extends LLMProvider {
       requestBody.stop_sequences = options.stop_sequences;
     }
 
-    const response = await fetch(`${this.baseURL}/messages`, {
+    const endpoint = `${this.baseURL}/messages`;
+    logLLMRequest(this.constructor.name, endpoint, requestBody);
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(requestBody),
@@ -168,7 +178,9 @@ export class AnthropicProvider extends LLMProvider {
     }
 
     return {
-      stream: this.parseStreamResponse(response.body),
+      stream: isLLMDebugEnabled()
+        ? this.parseStreamResponseWithDebug(response.body)
+        : this.parseStreamResponse(response.body),
       abort: () => controller.abort(),
       metadata: {
         userPrompt,
@@ -237,6 +249,20 @@ export class AnthropicProvider extends LLMProvider {
     } finally {
       reader.releaseLock();
     }
+  }
+
+  /**
+   * Parse SSE stream with debug logging of each chunk
+   */
+  async *parseStreamResponseWithDebug(body) {
+    const startTime = Date.now();
+    let chunkCount = 0;
+    for await (const chunk of this.parseStreamResponse(body)) {
+      chunkCount++;
+      logLLMChunk(this.constructor.name, chunk);
+      yield chunk;
+    }
+    logLLMResponse(this.constructor.name, { chunks: chunkCount }, Date.now() - startTime);
   }
 
   /**

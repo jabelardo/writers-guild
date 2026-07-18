@@ -474,7 +474,7 @@ describe('Lorebooks API Routes', () => {
       expect(response.body.entryCount).toBe(1);
     });
 
-    it('should cache images found in lorebook entry content', async () => {
+    it('should still import when entry images cannot be cached', async () => {
       const lorebookJson = {
         entries: {
           0: {
@@ -498,8 +498,14 @@ describe('Lorebooks API Routes', () => {
       expect(response.body.name).toBe('Cached Lorebook');
       expect(response.body.entryCount).toBe(1);
 
-      // The caching won't persist without a successful fetch, but the
-      // code path exercises the try/catch and the empty imageMap branch
+      // Downloads fail (fetch is refused in tests), which exercises the
+      // non-fatal path: the lorebook imports regardless and its entries keep
+      // their original external URLs.
+      const stored = await request(app)
+        .get(`/api/lorebooks/${response.body.id}`)
+        .expect(200);
+
+      expect(stored.body.lorebook.entries[0].content).toContain('https://example.com/dragon.png');
     });
   });
 

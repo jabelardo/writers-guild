@@ -93,7 +93,10 @@ async function requestWithProgress(endpoint, options = {}, onProgress) {
         throw new Error(event.error || 'Import failed')
       }
       if (event.type === 'done') {
-        result = event
+        // Strip the envelope so callers get the same payload shape whether or
+        // not progress streaming was used.
+        const { type, ...payload } = event
+        result = payload
       } else {
         onProgress(event)
       }

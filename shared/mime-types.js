@@ -8,14 +8,14 @@ export const IMAGE_MIME_TYPES_MAP = {
 };
 
 export const mimeTypeFromExt = (ext) => {
-    if (!ext || ext.length === 0) return null;
-    const finalExt = ext[0] === '.' ? ext.slice(1) : ext;
-    for (const [key, value] of Object.entries(IMAGE_MIME_TYPES_MAP)) {
-        if (value === finalExt) {
-            return key;
-        }
+  if (!ext || ext.length === 0) return null;
+  const finalExt = ext[0] === '.' ? ext.slice(1) : ext;
+  for (const [key, value] of Object.entries(IMAGE_MIME_TYPES_MAP)) {
+    if (value === finalExt) {
+      return key;
     }
-    return null;
-}
+  }
+  return null;
+};
 
 export const mimeTypeToExt = (mime) => IMAGE_MIME_TYPES_MAP[mime] || 'bin';

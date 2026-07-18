@@ -7,15 +7,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// The cacher resolves every host and refuses private addresses (SSRF guard).
-// Stub DNS so these tests stay hermetic and don't depend on the test
-// hostnames actually existing — the guard itself is tested separately below.
-vi.mock('dns/promises', () => ({
-  default: {
-    lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
-  },
-}));
-
+// DNS is stubbed globally in src/__tests__/setup.js so the SSRF guard never
+// reaches the network. The SSRF tests below drive it per case.
 import dns from 'dns/promises';
 import { cacheCharacterImages, cacheLorebookImages, cacheAndRewriteLorebookImages, rewriteCharacterImageUrls, rewriteLorebookImageUrls, extractCardImageUrls, extractLorebookImageUrls } from '../image-cacher.js';
 import { AssetManager } from '../asset-manager.js';

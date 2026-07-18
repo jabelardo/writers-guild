@@ -933,7 +933,7 @@ async function handleStoryStarter() {
 
       // Server restores [WG_IMAGE_n] markers back to image markup on the final
       // chunk. Without this the placeholder stays visible in the story.
-      if (chunk.imagesRestored && chunk.finalContent) {
+      if (chunk.imagesRestored && chunk.finalContent !== undefined) {
         generatedContent = chunk.finalContent
         content.value = generatedContent
         await nextTick()
@@ -1064,7 +1064,7 @@ async function generate(isCustom, instruction, characterId) {
 
       // Server restores [WG_IMAGE_n] markers back to image markup on the final
       // chunk. Without this the placeholder stays visible in the story.
-      if (chunk.imagesRestored && chunk.finalContent) {
+      if (chunk.imagesRestored && chunk.finalContent !== undefined) {
         generatedContent = chunk.finalContent
         content.value = textBefore + generatedContent + textAfter
         await nextTick()
@@ -1249,7 +1249,7 @@ async function rewriteToThirdPerson(skipConfirm = false) {
       }
 
       // Handle server-side image restoration event
-      if (chunk.imagesRestored && chunk.finalContent) {
+      if (chunk.imagesRestored && chunk.finalContent !== undefined) {
         // Server already restored images; use its final content directly
         rewrittenContent = chunk.finalContent
         content.value = rewrittenContent
@@ -1416,7 +1416,7 @@ async function handleIdeate() {
 
       // Server restores [WG_IMAGE_n] markers back to image markup on the final
       // chunk. Without this the placeholder stays visible in the response.
-      if (chunk.imagesRestored && chunk.finalContent) {
+      if (chunk.imagesRestored && chunk.finalContent !== undefined) {
         responseText = chunk.finalContent
         ideateResponse.value = responseText
       }

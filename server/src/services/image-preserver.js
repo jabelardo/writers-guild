@@ -174,12 +174,15 @@ export class ImagePreserver {
       finalContent += '\n\n' + recoverable.map(m => m.original).join('\n');
     }
 
-    console.log(`[ImagePreserver] Restored ${this.saved.length} image(s), ${missing.length} missing`);
+    // Report only story images as missing. Card and lorebook images are
+    // context the model was never asked to echo back, so counting them would
+    // report every healthy `continue` as having lost its entire gallery.
+    console.log(`[ImagePreserver] Restored ${this.saved.length} image(s), ${recoverable.length} story image(s) missing`);
     return {
       finalContent,
       imagesRestored: true,
       imagesPreserved: this.saved.length,
-      imagesMissing: missing.length
+      imagesMissing: recoverable.length
     };
   }
 }

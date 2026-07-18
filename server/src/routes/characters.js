@@ -366,26 +366,36 @@ router.post('/import-json', jsonUpload.single('character'), asyncHandler(async (
   const characterId = uuidv4();
   const channel = sseChannel(req, res);
 
-  // Cache external images and rewrite URLs
-  await cacheCardImages(characterId, cardData, req.app.locals.dataRoot, channel.send);
+  try {
+    // Cache external images and rewrite URLs
+    await cacheCardImages(characterId, cardData, req.app.locals.dataRoot, channel.send);
 
-  // Extract embedded lorebook if present
-  const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot, channel.send);
+    // Extract embedded lorebook if present
+    const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot, channel.send);
 
-  // Save character data (no image for JSON import)
-  await storage.saveCharacter(characterId, cardData, null);
+    // Save character data (no image for JSON import)
+    await storage.saveCharacter(characterId, cardData, null);
 
-  channel.finish({
-    statusCode: 201,
-    body: {
-      id: characterId,
-      name: cardData.data.name,
-      description: cardData.data.description || '',
-      imageUrl: null,
-      firstMessage: cardData.data.first_mes || '',
-      embeddedLorebook: embeddedLorebook
+    channel.finish({
+      statusCode: 201,
+      body: {
+        id: characterId,
+        name: cardData.data.name,
+        description: cardData.data.description || '',
+        imageUrl: null,
+        firstMessage: cardData.data.first_mes || '',
+        embeddedLorebook: embeddedLorebook
+      }
+    });
+  } catch (error) {
+    // Once the stream is open the status line is already sent, so the failure
+    // has to reach the client as an event rather than a status code.
+    if (channel.streaming) {
+      channel.fail(`Failed to import character: ${error.message}`);
+      return;
     }
-  });
+    throw error;
+  }
 }));
 
 // Import character from URL (CHUB, or direct image URL)

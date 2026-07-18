@@ -354,7 +354,7 @@ describe('ImagePreserver', () => {
       // A `continue` returns brand-new prose. Every preserved image is
       // therefore "missing" from it, and appending them would dump the whole
       // character card gallery onto the end of each generation.
-      preserver.preserve('![a](1.png) and ![b](2.png)');
+      preserver.preserve('![a](1.png) and ![b](2.png)', 'story');
 
       const result = preserver.restoreImages('A brand new paragraph.', { appendMissing: false });
 
@@ -370,6 +370,20 @@ describe('ImagePreserver', () => {
       expect(result.finalContent).toContain('![a](1.png)');
       expect(result.imagesMissing).toBe(1);
     });
+
+    it('should not count context images as missing', () => {
+      // A continue returns new prose; the card and lorebook images were never
+      // expected back. Counting them reported every healthy generation as
+      // having lost its entire gallery.
+      preserver.preserve('![card](portrait.png)', 'context')
+      preserver.preserve('![lore](map.png)', 'context')
+      preserver.preserve('![story](scene.png)', 'story')
+
+      const result = preserver.restoreImages('New prose.', { appendMissing: false })
+
+      expect(result.imagesPreserved).toBe(3)
+      expect(result.imagesMissing).toBe(1) // only the story image
+    })
 
     it('should never append context images the model dropped', () => {
       // Card and lorebook images are context, not part of the story being
@@ -412,10 +426,10 @@ describe('ImagePreserver', () => {
 
     it('should log restore info to console', () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      preserver.preserve('![a](1.png) ![b](2.png)');
+      preserver.preserve('![a](1.png) ![b](2.png)', 'story');
       preserver.restoreImages('[WG_IMAGE_0] only');
       expect(consoleSpy).toHaveBeenCalledWith(
-        '[ImagePreserver] Restored 2 image(s), 1 missing'
+        '[ImagePreserver] Restored 2 image(s), 1 story image(s) missing'
       );
       consoleSpy.mockRestore();
     });

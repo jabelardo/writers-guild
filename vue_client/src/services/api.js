@@ -57,6 +57,13 @@ async function requestWithProgress(endpoint, options = {}, onProgress) {
     throw new Error(error.error || `Request failed: ${response.statusText}`)
   }
 
+  // The server only streams if it supports it on this route. If it answered
+  // with JSON anyway, the import still succeeded — read it normally rather
+  // than reporting a completed import as a failure.
+  if (!(response.headers.get('content-type') || '').includes('text/event-stream')) {
+    return response.json()
+  }
+
   const reader = response.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
@@ -619,27 +626,22 @@ export const lorebooksAPI = {
     })
   },
 
-  importJSON(file) {
+  importJSON(file, onProgress) {
     const formData = new FormData()
     formData.append('lorebook', file)
 
-    return fetch('/api/lorebooks/import', {
-      method: 'POST',
-      body: formData,
-    }).then(async response => {
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Import failed')
-      }
-      return response.json()
-    })
+    return requestWithProgress('/lorebooks/import', { body: formData }, onProgress)
   },
 
-  importFromURL(url) {
-    return request('/lorebooks/import-url', {
-      method: 'POST',
-      body: JSON.stringify({ url }),
-    })
+  importFromURL(url, onProgress) {
+    return requestWithProgress(
+      '/lorebooks/import-url',
+      {
+        body: JSON.stringify({ url }),
+        headers: { 'Content-Type': 'application/json' },
+      },
+      onProgress
+    )
   },
 }
 

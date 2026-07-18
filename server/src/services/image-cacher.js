@@ -386,7 +386,7 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
           if (existing) {
             imageMap.set(url, `/api/assets/${entityType}/${entityId}/${existing.filename}`);
           }
-          report({ phase: 'image', completed: ++completed, total: urlArray.length, url, ok: true, cached: true });
+          report({ phase: 'image', completed: ++completed, total: urlArray.length, url, ok: true, alreadyCached: true });
           return;
         }
 
@@ -419,7 +419,7 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
         await assetManager.writeFileOnly(entityId, filename, finalBuffer);
         newEntries.push({ originalUrl: url, hash, filename, mimeType: finalMimeType });
         imageMap.set(url, localPath);
-        report({ phase: 'image', completed: ++completed, total: urlArray.length, url, ok: true, cached: false });
+        report({ phase: 'image', completed: ++completed, total: urlArray.length, url, ok: true, alreadyCached: false });
       })
     );
 
@@ -439,7 +439,10 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
   }
 
   console.log(`[ImageCacher] Cached ${imageMap.size}/${urls.size} image(s) for ${entityType.slice(0, -1)} "${label || entityId}"`);
-  report({ phase: 'done', total: urlArray.length, completed, cached: imageMap.size, failed });
+  // cachedCount, not `cached` — per-image events use alreadyCached as a
+  // boolean, and reusing one key for both a flag and a count invites
+  // `if (event.cached)` bugs where a count of 0 reads as false.
+  report({ phase: 'done', total: urlArray.length, completed, cachedCount: imageMap.size, failed });
   return imageMap;
 }
 
@@ -514,19 +517,33 @@ export async function cacheAndRewriteLorebookImages(lorebookId, lorebookData, da
   }
 }
 
+// One compiled pattern per imageMap. Rewriting runs over every card field and
+// every lorebook entry, so building the regex per field meant hundreds of
+// compilations and full-text scans for a single import.
+const replacementPatterns = new WeakMap();
+
+function patternFor(imageMap) {
+  let cached = replacementPatterns.get(imageMap);
+  if (cached) return cached;
+
+  // Longest first: one URL can be a prefix of another (a.png vs a.png?v=2).
+  // Regex alternation matches leftmost-first, so listing the longer URL first
+  // makes it win instead of the shorter one truncating it.
+  const ordered = [...imageMap.keys()].sort((a, b) => b.length - a.length);
+  const escaped = ordered.map(url => url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+
+  cached = new RegExp(escaped.join('|'), 'g');
+  replacementPatterns.set(imageMap, cached);
+  return cached;
+}
+
 function replaceUrls(text, imageMap) {
   if (!text || typeof text !== 'string') return text;
+  if (imageMap.size === 0) return text;
 
-  // Longest first: one URL can be a prefix of another (a.png vs a.png?v=2),
-  // and replacing the short one first would corrupt the long one.
-  const ordered = [...imageMap.entries()].sort((a, b) => b[0].length - a[0].length);
-
-  for (const [originalUrl, localPath] of ordered) {
-    // Escape URL for regex special characters
-    const escaped = originalUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    text = text.replace(new RegExp(escaped, 'g'), localPath);
-  }
-  return text;
+  // Single pass: each match is looked up directly rather than re-scanning the
+  // text once per known URL.
+  return text.replace(patternFor(imageMap), (match) => imageMap.get(match) ?? match);
 }
 
 /**

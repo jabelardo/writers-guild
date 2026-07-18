@@ -1251,6 +1251,32 @@ describe('Characters API Routes', () => {
       expect(done.embeddedLorebook.entryCount).toBe(2);
     });
 
+    it('delivers a late failure as an error event rather than hanging the stream', async () => {
+      // Once progress events have flushed headers the status line is already
+      // sent. A throw after that point must still reach the client as a
+      // terminal event, or the reader waits forever for a done that never comes.
+      const spy = vi.spyOn(SqliteStorageService.prototype, 'saveCharacter')
+        .mockRejectedValueOnce(new Error('disk on fire'));
+
+      try {
+        const response = await request(app)
+          .post('/api/characters/import-json')
+          .set('Accept', 'text/event-stream')
+          .attach('character', cardWithImages('Doomed'), 'card.json')
+          .expect(200);
+
+        const events = parseEvents(response.text);
+        const error = events.find(e => e.type === 'error');
+
+        expect(error).toBeTruthy();
+        expect(error.error).toContain('disk on fire');
+        // And no bogus success terminator.
+        expect(events.find(e => e.type === 'done')).toBeUndefined();
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
     it('still returns plain JSON when the client does not ask to stream', async () => {
       const response = await request(app)
         .post('/api/characters/import-json')

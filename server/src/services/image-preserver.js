@@ -90,9 +90,15 @@ export class ImagePreserver {
     WG_PLACEHOLDER_RE.lastIndex = 0;
 
     // Single regex pass to replace all placeholders
+    const hallucinated = [];
+
     const result = response.replace(WG_PLACEHOLDER_RE, (match) => {
       if (!placeholderMap.has(match)) {
-        return match; // Not one of ours, leave unchanged
+        // A marker we never issued — the model invented an index. Dropping it
+        // is the only safe option: leaving it puts a literal "[WG_IMAGE_99]"
+        // into the user's story, and there is no image to point it at.
+        hallucinated.push(match);
+        return '';
       }
 
       foundPlaceholders.add(match);
@@ -110,7 +116,11 @@ export class ImagePreserver {
     // Detect missing: placeholders that were saved but not found in response
     const missing = this.saved.filter(item => !foundPlaceholders.has(item.placeholder));
 
-    return { text: result, missing };
+    if (hallucinated.length > 0) {
+      console.warn(`[ImagePreserver] Dropped ${hallucinated.length} invented marker(s): ${[...new Set(hallucinated)].join(', ')}`);
+    }
+
+    return { text: result, missing, hallucinated };
   }
 
   /**

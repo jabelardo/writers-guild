@@ -330,6 +330,26 @@ describe('ImagePreserver', () => {
       expect(r3.missing[0].original).toBe('![a](1.png)');
     });
 
+    it('should drop markers the model invented', () => {
+      // The model sometimes emits an index that was never issued. Leaving it
+      // would write a literal "[WG_IMAGE_99]" into the user's story.
+      preserver.preserve('![a](1.png)', 'story');
+
+      const result = preserver.restoreImages('Text [WG_IMAGE_0] more [WG_IMAGE_99] end.', { appendMissing: false });
+
+      expect(result.finalContent).toContain('![a](1.png)');
+      expect(result.finalContent).not.toContain('[WG_IMAGE_99]');
+      expect(result.finalContent).not.toContain('WG_IMAGE');
+    });
+
+    it('should report invented markers via restore()', () => {
+      preserver.preserve('![a](1.png)', 'story');
+
+      const { hallucinated } = preserver.restore('[WG_IMAGE_0] and [WG_IMAGE_42]');
+
+      expect(hallucinated).toEqual(['[WG_IMAGE_42]']);
+    });
+
     it('should not append missing images when appendMissing is false', () => {
       // A `continue` returns brand-new prose. Every preserved image is
       // therefore "missing" from it, and appending them would dump the whole

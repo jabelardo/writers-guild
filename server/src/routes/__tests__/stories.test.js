@@ -898,10 +898,14 @@ describe('Stories API Routes - Story Lorebooks', () => {
   let app;
   let storage;
 
-  beforeEach(() => {
-    // Create storage instance
+  // One connection for the whole file. Opening a SqliteStorageService per test
+  // leaks an unclosed better-sqlite3 handle to the same WAL database that the
+  // routers already hold a connection to.
+  beforeAll(() => {
     storage = new SqliteStorageService(sharedTempDir);
+  });
 
+  beforeEach(() => {
     // Create Express app with routers
     app = express();
     app.use(express.json());
@@ -1050,9 +1054,12 @@ describe('Stories API Routes - Generation Endpoints', () => {
     return { storyId, presetId };
   }
 
-  beforeEach(() => {
+  // See note above: one connection per file, not per test.
+  beforeAll(() => {
     storage = new SqliteStorageService(sharedTempDir);
+  });
 
+  beforeEach(() => {
     app = express();
     app.use(express.json());
     app.locals.dataRoot = sharedTempDir;

@@ -870,11 +870,11 @@ describe('PromptBuilder', () => {
       expect(result).not.toContain('![img](photo.png)');
     });
 
-    it('should append image preservation note when images are saved', () => {
+    it('should append image preservation note for whole-text rewrites', () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const imagePreserver = new ImagePreserver();
 
-      builder.buildGenerationPrompt('continue', {
+      const result = builder.buildGenerationPrompt('rewriteThirdPerson', {
         storyContent: '![img](photo.png)',
         characterName: '',
         customInstruction: '',
@@ -884,9 +884,34 @@ describe('PromptBuilder', () => {
         imagePreserver
       });
 
-      // The image preservation note was appended
+      expect(result).toContain('[WG_IMAGE_0]');
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ImagePreserver] Appended image-preservation note for continue')
+        expect.stringContaining('[ImagePreserver] Appended image-preservation note for rewriteThirdPerson')
+      );
+      consoleSpy.mockRestore();
+    });
+
+    it('should not tell generative types to preserve markers', () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const imagePreserver = new ImagePreserver();
+
+      const result = builder.buildGenerationPrompt('continue', {
+        storyContent: '![img](photo.png)',
+        characterName: '',
+        customInstruction: '',
+        templateText: 'Story: {{storyContent}}',
+        maxChars: 1000,
+        userName: 'User',
+        imagePreserver
+      });
+
+      // Images are still hidden behind placeholders...
+      expect(result).toContain('[WG_IMAGE_0]');
+      // ...but a continuation returns new text, so instructing it to reproduce
+      // the markers would invite images it was never asked for.
+      expect(result).not.toContain('IMPORTANT: Preserve any markers');
+      expect(consoleSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Appended image-preservation note')
       );
       consoleSpy.mockRestore();
     });

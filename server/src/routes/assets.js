@@ -1,54 +1,45 @@
 /**
  * Assets API Routes
  *
- * Serves locally cached character gallery assets.
+ * Serves locally cached gallery assets for characters and lorebooks.
  *
- * GET /api/assets/characters/:characterId/:filename
+ * GET /api/assets/characters/:entityId/:filename
+ * GET /api/assets/lorebooks/:entityId/:filename
  *   — Serves the asset file with proper Content-Type and immutable caching.
  */
 
 import express from 'express';
+import path from 'path';
 import { asyncHandler, AppError } from '../middleware/error-handler.js';
 import { AssetManager } from '../services/asset-manager.js';
-import { mimeTypeFromExt } from '../../../shared/mime-types.js'
-import path from 'path';
+import { mimeTypeFromExt } from '../../../shared/mime-types.js';
 
 const router = express.Router();
 
-/**
- * Middleware to attach an AssetManager instance per request.
- */
-router.use((req, res, next) => {
-  req.assetManager = new AssetManager(req.app.locals.dataRoot);
-  next();
-});
+// Entity ids are uuids; anything else is a malformed or hostile path segment.
+const ENTITY_ID_RE = /^[A-Za-z0-9_-]+$/;
+
+// Cached filenames are always "{sha256}.{ext}" — see image-cacher.js.
+const ASSET_FILENAME_RE = /^[a-f0-9]{64}\.[a-z0-9]+$/;
 
 /**
- * GET /api/assets/characters/:characterId/:filename
- *
- * Serve a cached asset file. Filename is content-hashed so we use
+ * Serve a cached asset file. Filenames are content-hashed so we use
  * immutable caching: files never change once created.
- */
-router.get('/characters/:characterId/:filename', asyncHandler(async (req, res) => {
-  const { characterId, filename } = req.params;
-  return getAsset(characterId, filename);
-}));
-
-/**
- * GET /api/assets/lorebooks/:lorebookId/:filename
  *
- * Serve a cached lorebook asset file (same immutable caching strategy).
+ * @param {import('express').Request}  req
+ * @param {import('express').Response} res
+ * @param {string} entityType — 'characters' or 'lorebooks'
  */
-router.get('/lorebooks/:lorebookId/:filename', asyncHandler(async (req, res) => {
-  const { lorebookId, filename } = req.params;
-  return getAsset(lorebookId, filename);
-}));
+const serveAsset = async (req, res, entityType) => {
+  const { entityId, filename } = req.params;
 
-const getAsset = async (assetId, filename) => {
-
-  // Basic security: prevent directory traversal in filename
-  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-    throw new AppError('Invalid filename', 400);
+  // Reject traversal attempts before they reach the filesystem. Both segments
+  // are strictly formatted, so an allowlist is safer than blocking '..' and '/'.
+  if (!ENTITY_ID_RE.test(entityId)) {
+    throw new AppError('Invalid asset path', 400);
+  }
+  if (!ASSET_FILENAME_RE.test(filename)) {
+    throw new AppError('Invalid asset filename', 400);
   }
 
   // Only serve allowed image extensions
@@ -58,18 +49,25 @@ const getAsset = async (assetId, filename) => {
     throw new AppError(`Unsupported file type ${ext}`, 400);
   }
 
-  const buffer = await req.assetManager.readAsset(assetId, filename);
+  const assetManager = new AssetManager(req.app.locals.dataRoot, entityType);
+  const buffer = await assetManager.readAsset(entityId, filename);
 
   if (!buffer) {
     throw new AppError('Asset not found', 404);
   }
 
-  // Content-hashed filenames are immutable
   res.setHeader('Content-Type', mimeType);
   res.setHeader('Content-Length', buffer.length);
   res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-
   res.send(buffer);
 };
+
+router.get('/characters/:entityId/:filename', asyncHandler(async (req, res) => {
+  await serveAsset(req, res, 'characters');
+}));
+
+router.get('/lorebooks/:entityId/:filename', asyncHandler(async (req, res) => {
+  await serveAsset(req, res, 'lorebooks');
+}));
 
 export default router;

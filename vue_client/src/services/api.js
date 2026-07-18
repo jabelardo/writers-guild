@@ -508,11 +508,6 @@ export const charactersAPI = {
     })
   },
 
-  refreshImages(characterId) {
-    return request(`/characters/${characterId}/refresh-images`, {
-      method: 'POST',
-    })
-  },
 }
 
 // Lorebooks API

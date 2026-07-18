@@ -9,6 +9,7 @@ import { PromptBuilder } from '../services/prompt-builder.js';
 import { MacroProcessor } from '../services/macro-processor.js';
 import { LorebookActivator } from '../services/lorebook-activator.js';
 import { ImagePreserver } from '../services/image-preserver.js';
+import { REWRITE_GENERATION_TYPES } from '../services/prompt-builder.js';
 import { getProvider } from '../services/provider-factory.js';
 import { createPresetFromSettings } from '../services/default-presets.js';
 
@@ -674,8 +675,15 @@ function setupSSE(res) {
 async function streamGeneration(res, provider, preset, context, generationType, params, abortSignal = null) {
   console.log(`[streamGeneration] Starting ${generationType}, signal present: ${!!abortSignal}, aborted: ${abortSignal?.aborted}`);
 
-  // --- Image preservation: will be done after truncation inside buildPrompts ---
-  const imagePreserver = generationType === 'rewriteThirdPerson' ? new ImagePreserver() : null;
+  // --- Image preservation: applied to card, lorebook and story text inside
+  // buildPrompts, so the model sees [WG_IMAGE_n] rather than long cached
+  // asset URLs it cannot reproduce reliably. ---
+  const imagePreserver = new ImagePreserver();
+
+  // Rewrites are expected to return the whole text, so images the model
+  // dropped are recovered. Generative types return new text and must not have
+  // the story's images appended to them.
+  const appendMissingImages = REWRITE_GENERATION_TYPES.has(generationType);
 
   // Build both system and user prompts with proper context management
   const prompts = await provider.buildPrompts(
@@ -743,7 +751,7 @@ async function streamGeneration(res, provider, preset, context, generationType, 
 
         if (chunk.finished && imagePreserver) {
           // Restore images directly into the finished chunk
-          const { finalContent, imagesRestored, imagesPreserved, imagesMissing } = imagePreserver.restoreImages(fullContent);
+          const { finalContent, imagesRestored, imagesPreserved, imagesMissing } = imagePreserver.restoreImages(fullContent, { appendMissing: appendMissingImages });
           data.finalContent = finalContent;
           data.imagesRestored = imagesRestored;
           data.imagesPreserved = imagesPreserved;
@@ -785,14 +793,14 @@ async function streamGeneration(res, provider, preset, context, generationType, 
         const processedContent = update.content?.replace(/\*/g, '') || '';
 
         // Restore images in the final content
-        const finalContent = !imagePreserver 
-          ? processedContent 
-          : imagePreserver.restoreImages(processedContent)?.finalContent;
+        const finalContent = imagePreserver
+          .restoreImages(processedContent, { appendMissing: appendMissingImages })
+          .finalContent;
 
         res.write(`data: ${JSON.stringify({
           content: finalContent,
           finished: true,
-          imagesRestored: imagePreserver?.saved.length > 0
+          imagesRestored: imagePreserver.saved.length > 0
         })}\n\n`);
       }
 
@@ -806,18 +814,20 @@ async function streamGeneration(res, provider, preset, context, generationType, 
       maxContextLength: preset.generationSettings.maxContextTokens
     });
 
-    const processedContent = update.content?.replace(/\*/g, '') || '';
+    // NOTE: this read `update.content` before, but `update` is out of scope in
+    // this fallback branch — the non-streaming path threw ReferenceError.
+    const processedContent = result.content?.replace(/\*/g, '') || '';
 
     // Restore images in the final content
-    const finalContent = !imagePreserver 
-      ? processedContent 
-      : imagePreserver.restoreImages(processedContent)?.finalContent;
+    const finalContent = imagePreserver
+      .restoreImages(processedContent, { appendMissing: appendMissingImages })
+      .finalContent;
 
     res.write(`data: ${JSON.stringify({
       reasoning: result.reasoning || null,
       content: finalContent,
       finished: true,
-      imagesRestored: imagePreserver?.saved.length > 0
+      imagesRestored: imagePreserver.saved.length > 0
     })}\n\n`);
     if (res.flush) res.flush();
   }

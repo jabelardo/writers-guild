@@ -8,10 +8,10 @@ export const IMAGE_MIME_TYPES_MAP = {
 };
 
 export const mimeTypeFromExt = (ext) => {
-    if (!ext || ext.lenght == 0) return null;
-    const finalExt = ext[0] == '.' ? ext.slice(1): ext;
+    if (!ext || ext.length === 0) return null;
+    const finalExt = ext[0] === '.' ? ext.slice(1) : ext;
     for (const [key, value] of Object.entries(IMAGE_MIME_TYPES_MAP)) {
-        if (value == finalExt) {
+        if (value === finalExt) {
             return key;
         }
     }

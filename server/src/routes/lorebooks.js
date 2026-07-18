@@ -8,7 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { asyncHandler, AppError } from '../middleware/error-handler.js';
 import { SqliteStorageService } from '../services/sqliteStorage.js';
 import { LorebookParser } from '../services/lorebook-parser.js';
-import { cacheLorebookImages, rewriteLorebookImageUrls } from '../services/image-cacher.js';
+import { cacheAndRewriteLorebookImages } from '../services/image-cacher.js';
+import { AssetManager } from '../services/asset-manager.js';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -98,10 +99,12 @@ router.post('/import', upload.single('lorebook'), asyncHandler(async (req, res) 
     // Generate unique ID
     const lorebookId = uuidv4();
 
+    // Cache external images and rewrite URLs before saving, so the rewritten
+    // local paths are what gets persisted.
+    await cacheAndRewriteLorebookImages(lorebookId, parsed, req.app.locals.dataRoot);
+
     // Save to storage
     await storage.saveLorebook(lorebookId, parsed);
-
-    await cacheLorebookImages(storage, lorebookId, parsed, req.app.locals.dataRoot);
 
     res.json({
       id: lorebookId,
@@ -147,10 +150,12 @@ router.post('/import-url', asyncHandler(async (req, res) => {
     // Generate unique ID
     const lorebookId = uuidv4();
 
+    // Cache external images and rewrite URLs before saving, so the rewritten
+    // local paths are what gets persisted.
+    await cacheAndRewriteLorebookImages(lorebookId, parsed, req.app.locals.dataRoot);
+
     // Save to storage
     await storage.saveLorebook(lorebookId, parsed);
-
-    await cacheLorebookImages(storage, lorebookId, parsed, req.app.locals.dataRoot);
 
     res.json({
       id: lorebookId,
@@ -232,6 +237,15 @@ router.put('/:lorebookId', asyncHandler(async (req, res) => {
 router.delete('/:lorebookId', asyncHandler(async (req, res) => {
   const { lorebookId } = req.params;
   await storage.deleteLorebook(lorebookId);
+
+  // Clean up cached asset files so deleted lorebooks don't leak their gallery
+  try {
+    const assetManager = new AssetManager(req.app.locals.dataRoot, 'lorebooks');
+    await assetManager.deleteDir(lorebookId);
+  } catch (error) {
+    console.error(`Failed to clean up assets for lorebook ${lorebookId}:`, error);
+  }
+
   res.json({ success: true });
 }));
 

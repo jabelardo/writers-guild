@@ -33,7 +33,8 @@ describe('ImagePreserver', () => {
       expect(preserver.saved[0]).toEqual({
         original: '![world](https://example.com/img.png)',
         placeholder: '[WG_IMAGE_0]',
-        type: 'markdown'
+        type: 'markdown',
+        source: 'context'
       });
     });
 
@@ -65,7 +66,8 @@ describe('ImagePreserver', () => {
       expect(preserver.saved[0]).toEqual({
         original: '<img src="photo.jpg" alt="A photo">',
         placeholder: '[WG_IMAGE_0]',
-        type: 'html'
+        type: 'html',
+        source: 'context'
       });
     });
 
@@ -101,13 +103,18 @@ describe('ImagePreserver', () => {
       expect(preserver.saved[2].original).toBe('![3](c.png)');
     });
 
-    it('should clear saved state on each call', () => {
-      preserver.preserve('![first](1.png)');
+    it('should accumulate across calls with continuing indices', () => {
+      // One request preserves the character card, lorebook entries and story
+      // content in turn, so state must carry across calls rather than reset.
+      const first = preserver.preserve('![first](1.png)');
+      expect(first).toBe('[WG_IMAGE_0]');
       expect(preserver.saved).toHaveLength(1);
 
-      preserver.preserve('![second](2.png)');
-      expect(preserver.saved).toHaveLength(1);
-      expect(preserver.saved[0].original).toBe('![second](2.png)');
+      const second = preserver.preserve('![second](2.png)');
+      expect(second).toBe('[WG_IMAGE_1]');
+      expect(preserver.saved).toHaveLength(2);
+      expect(preserver.saved[0].original).toBe('![first](1.png)');
+      expect(preserver.saved[1].original).toBe('![second](2.png)');
     });
 
     it('should handle images embedded within surrounding text', () => {
@@ -229,7 +236,7 @@ describe('ImagePreserver', () => {
     });
 
     it('should append missing images at the end of the content', () => {
-      preserver.preserve('![a](1.png) kept ![b](2.png) lost');
+      preserver.preserve('![a](1.png) kept ![b](2.png) lost', 'story');
       const result = preserver.restoreImages('[WG_IMAGE_0] survives');
       expect(result.finalContent).toContain('survives');
       expect(result.finalContent).toContain('![b](2.png)');
@@ -239,7 +246,7 @@ describe('ImagePreserver', () => {
     });
 
     it('should append multiple missing images separated by newlines', () => {
-      preserver.preserve('![a](1.png) ![b](2.png) ![c](3.png)');
+      preserver.preserve('![a](1.png) ![b](2.png) ![c](3.png)', 'story');
       const result = preserver.restoreImages('Nothing survives');
       expect(result.imagesMissing).toBe(3);
       expect(result.finalContent).toContain('![a](1.png)');
@@ -303,18 +310,60 @@ describe('ImagePreserver', () => {
       expect(result.missing).toEqual([]);
     });
 
-    it('should handle restorations in sequence after multiple preserve calls', () => {
-      // First round
+    it('should restore images from every preserve call in one request', () => {
       preserver.preserve('![a](1.png)');
       const r1 = preserver.restore('[WG_IMAGE_0]');
       expect(r1.text).toBe('![a](1.png)');
 
-      // Second round with new state
+      // A second source (e.g. story content after the character card) adds to
+      // the same map instead of replacing it.
       preserver.preserve('![b](2.png)');
-      const r2 = preserver.restore('[WG_IMAGE_0]');
-      expect(r2.text).toBe('![b](2.png)');
-      // Old placeholder from first round should not be in saved anymore
+      const r2 = preserver.restore('[WG_IMAGE_0] and [WG_IMAGE_1]');
+      expect(r2.text).toBe('![a](1.png) and ![b](2.png)');
       expect(r2.missing).toHaveLength(0);
+
+      // Both remain restorable; a response using only the later one reports
+      // the earlier as missing rather than losing it.
+      const r3 = preserver.restore('[WG_IMAGE_1]');
+      expect(r3.text).toBe('![b](2.png)');
+      expect(r3.missing).toHaveLength(1);
+      expect(r3.missing[0].original).toBe('![a](1.png)');
+    });
+
+    it('should not append missing images when appendMissing is false', () => {
+      // A `continue` returns brand-new prose. Every preserved image is
+      // therefore "missing" from it, and appending them would dump the whole
+      // character card gallery onto the end of each generation.
+      preserver.preserve('![a](1.png) and ![b](2.png)');
+
+      const result = preserver.restoreImages('A brand new paragraph.', { appendMissing: false });
+
+      expect(result.finalContent).toBe('A brand new paragraph.');
+      expect(result.imagesMissing).toBe(2);
+    });
+
+    it('should append missing images by default, for rewrites', () => {
+      preserver.preserve('![a](1.png)', 'story');
+
+      const result = preserver.restoreImages('Rewritten text without the marker.');
+
+      expect(result.finalContent).toContain('![a](1.png)');
+      expect(result.imagesMissing).toBe(1);
+    });
+
+    it('should never append context images the model dropped', () => {
+      // Card and lorebook images are context, not part of the story being
+      // rewritten. Recovering them would paste the character's gallery into
+      // the prose on every third-person rewrite.
+      preserver.preserve('![card](portrait.png)', 'context');
+      preserver.preserve('![lore](map.png)', 'context');
+      preserver.preserve('![story](scene.png)', 'story');
+
+      const result = preserver.restoreImages('A rewritten paragraph.', { appendMissing: true });
+
+      expect(result.finalContent).toContain('![story](scene.png)');
+      expect(result.finalContent).not.toContain('portrait.png');
+      expect(result.finalContent).not.toContain('map.png');
     });
 
     it('should preserve placeholders with multi-digit indices', () => {

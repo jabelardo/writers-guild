@@ -38,15 +38,6 @@
           <i class="fas fa-circle-info"></i> Details
         </button>
         <button
-          class="btn btn-small btn-warning"
-          :disabled="isRefreshing(row.id)"
-          @click="$emit('refresh-images', row.id)"
-          title="Re-download external images and cache locally"
-        >
-          <i :class="isRefreshing(row.id) ? 'fas fa-spinner fa-spin' : 'fas fa-sync-alt'"></i>
-          Refresh
-        </button>
-        <button
           class="btn btn-small btn-secondary"
           @click="$emit('delete', row)"
         >
@@ -71,18 +62,10 @@ const props = defineProps({
   stories: {
     type: Array,
     default: () => []
-  },
-  refreshingIds: {
-    type: Set,
-    default: () => new Set()
   }
 })
 
-function isRefreshing(id) {
-  return props.refreshingIds.has(id)
-}
-
-defineEmits(['continue', 'new-story', 'edit', 'delete', 'refresh-images'])
+defineEmits(['continue', 'new-story', 'edit', 'delete'])
 
 // Use centralized memoized story counts for O(1) lookup
 const { getStoryCount: getCachedStoryCount, storyCountsByCharacter } = useDataCache()

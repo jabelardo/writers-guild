@@ -1274,7 +1274,7 @@ describe('Stories API Routes - Generation Endpoints', () => {
     expect(response.text).toContain('"error":"provider crashed"');
   });
 
-  it('POST /:id/continue-with-instruction should emit error event for non-streaming fallback bug path', async () => {
+  it('POST /:id/continue-with-instruction should return content via the non-streaming fallback', async () => {
     const { storyId } = await createStoryWithPreset();
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
@@ -1298,7 +1298,11 @@ describe('Stories API Routes - Generation Endpoints', () => {
       .send({ instruction: 'Keep going' })
       .expect(200);
 
-    expect(response.text).toContain('"error":"update is not defined"');
+    // This previously asserted `"error":"update is not defined"` — the branch
+    // read an out-of-scope `update` and threw for every non-streaming
+    // provider. It now returns the generated content.
+    expect(response.text).toContain('final text');
+    expect(response.text).not.toContain('update is not defined');
   });
 
   it('POST /:id/ideate should emit cancelled event when provider throws cancellation', async () => {

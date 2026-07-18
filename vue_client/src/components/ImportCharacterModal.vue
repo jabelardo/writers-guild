@@ -119,7 +119,7 @@ async function importFromPhoto() {
     console.error('Failed to import photo:', error)
     toast.error('Failed to import character: ' + error.message)
   } finally {
-    importing.value = false
+    importing.value = null
   }
 }
 
@@ -137,7 +137,7 @@ async function importFromURL() {
     console.error('Failed to import from URL:', error)
     toast.error('Failed to import character: ' + error.message)
   } finally {
-    importing.value = false
+    importing.value = null
   }
 }
 
@@ -166,7 +166,7 @@ async function importFromStorage() {
     console.error('Failed to import character from storage:', error)
     toast.error('Failed to import character: ' + error.message)
   } finally {
-    importing.value = false
+    importing.value = null
   }
 }
 </script>

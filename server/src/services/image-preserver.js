@@ -29,17 +29,19 @@ export class ImagePreserver {
    * @param {string} text  The full story content
    * @returns {string}     Text with images replaced by placeholders
    */
-  preserve(text) {
+  preserve(text, source = 'context') {
     if (!text) return text;
 
-    this.saved = [];
-    let idx = 0;
+    // Accumulates across calls: a single request preserves images from the
+    // character card, lorebook entries AND the story content, so indices must
+    // keep counting up rather than restarting per source.
+    let idx = this.saved.length;
     let result = text;
 
     // --- Extract markdown images ![alt](url) ---
     result = result.replace(MARKDOWN_IMAGE_RE, (match) => {
       const placeholder = PLACEHOLDER_TEMPLATE(idx);
-      this.saved.push({ original: match, placeholder, type: 'markdown' });
+      this.saved.push({ original: match, placeholder, type: 'markdown', source });
       idx++;
       return placeholder;
     });
@@ -47,7 +49,7 @@ export class ImagePreserver {
     // --- Extract HTML <img ...> tags ---
     result = result.replace(HTML_IMAGE_RE, (match) => {
       const placeholder = PLACEHOLDER_TEMPLATE(idx);
-      this.saved.push({ original: match, placeholder, type: 'html' });
+      this.saved.push({ original: match, placeholder, type: 'html', source });
       idx++;
       return placeholder;
     });
@@ -120,9 +122,24 @@ export class ImagePreserver {
    * response is returned as-is and nothing is restored.
    *
    * @param {string} llmResponse  Raw text returned by the LLM
+   * @param {object} [options]
+   * @param {boolean} [options.appendMissing=true]
+   *   Whether images whose placeholder is absent from the response should be
+   *   appended at the end.
+   *
+   *   True for whole-text rewrites (rewriteThirdPerson), where the model was
+   *   given the story and is expected to return all of it — a dropped
+   *   placeholder means a lost image that must be recovered.
+   *
+   *   False for generative types (continue, character, ideate…), where the
+   *   model returns NEW text and is never expected to echo the preserved
+   *   images back. Appending there would dump every image in the character
+   *   card and story onto the end of each generation.
    * @returns {{ finalContent: string, imagesRestored: boolean, imagesPreserved: number, imagesMissing: number }}
    */
-  restoreImages(llmResponse) {
+  restoreImages(llmResponse, options = {}) {
+    const { appendMissing = true } = options;
+
     // Guard against empty/failed LLM response
     const hasContent = llmResponse && llmResponse.trim().length > 0;
     if (!hasContent || this.saved.length === 0) {
@@ -136,10 +153,15 @@ export class ImagePreserver {
 
     const { text: restoredContent, missing } = this.restore(llmResponse);
 
+    // Only images that came from the text being rewritten may be recovered.
+    // Character card and lorebook images were never part of the story, so
+    // appending them would inject the card's gallery into the prose.
+    const recoverable = missing.filter(m => m.source === 'story');
+
     // Build final content with missing images appended at the end
     let finalContent = restoredContent;
-    if (missing.length > 0) {
-      finalContent += '\n\n' + missing.map(m => m.original).join('\n');
+    if (appendMissing && recoverable.length > 0) {
+      finalContent += '\n\n' + recoverable.map(m => m.original).join('\n');
     }
 
     console.log(`[ImagePreserver] Restored ${this.saved.length} image(s), ${missing.length} missing`);

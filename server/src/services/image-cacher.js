@@ -9,9 +9,10 @@
  */
 
 import crypto from 'crypto';
+import dns from 'dns/promises';
 import sharp from 'sharp';
 import { AssetManager } from './asset-manager.js';
-import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE, IMAGE_EXTENSIONS } from '../../../shared/regex-patterns.js';
+import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE } from '../../../shared/regex-patterns.js';
 import { IMAGE_MIME_TYPES_MAP, mimeTypeToExt } from '../../../shared/mime-types.js'
 
 // ── Configuration ─────────────────────────────────────────────────────
@@ -19,6 +20,23 @@ import { IMAGE_MIME_TYPES_MAP, mimeTypeToExt } from '../../../shared/mime-types.
 const DOWNLOAD_TIMEOUT_MS = 15_000;       // 15 s per image
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_CONCURRENT_DOWNLOADS = 3;
+const MAX_REDIRECTS = 3;
+
+/**
+ * Card fields that are cached.
+ *
+ * Deliberately excludes creator_notes, system_prompt and
+ * post_history_instructions: creator_notes in particular is where CHUB puts
+ * page furniture (banners, dividers, creator self-promo), and none of these
+ * reach the model, so caching their images is pure storage cost.
+ */
+const CACHEABLE_CARD_FIELDS = [
+  'description',
+  'personality',
+  'scenario',
+  'first_mes',
+  'mes_example',
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -45,7 +63,7 @@ function extractImageUrls(text) {
   let m;
   MARKDOWN_IMAGE_RE.lastIndex = 0;
   while ((m = MARKDOWN_IMAGE_RE.exec(text)) !== null) {
-    urls.add(m[2]); // capture group 2 is the URL
+    if (isHttpUrl(m[2])) urls.add(m[2]); // capture group 2 is the URL
   }
 
   // HTML: <img src="..." ...>
@@ -54,7 +72,9 @@ function extractImageUrls(text) {
     const tag = m[0];
     // Extract src attribute
     const srcMatch = tag.match(/src\s*=\s*["']([^"']+)["']/i);
-    if (srcMatch) {
+    // Cards frequently contain placeholder src values ("URL", "image.png",
+    // data: URIs). Filtering here keeps the "found N images" count honest.
+    if (srcMatch && isHttpUrl(srcMatch[1])) {
       urls.add(srcMatch[1]);
     }
   }
@@ -73,14 +93,7 @@ function collectAllImageUrls(cardData) {
   if (!data) return new Set();
 
   const fields = [
-    data.description,
-    data.personality,
-    data.scenario,
-    data.first_mes,
-    data.mes_example,
-    data.creator_notes,
-    data.system_prompt,
-    data.post_history_instructions,
+    ...CACHEABLE_CARD_FIELDS.map(f => data[f]),
     ...(Array.isArray(data.alternate_greetings) ? data.alternate_greetings : []),
   ];
 
@@ -131,34 +144,92 @@ function collectLorebookImageUrls(lorebookData) {
 }
 
 /**
- * Validate that a URL is a plausible image URL before attempting to download.
+ * Cheap, quiet check that a string is an http(s) URL with a hostname.
+ * Used at extraction time to filter out placeholder src values.
  *
  * @param {string} url
  * @returns {boolean}
  */
-function isValidImageUrl(url) {
+function isHttpUrl(url) {
   if (!url || typeof url !== 'string') return false;
-
   try {
     const parsed = new URL(url);
-
-    // Only http / https are supported
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      console.warn(`[ImageCacher] Skipping non-HTTP URL: ${url}`);
-      return false;
-    }
-
-    // Reject URLs with no hostname
-    if (!parsed.hostname) {
-      console.warn(`[ImageCacher] Skipping URL with no hostname: ${url}`);
-      return false;
-    }
-
-    return true;
+    return (parsed.protocol === 'http:' || parsed.protocol === 'https:') && !!parsed.hostname;
   } catch {
-    console.warn(`[ImageCacher] Skipping malformed URL: ${url}`);
     return false;
   }
+}
+
+/**
+ * True if an IP address is one we must never fetch from.
+ *
+ * Character cards are untrusted input and Writers Guild is typically
+ * self-hosted on a home or private network, so an imported card must not be
+ * able to make the server reach internal services or cloud metadata endpoints.
+ */
+function isBlockedAddress(ip, family) {
+  if (family === 6) {
+    const v6 = ip.toLowerCase();
+    if (v6 === '::1' || v6 === '::') return true;
+    if (v6.startsWith('fe80:')) return true;              // link-local
+    if (/^f[cd][0-9a-f]{2}:/.test(v6)) return true;        // unique local
+    // IPv4-mapped (::ffff:a.b.c.d) — re-check as v4
+    const mapped = v6.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+    if (mapped) return isBlockedAddress(mapped[1], 4);
+    return false;
+  }
+
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return true;
+  const [a, b] = parts;
+
+  if (a === 0) return true;                                // "this" network
+  if (a === 10) return true;                               // RFC1918
+  if (a === 127) return true;                              // loopback
+  if (a === 169 && b === 254) return true;                 // link-local + cloud metadata
+  if (a === 172 && b >= 16 && b <= 31) return true;         // RFC1918
+  if (a === 192 && b === 168) return true;                 // RFC1918
+  if (a === 100 && b >= 64 && b <= 127) return true;        // CGNAT
+  if (a >= 224) return true;                               // multicast + reserved
+  return false;
+}
+
+/**
+ * Resolve a hostname and confirm every address it maps to is publicly routable.
+ *
+ * @param {string} hostname
+ * @returns {Promise<boolean>}
+ */
+async function hasOnlyPublicAddresses(hostname) {
+  try {
+    const addresses = await dns.lookup(hostname, { all: true });
+    if (!addresses.length) return false;
+    return !addresses.some(({ address, family }) => isBlockedAddress(address, family));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validate a URL immediately before it is fetched: http(s), resolvable, and
+ * not pointing at a private or link-local address.
+ *
+ * @param {string} url
+ * @returns {Promise<boolean>}
+ */
+async function isSafeToFetch(url) {
+  if (!isHttpUrl(url)) {
+    console.warn(`[ImageCacher] Skipping non-HTTP or malformed URL: ${url}`);
+    return false;
+  }
+
+  const { hostname } = new URL(url);
+  if (!(await hasOnlyPublicAddresses(hostname))) {
+    console.warn(`[ImageCacher] Refusing to fetch private or unresolvable host: ${hostname}`);
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -170,22 +241,46 @@ function isValidImageUrl(url) {
  *   is not a valid image.
  */
 async function downloadImage(url) {
-  // Validate URL before making any network request
-  if (!isValidImageUrl(url)) {
-    return null;
-  }
-
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
 
   try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; WritersGuild/2.0)',
-        'Accept': 'image/*',
-      },
-    });
+    let currentUrl = url;
+    let response = null;
+
+    // Redirects are followed manually so that every hop is re-validated —
+    // otherwise a public URL could redirect the server onto a private address.
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      if (!(await isSafeToFetch(currentUrl))) {
+        return null;
+      }
+
+      response = await fetch(currentUrl, {
+        signal: controller.signal,
+        redirect: 'manual',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; WritersGuild/2.0)',
+          'Accept': 'image/*',
+        },
+      });
+
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get('location');
+        if (!location) {
+          console.warn(`[ImageCacher] Redirect with no Location: ${currentUrl}`);
+          return null;
+        }
+        currentUrl = new URL(location, currentUrl).toString();
+        continue;
+      }
+
+      break;
+    }
+
+    if (response.status >= 300 && response.status < 400) {
+      console.warn(`[ImageCacher] Too many redirects: ${url}`);
+      return null;
+    }
 
     if (!response.ok) {
       console.warn(`[ImageCacher] Download failed (${response.status}): ${url}`);
@@ -347,6 +442,10 @@ export async function cacheCharacterImages(characterId, cardData, dataRoot, opti
  * Download all external images referenced in a lorebook's entry content,
  * store them locally, and return a mapping of original URL → local path.
  *
+ * Mirrors cacheCharacterImages: does NOT modify lorebookData and does NOT
+ * save — call rewriteLorebookImageUrls() and persist separately, so both
+ * entity types follow the same cache → rewrite → save order.
+ *
  * @param {string}   lorebookId
  * @param {object}   lorebookData  — lorebook with .entries[].content fields
  * @param {string}   dataRoot
@@ -355,28 +454,46 @@ export async function cacheCharacterImages(characterId, cardData, dataRoot, opti
  * @returns {Promise<Map<string, string>>}
  *   Map where key = original URL, value = local path (e.g. "/api/assets/lorebooks/{id}/{hash}.webp")
  */
-export async function cacheLorebookImages(storage, lorebookId, lorebookData, dataRoot, options = {}) {
-    try {
-      const urls = collectLorebookImageUrls(lorebookData);
-      const label = lorebookData.name || lorebookId;
-      const imageMap = await cacheImageSet(lorebookId, urls, dataRoot, 'lorebooks', label, options);
-      if (imageMap.size > 0) {
-        rewriteLorebookImageUrls(lorebookData, imageMap);
-        const saved = await storage.saveLorebook(lorebookId, lorebookData);
-        console.log(`[Lorebooks] Rewrote ${imageMap.size} image URL(s) in lorebook ${lorebookId}`);
-        return imageMap;
-      }
-    } catch (error) {
-      console.error(`[Lorebooks] Failed to cache images for lorebook ${lorebookId}:`, error);
+export async function cacheLorebookImages(lorebookId, lorebookData, dataRoot, options = {}) {
+  const urls = collectLorebookImageUrls(lorebookData);
+  const label = lorebookData?.name || lorebookId;
+  return cacheImageSet(lorebookId, urls, dataRoot, 'lorebooks', label, options);
+}
+
+/**
+ * Cache a lorebook's external images and rewrite its URLs in place.
+ *
+ * Non-fatal: an import must still succeed if image caching fails, in which
+ * case the original external URLs are left untouched. Callers must persist
+ * lorebookData AFTER calling this, so the rewritten URLs are what gets saved.
+ *
+ * @param {string} lorebookId
+ * @param {object} lorebookData — mutated in place
+ * @param {string} dataRoot
+ * @returns {Promise<number>} number of image URLs rewritten
+ */
+export async function cacheAndRewriteLorebookImages(lorebookId, lorebookData, dataRoot) {
+  try {
+    const imageMap = await cacheLorebookImages(lorebookId, lorebookData, dataRoot);
+    if (imageMap.size > 0) {
+      rewriteLorebookImageUrls(lorebookData, imageMap);
+      console.log(`[ImageCacher] Rewrote ${imageMap.size} image URL(s) in lorebook ${lorebookId}`);
     }
-    return null;
+    return imageMap.size;
+  } catch (error) {
+    console.error(`[ImageCacher] Failed to cache images for lorebook ${lorebookId}:`, error);
+    return 0;
+  }
 }
 
 function replaceUrls(text, imageMap) {
   if (!text || typeof text !== 'string') return text;
 
-  // Replace each original URL in the text with its local path
-  for (const [originalUrl, localPath] of imageMap) {
+  // Longest first: one URL can be a prefix of another (a.png vs a.png?v=2),
+  // and replacing the short one first would corrupt the long one.
+  const ordered = [...imageMap.entries()].sort((a, b) => b[0].length - a[0].length);
+
+  for (const [originalUrl, localPath] of ordered) {
     // Escape URL for regex special characters
     const escaped = originalUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     text = text.replace(new RegExp(escaped, 'g'), localPath);
@@ -398,18 +515,7 @@ export function rewriteCharacterImageUrls(cardData, imageMap) {
   const data = cardData.data;
 
   // Apply to all text fields
-  const fields = [
-    'description',
-    'personality',
-    'scenario',
-    'first_mes',
-    'mes_example',
-    'creator_notes',
-    'system_prompt',
-    'post_history_instructions',
-  ];
-
-  for (const field of fields) {
+  for (const field of CACHEABLE_CARD_FIELDS) {
     if (data[field] !== undefined) {
       data[field] = replaceUrls(data[field], imageMap);
     }

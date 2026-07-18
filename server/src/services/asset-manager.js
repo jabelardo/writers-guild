@@ -26,8 +26,21 @@ export class AssetManager {
 
   // ── Path helpers ────────────────────────────────────────────────────
 
+  /**
+   * Resolve an entity's asset directory, refusing anything that escapes the
+   * gallery root. Entity ids reach this from request params in several places,
+   * so containment is enforced here rather than at each call site.
+   */
   entityDir(entityId) {
-    return path.join(this.dataRoot, ...ASSETS_BASE, this.entityType, entityId);
+    const base = path.resolve(this.dataRoot, ...ASSETS_BASE, this.entityType);
+    const dir = path.resolve(base, String(entityId ?? ''));
+    if (dir !== base && !dir.startsWith(base + path.sep)) {
+      throw new Error(`Invalid entity id: ${entityId}`);
+    }
+    if (dir === base) {
+      throw new Error('Entity id is required');
+    }
+    return dir;
   }
 
   assetPath(entityId, filename) {

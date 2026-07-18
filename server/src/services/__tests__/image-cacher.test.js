@@ -6,7 +6,18 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { cacheCharacterImages, cacheLorebookImages, rewriteCharacterImageUrls, rewriteLorebookImageUrls, extractCardImageUrls, extractLorebookImageUrls } from '../image-cacher.js';
+
+// The cacher resolves every host and refuses private addresses (SSRF guard).
+// Stub DNS so these tests stay hermetic and don't depend on the test
+// hostnames actually existing — the guard itself is tested separately below.
+vi.mock('dns/promises', () => ({
+  default: {
+    lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
+  },
+}));
+
+import dns from 'dns/promises';
+import { cacheCharacterImages, cacheLorebookImages, cacheAndRewriteLorebookImages, rewriteCharacterImageUrls, rewriteLorebookImageUrls, extractCardImageUrls, extractLorebookImageUrls } from '../image-cacher.js';
 import { AssetManager } from '../asset-manager.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -31,6 +42,29 @@ function makeCard(fields = {}) {
   };
 }
 
+/** A minimal successful PNG response shaped like the fetch Response we use. */
+function makePngResponse() {
+  const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0]);
+  return {
+    ok: true,
+    status: 200,
+    headers: { get: () => 'image/png' },
+    body: {
+      getReader() {
+        let sent = false;
+        return {
+          read() {
+            if (sent) return Promise.resolve({ done: true });
+            sent = true;
+            return Promise.resolve({ done: false, value: new Uint8Array(png) });
+          },
+          cancel() {},
+        };
+      },
+    },
+  };
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────
 
 describe('extractCardImageUrls', () => {
@@ -51,20 +85,41 @@ describe('extractCardImageUrls', () => {
     expect([...urls]).toEqual(['https://host.com/avatar.jpg']);
   });
 
-  it('extracts from all text fields', () => {
+  it('extracts from the cacheable text fields', () => {
     const card = makeCard({
       description: '![a](https://a.com/1.png)',
       personality: '![b](https://b.com/2.png)',
       scenario: '<img src="https://c.com/3.jpg">',
       first_mes: '![d](https://d.com/4.png)',
       mes_example: '![e](https://e.com/5.png)',
-      creator_notes: '![f](https://f.com/6.png)',
-      system_prompt: '![g](https://g.com/7.png)',
-      post_history_instructions: '![h](https://h.com/8.png)',
       alternate_greetings: ['![i](https://i.com/9.png)', '<img src="https://j.com/10.jpg">'],
     });
     const urls = extractCardImageUrls(card);
-    expect(urls.size).toBe(10);
+    expect(urls.size).toBe(7);
+  });
+
+  it('ignores metadata fields that never reach the model', () => {
+    // creator_notes is where CHUB keeps page furniture (banners, promo art).
+    // Caching it would download a creator's page decoration for every user.
+    const card = makeCard({
+      description: '![a](https://a.com/1.png)',
+      creator_notes: '![f](https://f.com/6.png)',
+      system_prompt: '![g](https://g.com/7.png)',
+      post_history_instructions: '![h](https://h.com/8.png)',
+    });
+    const urls = extractCardImageUrls(card);
+    expect(urls.size).toBe(1);
+    expect([...urls]).toEqual(['https://a.com/1.png']);
+  });
+
+  it('ignores placeholder src values that are not real URLs', () => {
+    const card = makeCard({
+      description: '<img src="URL"> <img src="image.png"> <img src="data:image/png;base64,AAAA">',
+      first_mes: '![real](https://real.com/pic.png)',
+    });
+    const urls = extractCardImageUrls(card);
+    expect(urls.size).toBe(1);
+    expect([...urls]).toEqual(['https://real.com/pic.png']);
   });
 
   it('deduplicates identical URLs across fields', () => {
@@ -257,10 +312,7 @@ describe('rewriteLorebookImageUrls', () => {
 });
 
 describe('cacheLorebookImages (mocked fetch + fs)', () => {
-  let mockStorage;
-
   beforeEach(() => {
-    mockStorage = { saveLorebook: vi.fn().mockResolvedValue({}) };
     vi.stubGlobal('fetch', vi.fn());
     vi.spyOn(AssetManager.prototype, 'readMetadata').mockResolvedValue({ images: [] });
     vi.spyOn(AssetManager.prototype, 'ensureDir').mockResolvedValue('/fake/dir');
@@ -274,10 +326,10 @@ describe('cacheLorebookImages (mocked fetch + fs)', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns null when lorebook has no images', async () => {
+  it('returns an empty map when lorebook has no images', async () => {
     const lorebook = { name: 'Empty', entries: [{ content: 'no images' }] };
-    const result = await cacheLorebookImages(mockStorage, 'lb-1', lorebook, '/fake/data');
-    expect(result).toBeNull();
+    const result = await cacheLorebookImages('lb-1', lorebook, '/fake/data');
+    expect(result.size).toBe(0);
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -307,15 +359,14 @@ describe('cacheLorebookImages (mocked fetch + fs)', () => {
         { content: '![dragon](https://remote.com/dragon.png)' },
       ],
     };
-    const result = await cacheLorebookImages(mockStorage, 'lb-1', lorebook, '/fake/data');
+    const result = await cacheLorebookImages('lb-1', lorebook, '/fake/data');
 
     expect(result.size).toBe(1);
     const localUrl = result.get('https://remote.com/dragon.png');
     expect(localUrl).toMatch(/^\/api\/assets\/lorebooks\/lb-1\/[a-f0-9]+\.png$/);
     expect(fetch).toHaveBeenCalledTimes(1);
-    // Should have rewritten URL in the lorebook data and saved
-    expect(lorebook.entries[0].content).toContain('/api/assets/lorebooks/lb-1/');
-    expect(mockStorage.saveLorebook).toHaveBeenCalledOnce();
+    // Mirrors cacheCharacterImages: caching alone does not mutate the data.
+    expect(lorebook.entries[0].content).toBe('![dragon](https://remote.com/dragon.png)');
   });
 
   it('skips already-cached images', async () => {
@@ -327,12 +378,10 @@ describe('cacheLorebookImages (mocked fetch + fs)', () => {
       name: 'Cached Lorebook',
       entries: [{ content: '![x](https://remote.com/dragon.png)' }],
     };
-    const result = await cacheLorebookImages(mockStorage, 'lb-1', lorebook, '/fake/data');
+    const result = await cacheLorebookImages('lb-1', lorebook, '/fake/data');
     expect(result.size).toBe(1);
     expect(result.get('https://remote.com/dragon.png')).toBe('/api/assets/lorebooks/lb-1/abc.png');
     expect(fetch).not.toHaveBeenCalled();
-    // Already-cached also triggers rewrite + save
-    expect(mockStorage.saveLorebook).toHaveBeenCalledOnce();
   });
 
   it('does not fail on download errors', async () => {
@@ -341,8 +390,128 @@ describe('cacheLorebookImages (mocked fetch + fs)', () => {
       name: 'Fail Lorebook',
       entries: [{ content: '![x](https://remote.com/pic.png)' }],
     };
-    const result = await cacheLorebookImages(mockStorage, 'lb-1', lorebook, '/fake/data');
-    expect(result).toBeNull();
+    const result = await cacheLorebookImages('lb-1', lorebook, '/fake/data');
+    expect(result.size).toBe(0);
+  });
+});
+
+describe('SSRF protection', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+    vi.spyOn(AssetManager.prototype, 'readMetadata').mockResolvedValue({ images: [] });
+    vi.spyOn(AssetManager.prototype, 'writeFileOnly').mockResolvedValue(undefined);
+    vi.spyOn(AssetManager.prototype, 'writeMetadata').mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  // Character cards are untrusted and WG is usually self-hosted on a private
+  // network, so an imported card must never make the server reach inward.
+  const blocked = [
+    ['loopback', '127.0.0.1', 4],
+    ['RFC1918 10/8', '10.0.0.5', 4],
+    ['RFC1918 192.168/16', '192.168.1.1', 4],
+    ['RFC1918 172.16/12', '172.20.10.1', 4],
+    ['cloud metadata', '169.254.169.254', 4],
+    ['CGNAT', '100.64.0.1', 4],
+    ['IPv6 loopback', '::1', 6],
+    ['IPv6 unique local', 'fd00::1', 6],
+    ['IPv4-mapped loopback', '::ffff:127.0.0.1', 6],
+  ];
+
+  for (const [label, address, family] of blocked) {
+    it(`refuses to fetch a host resolving to ${label}`, async () => {
+      dns.lookup.mockResolvedValueOnce([{ address, family }]);
+
+      const card = makeCard({ description: '![x](https://internal.example/pic.png)' });
+      const result = await cacheCharacterImages('c-1', card, '/fake/data');
+
+      expect(result.size).toBe(0);
+      expect(fetch).not.toHaveBeenCalled();
+    });
+  }
+
+  it('allows a host resolving to a public address', async () => {
+    dns.lookup.mockResolvedValueOnce([{ address: '93.184.216.34', family: 4 }]);
+    fetch.mockResolvedValue(makePngResponse());
+
+    const card = makeCard({ description: '![x](https://public.example/pic.png)' });
+    const result = await cacheCharacterImages('c-1', card, '/fake/data');
+
+    expect(result.size).toBe(1);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-validates redirect targets, blocking a public host that redirects inward', async () => {
+    dns.lookup
+      .mockResolvedValueOnce([{ address: '93.184.216.34', family: 4 }])  // public.example
+      .mockResolvedValueOnce([{ address: '169.254.169.254', family: 4 }]); // redirect target
+
+    fetch.mockResolvedValueOnce({
+      status: 302,
+      ok: false,
+      headers: { get: (h) => (h.toLowerCase() === 'location' ? 'http://169.254.169.254/latest/meta-data/' : null) },
+    });
+
+    const card = makeCard({ description: '![x](https://public.example/pic.png)' });
+    const result = await cacheCharacterImages('c-1', card, '/fake/data');
+
+    expect(result.size).toBe(0);
+    // The redirect was followed but the second hop was never fetched.
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a host that does not resolve', async () => {
+    dns.lookup.mockRejectedValueOnce(new Error('ENOTFOUND'));
+
+    const card = makeCard({ description: '![x](https://nope.invalid/pic.png)' });
+    const result = await cacheCharacterImages('c-1', card, '/fake/data');
+
+    expect(result.size).toBe(0);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('cacheAndRewriteLorebookImages', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+    vi.spyOn(AssetManager.prototype, 'readMetadata').mockResolvedValue({
+      images: [{ originalUrl: 'https://remote.com/dragon.png', hash: 'abc', filename: 'abc.png' }],
+    });
+    vi.spyOn(AssetManager.prototype, 'writeMetadata').mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('rewrites URLs in place and reports how many were rewritten', async () => {
+    const lorebook = {
+      name: 'Rewrite Me',
+      entries: [{ content: '![x](https://remote.com/dragon.png)' }],
+    };
+
+    const count = await cacheAndRewriteLorebookImages('lb-1', lorebook, '/fake/data');
+
+    expect(count).toBe(1);
+    expect(lorebook.entries[0].content).toBe('![x](/api/assets/lorebooks/lb-1/abc.png)');
+  });
+
+  it('is non-fatal when caching throws, leaving data untouched', async () => {
+    vi.spyOn(AssetManager.prototype, 'readMetadata').mockRejectedValue(new Error('disk on fire'));
+    const lorebook = {
+      name: 'Boom',
+      entries: [{ content: '![x](https://remote.com/dragon.png)' }],
+    };
+
+    const count = await cacheAndRewriteLorebookImages('lb-1', lorebook, '/fake/data');
+
+    expect(count).toBe(0);
+    expect(lorebook.entries[0].content).toBe('![x](https://remote.com/dragon.png)');
   });
 });
 

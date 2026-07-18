@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import fs from 'fs';
@@ -8,6 +8,7 @@ import { createTestPng, createTestCharacterPng, PNG_SIGNATURE } from './test-hel
 
 // Import the routers
 import charactersRouter from '../characters.js';
+import assetsRouter from '../assets.js';
 import storiesRouter from '../stories.js';
 import { SqliteStorageService } from '../../services/sqliteStorage.js';
 
@@ -37,6 +38,7 @@ describe('Characters API Routes', () => {
     app.use(express.json());
     app.locals.dataRoot = tempDir;
     app.use('/api/characters', charactersRouter);
+    app.use('/api/assets', assetsRouter);
     app.use('/api/stories', storiesRouter);
 
     // Add error handler
@@ -1134,67 +1136,87 @@ describe('Characters API Routes', () => {
     });
   });
 
-  describe('POST /:characterId/refresh-images', () => {
-    let charId;
+  describe('image caching persistence', () => {
+    // Regression guard: the cacher rewrites cardData in place, so it must run
+    // BEFORE saveCharacter. If the order flips, the download still happens and
+    // the asset lands on disk, but the persisted card keeps the external URL.
+    let origFetch;
 
-    beforeEach(async () => {
-      // Create a character via POST /
-      const createResponse = await request(app)
-        .post('/api/characters')
-        .send({
-          name: 'Refresh Test',
-          description: 'Character for refresh-images test',
-        })
-        .expect(201);
-
-      charId = createResponse.body.id;
-
-      // Add external image URLs to the character data via PUT
-      await request(app)
-        .put(`/api/characters/${charId}`)
-        .send({
-          description: 'A character with an external image ![img](https://example.com/photo.png)',
-          first_mes: 'Hello! Check this out: <img src="https://example.com/banner.jpg"/>',
-        })
-        .expect(200);
-    });
-
-    it('should return success with imagesCached=0 when no images can be downloaded', async () => {
-      const response = await request(app)
-        .post(`/api/characters/${charId}/refresh-images`)
-        .expect(200);
-
-      expect(response.body.success).toBe(true);
-      expect(response.body.imagesCached).toBe(0);
-      expect(response.body.message).toBe('All images already cached');
-    });
-
-    it('should return success with imagesCached>0 when new images are cached', async () => {
-      // Mock fetch to return a valid PNG so images get downloaded and cached
+    beforeEach(() => {
       const pngBuffer = createTestPng();
-      const origFetch = globalThis.fetch;
+      origFetch = globalThis.fetch;
       globalThis.fetch = async () => new Response(pngBuffer, {
         status: 200,
         headers: { 'Content-Type': 'image/png' },
       });
-
-      try {
-        const response = await request(app)
-          .post(`/api/characters/${charId}/refresh-images`)
-          .expect(200);
-
-        expect(response.body.success).toBe(true);
-        expect(response.body.imagesCached).toBeGreaterThan(0);
-        expect(response.body.message).toContain('Cached');
-      } finally {
-        globalThis.fetch = origFetch;
-      }
     });
 
-    it('should return 500 for a non-existent character', async () => {
+    afterEach(() => {
+      globalThis.fetch = origFetch;
+    });
+
+    it('persists rewritten image URLs on create', async () => {
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({
+          name: 'Persist Create',
+          description: 'External image ![img](https://example.com/photo.png)',
+        })
+        .expect(201);
+
+      const dataResponse = await request(app)
+        .get(`/api/characters/${createResponse.body.id}/data`)
+        .expect(200);
+
+      const { description } = dataResponse.body.character.data;
+      expect(description).toContain('/api/assets/characters/');
+      expect(description).not.toContain('https://example.com/photo.png');
+    });
+
+    it('persists rewritten image URLs on update', async () => {
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({ name: 'Persist Update', description: 'No images yet' })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+
       await request(app)
-        .post('/api/characters/non-existent-id/refresh-images')
-        .expect(500);
+        .put(`/api/characters/${charId}`)
+        .send({
+          description: 'Now with an image ![img](https://example.com/added.png)',
+        })
+        .expect(200);
+
+      const dataResponse = await request(app)
+        .get(`/api/characters/${charId}/data`)
+        .expect(200);
+
+      const { description } = dataResponse.body.character.data;
+      expect(description).toContain('/api/assets/characters/');
+      expect(description).not.toContain('https://example.com/added.png');
+    });
+
+    it('serves the cached asset that a create produced', async () => {
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({
+          name: 'Persist Serve',
+          description: 'External image ![img](https://example.com/served.png)',
+        })
+        .expect(201);
+
+      const dataResponse = await request(app)
+        .get(`/api/characters/${createResponse.body.id}/data`)
+        .expect(200);
+
+      // Pull the rewritten local path back out and fetch it end-to-end.
+      const match = dataResponse.body.character.data.description.match(
+        /\/api\/assets\/characters\/[^)\s]+/
+      );
+      expect(match).not.toBeNull();
+
+      await request(app).get(match[0]).expect(200);
     });
   });
 

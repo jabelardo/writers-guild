@@ -80,12 +80,10 @@
           v-else
           :characters="characters"
           :stories="stories"
-          :refreshing-ids="refreshingCharacterIds"
           @continue="showCharacterStories"
           @new-story="createStoryWithCharacter"
           @edit="editCharacter"
           @delete="deleteCharacter"
-          @refresh-images="refreshCharacterImages"
         />
       </template>
 
@@ -272,7 +270,6 @@ const showPresetEditorModal = ref(false)
 const showProviderSelectionModal = ref(false)
 const editingPreset = ref(null)
 const selectedProvider = ref(null)
-const refreshingCharacterIds = ref(new Set())
 
 const characterStoriesForModal = computed(() => {
   if (!selectedCharacter.value) return []
@@ -433,31 +430,6 @@ async function deleteCharacter(character) {
   } catch (error) {
     console.error('Error deleting character:', error)
     toast.error('Failed to delete character: ' + error.message)
-  }
-}
-
-async function refreshCharacterImages(characterId) {
-  const character = characters.value.find(c => c.id === characterId)
-  const name = character?.name || 'Character'
-
-  // Mark as refreshing for spinner
-  refreshingCharacterIds.value = new Set([...refreshingCharacterIds.value, characterId])
-
-  try {
-    const result = await charactersAPI.refreshImages(characterId)
-    if (result.imagesCached > 0) {
-      toast.success(`Cached ${result.imagesCached} new image(s) for ${name}`)
-    } else {
-      toast.success(`All images already cached for ${name}`)
-    }
-  } catch (error) {
-    console.error('Error refreshing images:', error)
-    toast.error('Failed to refresh images: ' + error.message)
-  } finally {
-    // Remove from refreshing set
-    const next = new Set(refreshingCharacterIds.value)
-    next.delete(characterId)
-    refreshingCharacterIds.value = next
   }
 }
 

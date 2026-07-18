@@ -40,9 +40,7 @@ describe('Onboarding API Routes', () => {
 
   describe('GET /status', () => {
     it('should return onboardingCompleted as false for fresh install', async () => {
-      const response = await request(app)
-        .get('/api/onboarding/status')
-        .expect(200);
+      const response = await request(app).get('/api/onboarding/status').expect(200);
 
       expect(response.body).toHaveProperty('onboardingCompleted');
       expect(response.body.onboardingCompleted).toBe(false);
@@ -50,14 +48,10 @@ describe('Onboarding API Routes', () => {
 
     it('should return onboardingCompleted as true after completing onboarding', async () => {
       // Complete onboarding first
-      await request(app)
-        .post('/api/onboarding/complete')
-        .expect(200);
+      await request(app).post('/api/onboarding/complete').expect(200);
 
       // Check status
-      const response = await request(app)
-        .get('/api/onboarding/status')
-        .expect(200);
+      const response = await request(app).get('/api/onboarding/status').expect(200);
 
       expect(response.body.onboardingCompleted).toBe(true);
     });
@@ -281,16 +275,12 @@ describe('Onboarding API Routes', () => {
 
   describe('POST /complete', () => {
     it('should mark onboarding as completed', async () => {
-      const response = await request(app)
-        .post('/api/onboarding/complete')
-        .expect(200);
+      const response = await request(app).post('/api/onboarding/complete').expect(200);
 
       expect(response.body.success).toBe(true);
 
       // Verify status changed
-      const statusResponse = await request(app)
-        .get('/api/onboarding/status')
-        .expect(200);
+      const statusResponse = await request(app).get('/api/onboarding/status').expect(200);
 
       expect(statusResponse.body.onboardingCompleted).toBe(true);
     });
@@ -298,24 +288,18 @@ describe('Onboarding API Routes', () => {
 
   describe('POST /skip', () => {
     it('should mark onboarding as completed', async () => {
-      const response = await request(app)
-        .post('/api/onboarding/skip')
-        .expect(200);
+      const response = await request(app).post('/api/onboarding/skip').expect(200);
 
       expect(response.body.success).toBe(true);
 
       // Verify status changed
-      const statusResponse = await request(app)
-        .get('/api/onboarding/status')
-        .expect(200);
+      const statusResponse = await request(app).get('/api/onboarding/status').expect(200);
 
       expect(statusResponse.body.onboardingCompleted).toBe(true);
     });
 
     it('should create a default AI Horde preset if no presets exist', async () => {
-      await request(app)
-        .post('/api/onboarding/skip')
-        .expect(200);
+      await request(app).post('/api/onboarding/skip').expect(200);
 
       // Verify a preset was created
       const storage = new SqliteStorageService(tempDir);
@@ -336,9 +320,7 @@ describe('Onboarding API Routes', () => {
         .expect(201);
 
       // Skip onboarding
-      await request(app)
-        .post('/api/onboarding/skip')
-        .expect(200);
+      await request(app).post('/api/onboarding/skip').expect(200);
 
       // Verify only one preset exists
       const storage = new SqliteStorageService(tempDir);
@@ -352,9 +334,7 @@ describe('Onboarding API Routes', () => {
 
   describe('POST /import-defaults', () => {
     it('should return import results', async () => {
-      const response = await request(app)
-        .post('/api/onboarding/import-defaults')
-        .expect(200);
+      const response = await request(app).post('/api/onboarding/import-defaults').expect(200);
 
       expect(response.body).toHaveProperty('importedCharacters');
       expect(response.body).toHaveProperty('createdStories');
@@ -372,9 +352,7 @@ describe('Onboarding API Routes', () => {
         .expect(201);
 
       // Import defaults
-      const importResponse = await request(app)
-        .post('/api/onboarding/import-defaults')
-        .expect(200);
+      const importResponse = await request(app).post('/api/onboarding/import-defaults').expect(200);
 
       // Verify stories have the persona set
       if (importResponse.body.stories.length > 0) {
@@ -390,9 +368,7 @@ describe('Onboarding API Routes', () => {
   describe('Full Onboarding Flow', () => {
     it('should complete a full onboarding flow', async () => {
       // Step 1: Check initial status
-      let statusResponse = await request(app)
-        .get('/api/onboarding/status')
-        .expect(200);
+      let statusResponse = await request(app).get('/api/onboarding/status').expect(200);
       expect(statusResponse.body.onboardingCompleted).toBe(false);
 
       // Step 2: Create persona
@@ -410,20 +386,14 @@ describe('Onboarding API Routes', () => {
       expect(presetResponse.body.provider).toBe('deepseek');
 
       // Step 4: Import defaults
-      const importResponse = await request(app)
-        .post('/api/onboarding/import-defaults')
-        .expect(200);
+      const importResponse = await request(app).post('/api/onboarding/import-defaults').expect(200);
       expect(importResponse.body.importedCharacters).toBeGreaterThanOrEqual(0);
 
       // Step 5: Complete onboarding
-      await request(app)
-        .post('/api/onboarding/complete')
-        .expect(200);
+      await request(app).post('/api/onboarding/complete').expect(200);
 
       // Verify final status
-      statusResponse = await request(app)
-        .get('/api/onboarding/status')
-        .expect(200);
+      statusResponse = await request(app).get('/api/onboarding/status').expect(200);
       expect(statusResponse.body.onboardingCompleted).toBe(true);
     });
   });

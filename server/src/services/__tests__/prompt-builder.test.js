@@ -138,12 +138,9 @@ describe('PromptBuilder', () => {
     });
 
     it('should skip dialogue examples when disabled', () => {
-      const result = builder.buildSingleCharacterSection(
-        characterCard,
-        persona,
-        macroProcessor,
-        { includeDialogueExamples: false }
-      );
+      const result = builder.buildSingleCharacterSection(characterCard, persona, macroProcessor, {
+        includeDialogueExamples: false
+      });
 
       expect(result).not.toContain('=== DIALOGUE STYLE EXAMPLES ===');
     });
@@ -168,7 +165,9 @@ describe('PromptBuilder', () => {
 
     it('should return empty for characterCard with null/undefined data', () => {
       expect(builder.buildSingleCharacterSection({ data: null }, persona, macroProcessor)).toBe('');
-      expect(builder.buildSingleCharacterSection({ data: undefined }, persona, macroProcessor)).toBe('');
+      expect(
+        builder.buildSingleCharacterSection({ data: undefined }, persona, macroProcessor)
+      ).toBe('');
       expect(builder.buildSingleCharacterSection({}, persona, macroProcessor)).toBe('');
     });
   });
@@ -202,22 +201,21 @@ describe('PromptBuilder', () => {
     });
 
     it('should separate characters with dividers', () => {
-      const cards = [
-        { data: { name: 'Alice' } },
-        { data: { name: 'Bob' } }
-      ];
+      const cards = [{ data: { name: 'Alice' } }, { data: { name: 'Bob' } }];
 
       const result = builder.buildMultipleCharactersSection(cards, persona, macroProcessor);
       expect(result).toContain('---');
     });
 
     it('should include scenario only for single character', () => {
-      const singleCard = [{
-        data: {
-          name: 'Alice',
-          scenario: 'In the forest'
+      const singleCard = [
+        {
+          data: {
+            name: 'Alice',
+            scenario: 'In the forest'
+          }
         }
-      }];
+      ];
 
       const result = builder.buildMultipleCharactersSection(singleCard, persona, macroProcessor);
       expect(result).toContain('Scenario: In the forest');
@@ -415,7 +413,7 @@ describe('PromptBuilder', () => {
     });
 
     it('should process macros in character fields', () => {
-      characterCard.data.description = '{{user}}\'s friend';
+      characterCard.data.description = "{{user}}'s friend";
       const context = {
         persona,
         characterCards: [characterCard],
@@ -425,7 +423,7 @@ describe('PromptBuilder', () => {
       };
 
       const result = builder.buildSystemPrompt(context);
-      expect(result).toContain('Description: Alice\'s friend');
+      expect(result).toContain("Description: Alice's friend");
     });
 
     it('should filter asterisks from character content', () => {
@@ -461,9 +459,7 @@ describe('PromptBuilder', () => {
       const context = {
         persona,
         characterCards: [characterCard],
-        activatedLorebooks: [
-          { content: 'Magic is real and powerfu:q', comment: 'Magic' }
-        ],
+        activatedLorebooks: [{ content: 'Magic is real and powerfu:q', comment: 'Magic' }],
         story: {},
         settings: {}
       };
@@ -570,9 +566,7 @@ describe('PromptBuilder', () => {
       const context = {
         persona,
         characterCards: [characterCard],
-        activatedLorebooks: [
-          { content: 'No comment entry' }
-        ],
+        activatedLorebooks: [{ content: 'No comment entry' }],
         story: {},
         settings: {}
       };
@@ -663,9 +657,7 @@ describe('PromptBuilder', () => {
       const context = {
         persona: { name: 'Hero' },
         characterCards: [characterCard],
-        activatedLorebooks: [
-          { content: 'The {{user}} is the chosen one', comment: 'Prophecy' }
-        ],
+        activatedLorebooks: [{ content: 'The {{user}} is the chosen one', comment: 'Prophecy' }],
         story: {},
         settings: {}
       };
@@ -690,7 +682,9 @@ describe('PromptBuilder', () => {
     it('should return content as-is when within limit', () => {
       const content = 'Short story content here.';
       const result = builder.truncateStoryContent(content, 1000);
-      expect(result).toBe('Here is the current story so far:\n\nShort story content here.\n\n---\n\n');
+      expect(result).toBe(
+        'Here is the current story so far:\n\nShort story content here.\n\n---\n\n'
+      );
     });
 
     it('should truncate content exceeding maxChars', () => {
@@ -709,7 +703,9 @@ describe('PromptBuilder', () => {
     });
 
     it('should throw error for invalid maxChars', () => {
-      expect(() => builder.truncateStoryContent('content', 0)).toThrow('maxChars must be provided and greater than 0');
+      expect(() => builder.truncateStoryContent('content', 0)).toThrow(
+        'maxChars must be provided and greater than 0'
+      );
       expect(() => builder.truncateStoryContent('content', -1)).toThrow();
       expect(() => builder.truncateStoryContent('content', null)).toThrow();
     });
@@ -843,7 +839,7 @@ describe('PromptBuilder', () => {
         storyContent: 'Once upon a time...',
         characterName: '',
         customInstruction: '',
-        templateText: 'Write a story',  // no {{storyContent}} placeholder
+        templateText: 'Write a story', // no {{storyContent}} placeholder
         maxChars: 1000,
         userName: 'User'
       });
@@ -886,7 +882,9 @@ describe('PromptBuilder', () => {
 
       expect(result).toContain('[WG_IMAGE_0]');
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ImagePreserver] Appended image-preservation note for rewriteThirdPerson')
+        expect.stringContaining(
+          '[ImagePreserver] Appended image-preservation note for rewriteThirdPerson'
+        )
       );
       consoleSpy.mockRestore();
     });
@@ -1237,7 +1235,11 @@ describe('PromptBuilder', () => {
         }
       });
 
-      const result = customBuilder.buildSingleCharacterSection(characterCard, persona, macroProcessor);
+      const result = customBuilder.buildSingleCharacterSection(
+        characterCard,
+        persona,
+        macroProcessor
+      );
       expect(result).toContain('### CHARACTER ###');
     });
 
@@ -1247,7 +1249,11 @@ describe('PromptBuilder', () => {
       });
 
       characterCard.data.description = '*friendly*';
-      const result = noFilterBuilder.buildSingleCharacterSection(characterCard, persona, macroProcessor);
+      const result = noFilterBuilder.buildSingleCharacterSection(
+        characterCard,
+        persona,
+        macroProcessor
+      );
       expect(result).toContain('*friendly*');
     });
 
@@ -1258,7 +1264,9 @@ describe('PromptBuilder', () => {
         }
       });
 
-      expect(customBuilder.config.instructionTemplates.continue).toBe('Custom continue instruction');
+      expect(customBuilder.config.instructionTemplates.continue).toBe(
+        'Custom continue instruction'
+      );
     });
   });
 });

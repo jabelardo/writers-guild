@@ -17,7 +17,7 @@ function createMockStream(chunks) {
 
       const chunk = chunks[index++];
       controller.enqueue(encoder.encode(chunk));
-      await new Promise(resolve => setTimeout(resolve, 0)); // Simulate async
+      await new Promise((resolve) => setTimeout(resolve, 0)); // Simulate async
     }
   });
 }
@@ -26,7 +26,7 @@ function createMockStream(chunks) {
  * Helper: Create SSE-formatted chunks
  */
 function createSSEChunks(dataArray) {
-  return dataArray.map(data => {
+  return dataArray.map((data) => {
     if (data === '[DONE]') {
       return `data: [DONE]\n\n`;
     }
@@ -40,7 +40,7 @@ describe('stream-parser.js', () => {
       const chunks = createSSEChunks([
         { choices: [{ delta: { content: 'Hello' }, finish_reason: null }] },
         { choices: [{ delta: { content: 'world' }, finish_reason: null }] },
-        { choices: [{ delta: {}, finish_reason: 'stop' }] },
+        { choices: [{ delta: {}, finish_reason: 'stop' }] }
       ]);
 
       const stream = createMockStream(chunks);
@@ -66,7 +66,7 @@ describe('stream-parser.js', () => {
       const chunks = createSSEChunks([
         { choices: [{ delta: { reasoning_content: 'Thinking...' }, finish_reason: null }] },
         { choices: [{ delta: { content: 'Answer' }, finish_reason: null }] },
-        { choices: [{ delta: {}, finish_reason: 'stop' }] },
+        { choices: [{ delta: {}, finish_reason: 'stop' }] }
       ]);
 
       const stream = createMockStream(chunks);
@@ -76,7 +76,7 @@ describe('stream-parser.js', () => {
         { getReader: () => stream.getReader() },
         (delta) => ({
           reasoning: delta.reasoning_content || null,
-          content: delta.content || null,
+          content: delta.content || null
         }),
         'DeepSeek'
       )) {
@@ -98,7 +98,7 @@ describe('stream-parser.js', () => {
         'data: [DONE]\n\n',
         'data: {"choices":[{"delta":{"content":" world"}}]}\n\n',
         '\n\n',
-        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n',
+        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n'
       ];
 
       const stream = new ReadableStream({
@@ -136,7 +136,7 @@ describe('stream-parser.js', () => {
       const customChunks = [
         'data: {invalid json}\n\n',
         'data: {"choices":[{"delta":{"content":"valid"}}]}\n\n',
-        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n',
+        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n'
       ];
 
       const stream = new ReadableStream({
@@ -175,7 +175,7 @@ describe('stream-parser.js', () => {
     it('should handle stream with no choices', async () => {
       const chunks = createSSEChunks([
         { id: 'test-123', object: 'chat.completion.chunk' },
-        { choices: [{ delta: { content: 'Hello' }, finish_reason: null }] },
+        { choices: [{ delta: { content: 'Hello' }, finish_reason: null }] }
       ]);
 
       const stream = createMockStream(chunks);
@@ -201,7 +201,9 @@ describe('stream-parser.js', () => {
       const stream = new ReadableStream({
         async pull(controller) {
           if (chunkCount === 0) {
-            controller.enqueue(encoder.encode('data: {"choices":[{"delta":{"content":"partial"}}]}\n\n'));
+            controller.enqueue(
+              encoder.encode('data: {"choices":[{"delta":{"content":"partial"}}]}\n\n')
+            );
             chunkCount++;
           } else {
             // Simulate abort by throwing AbortError
@@ -235,7 +237,7 @@ describe('stream-parser.js', () => {
 
     it('should release reader lock on completion', async () => {
       const chunks = createSSEChunks([
-        { choices: [{ delta: { content: 'Done' }, finish_reason: 'stop' }] },
+        { choices: [{ delta: { content: 'Done' }, finish_reason: 'stop' }] }
       ]);
 
       const stream = createMockStream(chunks);
@@ -258,21 +260,25 @@ describe('stream-parser.js', () => {
     it('should handle OpenRouter-style reasoning_details', async () => {
       const chunks = createSSEChunks([
         {
-          choices: [{
-            delta: {
-              reasoning_details: [{ text: 'Let me think...' }],
-              content: null
-            },
-            finish_reason: null
-          }]
+          choices: [
+            {
+              delta: {
+                reasoning_details: [{ text: 'Let me think...' }],
+                content: null
+              },
+              finish_reason: null
+            }
+          ]
         },
         {
-          choices: [{
-            delta: { content: 'Answer here' },
-            finish_reason: null
-          }]
+          choices: [
+            {
+              delta: { content: 'Answer here' },
+              finish_reason: null
+            }
+          ]
         },
-        { choices: [{ delta: {}, finish_reason: 'stop' }] },
+        { choices: [{ delta: {}, finish_reason: 'stop' }] }
       ]);
 
       const stream = createMockStream(chunks);
@@ -287,7 +293,7 @@ describe('stream-parser.js', () => {
           }
           return {
             reasoning,
-            content: delta.content || null,
+            content: delta.content || null
           };
         },
         'OpenRouter'
@@ -406,11 +412,13 @@ describe('stream-parser.js', () => {
 
       it('should extract reasoning from reasoning_details array', () => {
         const data = {
-          choices: [{
-            delta: {
-              reasoning_details: [{ text: 'Detailed reasoning' }]
+          choices: [
+            {
+              delta: {
+                reasoning_details: [{ text: 'Detailed reasoning' }]
+              }
             }
-          }]
+          ]
         };
 
         const delta = data.choices[0].delta;

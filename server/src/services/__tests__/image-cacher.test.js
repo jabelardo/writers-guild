@@ -10,7 +10,15 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // DNS is stubbed globally in src/__tests__/setup.js so the SSRF guard never
 // reaches the network. The SSRF tests below drive it per case.
 import dns from 'dns/promises';
-import { cacheCharacterImages, cacheLorebookImages, cacheAndRewriteLorebookImages, rewriteCharacterImageUrls, rewriteLorebookImageUrls, extractCardImageUrls, extractLorebookImageUrls } from '../image-cacher.js';
+import {
+  cacheCharacterImages,
+  cacheLorebookImages,
+  cacheAndRewriteLorebookImages,
+  rewriteCharacterImageUrls,
+  rewriteLorebookImageUrls,
+  extractCardImageUrls,
+  extractLorebookImageUrls
+} from '../image-cacher.js';
 import { AssetManager } from '../asset-manager.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -30,8 +38,8 @@ function makeCard(fields = {}) {
       system_prompt: '',
       post_history_instructions: '',
       alternate_greetings: [],
-      ...fields,
-    },
+      ...fields
+    }
   };
 }
 
@@ -51,10 +59,10 @@ function makePngResponse() {
             sent = true;
             return Promise.resolve({ done: false, value: new Uint8Array(png) });
           },
-          cancel() {},
+          cancel() {}
         };
-      },
-    },
+      }
+    }
   };
 }
 
@@ -85,7 +93,7 @@ describe('extractCardImageUrls', () => {
       scenario: '<img src="https://c.com/3.jpg">',
       first_mes: '![d](https://d.com/4.png)',
       mes_example: '![e](https://e.com/5.png)',
-      alternate_greetings: ['![i](https://i.com/9.png)', '<img src="https://j.com/10.jpg">'],
+      alternate_greetings: ['![i](https://i.com/9.png)', '<img src="https://j.com/10.jpg">']
     });
     const urls = extractCardImageUrls(card);
     expect(urls.size).toBe(7);
@@ -98,7 +106,7 @@ describe('extractCardImageUrls', () => {
       description: '![a](https://a.com/1.png)',
       creator_notes: '![f](https://f.com/6.png)',
       system_prompt: '![g](https://g.com/7.png)',
-      post_history_instructions: '![h](https://h.com/8.png)',
+      post_history_instructions: '![h](https://h.com/8.png)'
     });
     const urls = extractCardImageUrls(card);
     expect(urls.size).toBe(1);
@@ -108,7 +116,7 @@ describe('extractCardImageUrls', () => {
   it('ignores placeholder src values that are not real URLs', () => {
     const card = makeCard({
       description: '<img src="URL"> <img src="image.png"> <img src="data:image/png;base64,AAAA">',
-      first_mes: '![real](https://real.com/pic.png)',
+      first_mes: '![real](https://real.com/pic.png)'
     });
     const urls = extractCardImageUrls(card);
     expect(urls.size).toBe(1);
@@ -118,7 +126,7 @@ describe('extractCardImageUrls', () => {
   it('deduplicates identical URLs across fields', () => {
     const card = makeCard({
       description: '![a](https://x.com/img.png)',
-      personality: '![b](https://x.com/img.png)',
+      personality: '![b](https://x.com/img.png)'
     });
     const urls = extractCardImageUrls(card);
     expect(urls.size).toBe(1);
@@ -155,7 +163,7 @@ describe('rewriteCharacterImageUrls', () => {
   it('rewrites the same URL everywhere', () => {
     const card = makeCard({
       description: '![a](https://ex.com/img.png)',
-      personality: '![b](https://ex.com/img.png)',
+      personality: '![b](https://ex.com/img.png)'
     });
     const map = new Map([['https://ex.com/img.png', '/api/assets/abc/img.png']]);
     rewriteCharacterImageUrls(card, map);
@@ -165,7 +173,7 @@ describe('rewriteCharacterImageUrls', () => {
 
   it('rewrites URLs in alternate greetings', () => {
     const card = makeCard({
-      alternate_greetings: ['Hello ![img](https://ex.com/greet1.png)'],
+      alternate_greetings: ['Hello ![img](https://ex.com/greet1.png)']
     });
     const map = new Map([['https://ex.com/greet1.png', '/api/assets/abc/g1.png']]);
     rewriteCharacterImageUrls(card, map);
@@ -191,7 +199,7 @@ describe('extractLorebookImageUrls', () => {
     return {
       name: 'Test Lorebook',
       description,
-      entries,
+      entries
     };
   }
 
@@ -201,17 +209,13 @@ describe('extractLorebookImageUrls', () => {
   });
 
   it('extracts markdown image URLs from entry content', () => {
-    const lorebook = makeLorebook([
-      { content: '![dragon](https://ex.com/dragon.png)' },
-    ]);
+    const lorebook = makeLorebook([{ content: '![dragon](https://ex.com/dragon.png)' }]);
     const urls = extractLorebookImageUrls(lorebook);
     expect([...urls]).toEqual(['https://ex.com/dragon.png']);
   });
 
   it('extracts HTML img src URLs from entry content', () => {
-    const lorebook = makeLorebook([
-      { content: '<img src="https://host.com/creature.jpg">' },
-    ]);
+    const lorebook = makeLorebook([{ content: '<img src="https://host.com/creature.jpg">' }]);
     const urls = extractLorebookImageUrls(lorebook);
     expect([...urls]).toEqual(['https://host.com/creature.jpg']);
   });
@@ -220,8 +224,8 @@ describe('extractLorebookImageUrls', () => {
     const lorebook = makeLorebook([
       {
         content: 'just text',
-        comment: 'see ![map](https://ex.com/map.png)',
-      },
+        comment: 'see ![map](https://ex.com/map.png)'
+      }
     ]);
     const urls = extractLorebookImageUrls(lorebook);
     expect([...urls]).toEqual(['https://ex.com/map.png']);
@@ -237,7 +241,7 @@ describe('extractLorebookImageUrls', () => {
     const lorebook = makeLorebook([
       { content: '![a](https://ex.com/img.png)' },
       { content: '![b](https://ex.com/img.png)' },
-      { content: '![c](https://ex.com/other.png)' },
+      { content: '![c](https://ex.com/other.png)' }
     ]);
     const urls = extractLorebookImageUrls(lorebook);
     expect(urls.size).toBe(2);
@@ -259,7 +263,7 @@ describe('rewriteLorebookImageUrls', () => {
     return {
       name: 'Test Lorebook',
       description,
-      entries,
+      entries
     };
   }
 
@@ -270,9 +274,7 @@ describe('rewriteLorebookImageUrls', () => {
   });
 
   it('rewrites URLs in entry content', () => {
-    const lorebook = makeLorebook([
-      { content: '![dragon](https://ex.com/dragon.png)' },
-    ]);
+    const lorebook = makeLorebook([{ content: '![dragon](https://ex.com/dragon.png)' }]);
     const map = new Map([['https://ex.com/dragon.png', '/api/assets/lorebooks/abc/def.webp']]);
     rewriteLorebookImageUrls(lorebook, map);
     expect(lorebook.entries[0].content).toBe('![dragon](/api/assets/lorebooks/abc/def.webp)');
@@ -282,8 +284,8 @@ describe('rewriteLorebookImageUrls', () => {
     const lorebook = makeLorebook([
       {
         content: 'plain',
-        comment: 'see ![map](https://ex.com/map.png)',
-      },
+        comment: 'see ![map](https://ex.com/map.png)'
+      }
     ]);
     const map = new Map([['https://ex.com/map.png', '/api/assets/lorebooks/x/y.webp']]);
     rewriteLorebookImageUrls(lorebook, map);
@@ -340,17 +342,15 @@ describe('cacheLorebookImages (mocked fetch + fs)', () => {
               done = true;
               return Promise.resolve({ done: false, value: new Uint8Array(pngBuffer) });
             },
-            cancel() {},
+            cancel() {}
           };
-        },
-      },
+        }
+      }
     });
 
     const lorebook = {
       name: 'Test Lorebook',
-      entries: [
-        { content: '![dragon](https://remote.com/dragon.png)' },
-      ],
+      entries: [{ content: '![dragon](https://remote.com/dragon.png)' }]
     };
     const result = await cacheLorebookImages('lb-1', lorebook, '/fake/data');
 
@@ -364,12 +364,12 @@ describe('cacheLorebookImages (mocked fetch + fs)', () => {
 
   it('skips already-cached images', async () => {
     vi.spyOn(AssetManager.prototype, 'readMetadata').mockResolvedValue({
-      images: [{ originalUrl: 'https://remote.com/dragon.png', hash: 'abc', filename: 'abc.png' }],
+      images: [{ originalUrl: 'https://remote.com/dragon.png', hash: 'abc', filename: 'abc.png' }]
     });
 
     const lorebook = {
       name: 'Cached Lorebook',
-      entries: [{ content: '![x](https://remote.com/dragon.png)' }],
+      entries: [{ content: '![x](https://remote.com/dragon.png)' }]
     };
     const result = await cacheLorebookImages('lb-1', lorebook, '/fake/data');
     expect(result.size).toBe(1);
@@ -381,7 +381,7 @@ describe('cacheLorebookImages (mocked fetch + fs)', () => {
     fetch.mockRejectedValue(new Error('Network error'));
     const lorebook = {
       name: 'Fail Lorebook',
-      entries: [{ content: '![x](https://remote.com/pic.png)' }],
+      entries: [{ content: '![x](https://remote.com/pic.png)' }]
     };
     const result = await cacheLorebookImages('lb-1', lorebook, '/fake/data');
     expect(result.size).toBe(0);
@@ -412,7 +412,7 @@ describe('SSRF protection', () => {
     ['CGNAT', '100.64.0.1', 4],
     ['IPv6 loopback', '::1', 6],
     ['IPv6 unique local', 'fd00::1', 6],
-    ['IPv4-mapped loopback', '::ffff:127.0.0.1', 6],
+    ['IPv4-mapped loopback', '::ffff:127.0.0.1', 6]
   ];
 
   for (const [label, address, family] of blocked) {
@@ -440,13 +440,16 @@ describe('SSRF protection', () => {
 
   it('re-validates redirect targets, blocking a public host that redirects inward', async () => {
     dns.lookup
-      .mockResolvedValueOnce([{ address: '93.184.216.34', family: 4 }])  // public.example
+      .mockResolvedValueOnce([{ address: '93.184.216.34', family: 4 }]) // public.example
       .mockResolvedValueOnce([{ address: '169.254.169.254', family: 4 }]); // redirect target
 
     fetch.mockResolvedValueOnce({
       status: 302,
       ok: false,
-      headers: { get: (h) => (h.toLowerCase() === 'location' ? 'http://169.254.169.254/latest/meta-data/' : null) },
+      headers: {
+        get: (h) =>
+          h.toLowerCase() === 'location' ? 'http://169.254.169.254/latest/meta-data/' : null
+      }
     });
 
     const card = makeCard({ description: '![x](https://public.example/pic.png)' });
@@ -472,7 +475,7 @@ describe('cacheAndRewriteLorebookImages', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
     vi.spyOn(AssetManager.prototype, 'readMetadata').mockResolvedValue({
-      images: [{ originalUrl: 'https://remote.com/dragon.png', hash: 'abc', filename: 'abc.png' }],
+      images: [{ originalUrl: 'https://remote.com/dragon.png', hash: 'abc', filename: 'abc.png' }]
     });
     vi.spyOn(AssetManager.prototype, 'writeMetadata').mockResolvedValue(undefined);
   });
@@ -485,7 +488,7 @@ describe('cacheAndRewriteLorebookImages', () => {
   it('rewrites URLs in place and reports how many were rewritten', async () => {
     const lorebook = {
       name: 'Rewrite Me',
-      entries: [{ content: '![x](https://remote.com/dragon.png)' }],
+      entries: [{ content: '![x](https://remote.com/dragon.png)' }]
     };
 
     const count = await cacheAndRewriteLorebookImages('lb-1', lorebook, '/fake/data');
@@ -498,7 +501,7 @@ describe('cacheAndRewriteLorebookImages', () => {
     vi.spyOn(AssetManager.prototype, 'readMetadata').mockRejectedValue(new Error('disk on fire'));
     const lorebook = {
       name: 'Boom',
-      entries: [{ content: '![x](https://remote.com/dragon.png)' }],
+      entries: [{ content: '![x](https://remote.com/dragon.png)' }]
     };
 
     const count = await cacheAndRewriteLorebookImages('lb-1', lorebook, '/fake/data');
@@ -544,13 +547,13 @@ describe('cacheCharacterImages (mocked fetch + fs)', () => {
               done = true;
               return Promise.resolve({
                 done: false,
-                value: new Uint8Array(pngBuffer),
+                value: new Uint8Array(pngBuffer)
               });
             },
-            cancel() {},
+            cancel() {}
           };
-        },
-      },
+        }
+      }
     });
 
     const card = makeCard({ description: '![x](https://remote.com/pic.png)' });
@@ -565,7 +568,7 @@ describe('cacheCharacterImages (mocked fetch + fs)', () => {
 
   it('skips already-cached images', async () => {
     vi.spyOn(AssetManager.prototype, 'readMetadata').mockResolvedValue({
-      images: [{ originalUrl: 'https://remote.com/pic.png', hash: 'abc', filename: 'abc.png' }],
+      images: [{ originalUrl: 'https://remote.com/pic.png', hash: 'abc', filename: 'abc.png' }]
     });
 
     const card = makeCard({ description: '![x](https://remote.com/pic.png)' });
@@ -596,10 +599,10 @@ describe('cacheCharacterImages (mocked fetch + fs)', () => {
               done = true;
               return Promise.resolve({ done: false, value: new Uint8Array(Buffer.from('x')) });
             },
-            cancel() {},
+            cancel() {}
           };
-        },
-      },
+        }
+      }
     });
     const card = makeCard({ description: '![x](https://remote.com/not-img)' });
     const result = await cacheCharacterImages('char-1', card, '/fake/data');

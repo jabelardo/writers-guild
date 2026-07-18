@@ -1,13 +1,10 @@
 <template>
-  <Modal
-    title="Choose AI Provider"
-    maxWidth="600px"
-    @close="$emit('close')"
-  >
+  <Modal title="Choose AI Provider" maxWidth="600px" @close="$emit('close')">
     <div class="provider-selection">
       <p class="selection-description">
-        Select an AI provider for your new configuration preset. Each provider has its own capabilities, pricing, and features.
-        The preset will be locked to this provider and pre-filled with sensible defaults.
+        Select an AI provider for your new configuration preset. Each provider has its own
+        capabilities, pricing, and features. The preset will be locked to this provider and
+        pre-filled with sensible defaults.
       </p>
 
       <div class="providers-grid">
@@ -15,7 +12,7 @@
           v-for="(info, key) in providers"
           :key="key"
           class="provider-card"
-          :class="{ 'selected': selectedProvider === key }"
+          :class="{ selected: selectedProvider === key }"
           @click="selectProvider(key)"
         >
           <div class="provider-icon">
@@ -33,14 +30,8 @@
     </div>
 
     <template #footer>
-      <button class="btn btn-secondary" @click="$emit('close')">
-        Cancel
-      </button>
-      <button
-        class="btn btn-primary"
-        :disabled="!selectedProvider"
-        @click="confirmSelection"
-      >
+      <button class="btn btn-secondary" @click="$emit('close')">Cancel</button>
+      <button class="btn btn-primary" :disabled="!selectedProvider" @click="confirmSelection">
         <i class="fas fa-arrow-right"></i>
         Continue
       </button>
@@ -49,22 +40,22 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import Modal from './Modal.vue'
-import { PROVIDERS } from '../config/providerDefaults'
+import { ref } from 'vue';
+import Modal from './Modal.vue';
+import { PROVIDERS } from '../config/providerDefaults';
 
-const emit = defineEmits(['close', 'select'])
+const emit = defineEmits(['close', 'select']);
 
-const providers = PROVIDERS
-const selectedProvider = ref(null)
+const providers = PROVIDERS;
+const selectedProvider = ref(null);
 
 function selectProvider(provider) {
-  selectedProvider.value = provider
+  selectedProvider.value = provider;
 }
 
 function confirmSelection() {
   if (selectedProvider.value) {
-    emit('select', selectedProvider.value)
+    emit('select', selectedProvider.value);
   }
 }
 </script>

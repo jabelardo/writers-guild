@@ -3,7 +3,7 @@ services:
     build: .
     container_name: writers-guild-server
     ports:
-      - "8000:8000"
+      - '8000:8000'
     volumes:
       - ./data:/data
       - ./server/config.yaml:/app/config.yaml

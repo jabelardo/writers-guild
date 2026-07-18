@@ -10,8 +10,8 @@ export class DeepSeekProvider extends LLMProvider {
   constructor(config) {
     const deepseekConfig = {
       ...config,
-      baseURL: config.baseURL || "https://api.deepseek.com/v1",
-      model: config.model || "deepseek-v4-flash"
+      baseURL: config.baseURL || 'https://api.deepseek.com/v1',
+      model: config.model || 'deepseek-v4-flash'
     };
 
     super(deepseekConfig);
@@ -59,10 +59,10 @@ export class DeepSeekProvider extends LLMProvider {
       max_tokens: options.maxTokens || 4000,
       thinking: thinkingEnabled
         ? {
-            type: "enabled",
-            reasoning_effort: options.reasoningEffort === "max" ? "max" : "high"
+            type: 'enabled',
+            reasoning_effort: options.reasoningEffort === 'max' ? 'max' : 'high'
           }
-        : { type: "disabled" }
+        : { type: 'disabled' }
     };
 
     if (!thinkingEnabled) {
@@ -90,40 +90,38 @@ export class DeepSeekProvider extends LLMProvider {
    */
   async generate(systemPrompt, userPrompt, options = {}) {
     if (!this.apiKey) {
-      throw new Error("API key not set");
+      throw new Error('API key not set');
     }
 
     const messages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
     ];
 
     const requestBody = this.buildRequestBody(messages, options, false);
 
     const response = await fetch(`${this.baseURL}/chat/completions`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.apiKey}`
       },
       body: JSON.stringify(requestBody),
-      signal: options.signal,
+      signal: options.signal
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error?.message || `API request failed: ${response.statusText}`
-      );
+      throw new Error(errorData.error?.message || `API request failed: ${response.statusText}`);
     }
 
     const data = await response.json();
     const choice = data.choices[0];
 
     return {
-      content: choice.message.content || "",
-      reasoning: choice.message.reasoning_content || "",
-      usage: data.usage,
+      content: choice.message.content || '',
+      reasoning: choice.message.reasoning_content || '',
+      usage: data.usage
     };
   }
 
@@ -132,32 +130,30 @@ export class DeepSeekProvider extends LLMProvider {
    */
   async generateStreaming(systemPrompt, userPrompt, options = {}) {
     if (!this.apiKey) {
-      throw new Error("API key not set");
+      throw new Error('API key not set');
     }
 
     const messages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
     ];
 
     const controller = new AbortController();
     const requestBody = this.buildRequestBody(messages, options, true);
 
     const response = await fetch(`${this.baseURL}/chat/completions`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.apiKey}`
       },
       body: JSON.stringify(requestBody),
-      signal: options.signal || controller.signal,
+      signal: options.signal || controller.signal
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error?.message || `API request failed: ${response.statusText}`
-      );
+      throw new Error(errorData.error?.message || `API request failed: ${response.statusText}`);
     }
 
     return {
@@ -207,9 +203,9 @@ export class DeepSeekProvider extends LLMProvider {
   async getAvailableModels() {
     try {
       const response = await fetch(`${this.baseURL}/models`, {
-        method: "GET",
+        method: 'GET',
         headers: {
-          "Authorization": `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`
         }
       });
 
@@ -219,7 +215,7 @@ export class DeepSeekProvider extends LLMProvider {
 
       const data = await response.json();
 
-      return data.data.map(model => ({
+      return data.data.map((model) => ({
         id: model.id,
         name: model.id,
         description: this.getModelDescription(model.id),
@@ -242,8 +238,10 @@ export class DeepSeekProvider extends LLMProvider {
    */
   getModelDescription(modelId) {
     const descriptions = {
-      'deepseek-v4-flash': 'DeepSeek V4 Flash — fast, low-cost, 1M context. Supports optional thinking mode.',
-      'deepseek-v4-pro': 'DeepSeek V4 Pro — higher-quality, 1M context. Supports optional thinking mode.',
+      'deepseek-v4-flash':
+        'DeepSeek V4 Flash — fast, low-cost, 1M context. Supports optional thinking mode.',
+      'deepseek-v4-pro':
+        'DeepSeek V4 Pro — higher-quality, 1M context. Supports optional thinking mode.',
       'deepseek-chat': 'Deprecated — aliases to deepseek-v4-flash (non-thinking).',
       'deepseek-reasoner': 'Deprecated — aliases to deepseek-v4-flash (thinking enabled).'
     };

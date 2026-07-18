@@ -344,7 +344,7 @@ describe('ConfirmDialog', () => {
     it('should accept valid variant values', () => {
       const validVariants = ['default', 'danger', 'warning'];
 
-      validVariants.forEach(variant => {
+      validVariants.forEach((variant) => {
         const wrapper = mount(ConfirmDialog, {
           props: {
             message: 'Test',

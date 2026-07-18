@@ -21,7 +21,7 @@ const PROVIDERS = {
   anthropic: AnthropicProvider,
   koboldcpp: KoboldCppProvider,
   ollama: OllamaProvider,
-  openaicompatible: OpenAICompatibleProvider,
+  openaicompatible: OpenAICompatibleProvider
 };
 
 /**

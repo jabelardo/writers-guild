@@ -30,198 +30,231 @@ router.use(async (req, res, next) => {
 });
 
 // Get onboarding status
-router.get('/status', asyncHandler(async (req, res) => {
-  const settings = await storage.getSettings();
-  res.json({
-    onboardingCompleted: settings?.onboardingCompleted || false
-  });
-}));
+router.get(
+  '/status',
+  asyncHandler(async (req, res) => {
+    const settings = await storage.getSettings();
+    res.json({
+      onboardingCompleted: settings?.onboardingCompleted || false
+    });
+  })
+);
 
 // Create persona during onboarding
-router.post('/persona', asyncHandler(async (req, res) => {
-  const { firstName, description } = req.body;
+router.post(
+  '/persona',
+  asyncHandler(async (req, res) => {
+    const { firstName, description } = req.body;
 
-  if (!firstName || !firstName.trim()) {
-    throw new AppError('First name is required', 400);
-  }
-
-  if (firstName.trim().length > 100) {
-    throw new AppError('First name must be 100 characters or fewer', 400);
-  }
-
-  const characterId = uuidv4();
-
-  // Create persona character data in V2 format
-  const characterData = {
-    spec: 'chara_card_v2',
-    spec_version: '2.0',
-    data: {
-      name: firstName.trim(),
-      description: description?.trim() || '',
-      personality: '',
-      scenario: '',
-      first_mes: '',
-      mes_example: '',
-      creator_notes: 'Created during onboarding as user persona',
-      system_prompt: '',
-      post_history_instructions: '',
-      alternate_greetings: [],
-      character_book: null,
-      tags: ['persona'],
-      creator: '',
-      character_version: '1.0',
-      extensions: {
-        is_persona: true
-      }
+    if (!firstName || !firstName.trim()) {
+      throw new AppError('First name is required', 400);
     }
-  };
 
-  // Save character (no image)
-  await storage.saveCharacter(characterId, characterData, null);
+    if (firstName.trim().length > 100) {
+      throw new AppError('First name must be 100 characters or fewer', 400);
+    }
 
-  // Set as default persona
-  const settings = await storage.getSettings() || {};
-  settings.defaultPersonaId = characterId;
-  await storage.saveSettings(settings);
+    const characterId = uuidv4();
 
-  res.status(201).json({
-    id: characterId,
-    name: characterData.data.name,
-    description: characterData.data.description,
-  });
-}));
+    // Create persona character data in V2 format
+    const characterData = {
+      spec: 'chara_card_v2',
+      spec_version: '2.0',
+      data: {
+        name: firstName.trim(),
+        description: description?.trim() || '',
+        personality: '',
+        scenario: '',
+        first_mes: '',
+        mes_example: '',
+        creator_notes: 'Created during onboarding as user persona',
+        system_prompt: '',
+        post_history_instructions: '',
+        alternate_greetings: [],
+        character_book: null,
+        tags: ['persona'],
+        creator: '',
+        character_version: '1.0',
+        extensions: {
+          is_persona: true
+        }
+      }
+    };
+
+    // Save character (no image)
+    await storage.saveCharacter(characterId, characterData, null);
+
+    // Set as default persona
+    const settings = (await storage.getSettings()) || {};
+    settings.defaultPersonaId = characterId;
+    await storage.saveSettings(settings);
+
+    res.status(201).json({
+      id: characterId,
+      name: characterData.data.name,
+      description: characterData.data.description
+    });
+  })
+);
 
 // Create preset during onboarding
-router.post('/preset', asyncHandler(async (req, res) => {
-  const { provider, apiKey, baseURL, password } = req.body;
+router.post(
+  '/preset',
+  asyncHandler(async (req, res) => {
+    const { provider, apiKey, baseURL, password } = req.body;
 
-  if (!provider) {
-    throw new AppError('Provider is required', 400);
-  }
-
-  const validProviders = ['deepseek', 'openai', 'anthropic', 'openrouter', 'aihorde', 'koboldcpp', 'ollama', 'openaicompatible'];
-  if (!validProviders.includes(provider)) {
-    throw new AppError(`Invalid provider. Must be one of: ${validProviders.join(', ')}`, 400);
-  }
-
-  // AI Horde, KoboldCpp, Ollama, and OpenAI Compatible don't require an API key
-  const providersWithoutApiKey = ['aihorde', 'koboldcpp', 'ollama', 'openaicompatible'];
-  if (!providersWithoutApiKey.includes(provider) && (!apiKey || !apiKey.trim())) {
-    throw new AppError('API key is required for this provider', 400);
-  }
-
-  // KoboldCpp, Ollama, and OpenAI Compatible require a base URL
-  const providersRequiringBaseURL = ['koboldcpp', 'ollama', 'openaicompatible'];
-  if (providersRequiringBaseURL.includes(provider) && (!baseURL || !baseURL.trim())) {
-    const labels = { koboldcpp: 'KoboldCpp', ollama: 'Ollama', openaicompatible: 'OpenAI Compatible' };
-    throw new AppError(`Base URL is required for ${labels[provider]}`, 400);
-  }
-
-  // Basic API key validation
-  if (apiKey && apiKey.trim()) {
-    const trimmedKey = apiKey.trim();
-
-    // Check for reasonable length
-    if (trimmedKey.length < 20) {
-      throw new AppError('API key appears to be too short', 400);
+    if (!provider) {
+      throw new AppError('Provider is required', 400);
     }
 
-    // Provider-specific format validation
-    if (provider === 'openai' && !trimmedKey.startsWith('sk-')) {
-      throw new AppError('OpenAI API keys typically start with "sk-"', 400);
+    const validProviders = [
+      'deepseek',
+      'openai',
+      'anthropic',
+      'openrouter',
+      'aihorde',
+      'koboldcpp',
+      'ollama',
+      'openaicompatible'
+    ];
+    if (!validProviders.includes(provider)) {
+      throw new AppError(`Invalid provider. Must be one of: ${validProviders.join(', ')}`, 400);
     }
 
-    if (provider === 'anthropic' && !trimmedKey.startsWith('sk-ant-')) {
-      throw new AppError('Anthropic API keys typically start with "sk-ant-"', 400);
+    // AI Horde, KoboldCpp, Ollama, and OpenAI Compatible don't require an API key
+    const providersWithoutApiKey = ['aihorde', 'koboldcpp', 'ollama', 'openaicompatible'];
+    if (!providersWithoutApiKey.includes(provider) && (!apiKey || !apiKey.trim())) {
+      throw new AppError('API key is required for this provider', 400);
     }
-  }
 
-  const presetId = uuidv4();
+    // KoboldCpp, Ollama, and OpenAI Compatible require a base URL
+    const providersRequiringBaseURL = ['koboldcpp', 'ollama', 'openaicompatible'];
+    if (providersRequiringBaseURL.includes(provider) && (!baseURL || !baseURL.trim())) {
+      const labels = {
+        koboldcpp: 'KoboldCpp',
+        ollama: 'Ollama',
+        openaicompatible: 'OpenAI Compatible'
+      };
+      throw new AppError(`Base URL is required for ${labels[provider]}`, 400);
+    }
 
-  // Get provider-specific configuration
-  const presetConfig = getProviderPresetConfig(provider, apiKey, { baseURL, password });
+    // Basic API key validation
+    if (apiKey && apiKey.trim()) {
+      const trimmedKey = apiKey.trim();
 
-  await storage.savePreset(presetId, {
-    ...presetConfig,
-    id: presetId
-  });
-
-  // Set as default preset
-  await storage.setDefaultPresetId(presetId);
-
-  res.status(201).json({
-    id: presetId,
-    name: presetConfig.name,
-    provider: presetConfig.provider,
-  });
-}));
-
-// Import default characters and stories
-router.post('/import-defaults', asyncHandler(async (req, res) => {
-  console.log('Importing default characters and stories...');
-
-  // Get the default persona ID to set on stories
-  const settings = await storage.getSettings();
-  const defaultPersonaId = settings?.defaultPersonaId;
-
-  // Import default characters
-  const importedCharacters = await importDefaultCharacters(storage);
-
-  // Create a default story for each imported character
-  const defaultStories = [];
-  for (const character of importedCharacters) {
-    console.log(`Creating default story for ${character.name}...`);
-    const story = await createDefaultStory(storage, character);
-    if (story) {
-      // Set the default persona on the story
-      if (defaultPersonaId) {
-        await storage.setStoryPersona(story.id, defaultPersonaId);
-        console.log(`✓ Set default persona on story: ${story.title}`);
+      // Check for reasonable length
+      if (trimmedKey.length < 20) {
+        throw new AppError('API key appears to be too short', 400);
       }
-      defaultStories.push(story);
+
+      // Provider-specific format validation
+      if (provider === 'openai' && !trimmedKey.startsWith('sk-')) {
+        throw new AppError('OpenAI API keys typically start with "sk-"', 400);
+      }
+
+      if (provider === 'anthropic' && !trimmedKey.startsWith('sk-ant-')) {
+        throw new AppError('Anthropic API keys typically start with "sk-ant-"', 400);
+      }
     }
-  }
 
-  console.log(`Imported ${importedCharacters.length} characters and created ${defaultStories.length} stories`);
-
-  res.json({
-    importedCharacters: importedCharacters.length,
-    createdStories: defaultStories.length,
-    characters: importedCharacters.map(c => ({ id: c.id, name: c.name })),
-    stories: defaultStories
-  });
-}));
-
-// Complete onboarding
-router.post('/complete', asyncHandler(async (req, res) => {
-  const settings = await storage.getSettings() || {};
-  settings.onboardingCompleted = true;
-  await storage.saveSettings(settings);
-
-  res.json({ success: true });
-}));
-
-// Skip onboarding (for advanced users)
-router.post('/skip', asyncHandler(async (req, res) => {
-  // Create default AI Horde preset if no presets exist
-  const presets = await storage.listPresets();
-  if (presets.length === 0) {
-    const defaults = getDefaultPresets();
     const presetId = uuidv4();
+
+    // Get provider-specific configuration
+    const presetConfig = getProviderPresetConfig(provider, apiKey, { baseURL, password });
+
     await storage.savePreset(presetId, {
-      ...defaults.aihorde,
+      ...presetConfig,
       id: presetId
     });
+
+    // Set as default preset
     await storage.setDefaultPresetId(presetId);
-  }
 
-  // Mark onboarding as completed
-  const settings = await storage.getSettings() || {};
-  settings.onboardingCompleted = true;
-  await storage.saveSettings(settings);
+    res.status(201).json({
+      id: presetId,
+      name: presetConfig.name,
+      provider: presetConfig.provider
+    });
+  })
+);
 
-  res.json({ success: true });
-}));
+// Import default characters and stories
+router.post(
+  '/import-defaults',
+  asyncHandler(async (req, res) => {
+    console.log('Importing default characters and stories...');
+
+    // Get the default persona ID to set on stories
+    const settings = await storage.getSettings();
+    const defaultPersonaId = settings?.defaultPersonaId;
+
+    // Import default characters
+    const importedCharacters = await importDefaultCharacters(storage);
+
+    // Create a default story for each imported character
+    const defaultStories = [];
+    for (const character of importedCharacters) {
+      console.log(`Creating default story for ${character.name}...`);
+      const story = await createDefaultStory(storage, character);
+      if (story) {
+        // Set the default persona on the story
+        if (defaultPersonaId) {
+          await storage.setStoryPersona(story.id, defaultPersonaId);
+          console.log(`✓ Set default persona on story: ${story.title}`);
+        }
+        defaultStories.push(story);
+      }
+    }
+
+    console.log(
+      `Imported ${importedCharacters.length} characters and created ${defaultStories.length} stories`
+    );
+
+    res.json({
+      importedCharacters: importedCharacters.length,
+      createdStories: defaultStories.length,
+      characters: importedCharacters.map((c) => ({ id: c.id, name: c.name })),
+      stories: defaultStories
+    });
+  })
+);
+
+// Complete onboarding
+router.post(
+  '/complete',
+  asyncHandler(async (req, res) => {
+    const settings = (await storage.getSettings()) || {};
+    settings.onboardingCompleted = true;
+    await storage.saveSettings(settings);
+
+    res.json({ success: true });
+  })
+);
+
+// Skip onboarding (for advanced users)
+router.post(
+  '/skip',
+  asyncHandler(async (req, res) => {
+    // Create default AI Horde preset if no presets exist
+    const presets = await storage.listPresets();
+    if (presets.length === 0) {
+      const defaults = getDefaultPresets();
+      const presetId = uuidv4();
+      await storage.savePreset(presetId, {
+        ...defaults.aihorde,
+        id: presetId
+      });
+      await storage.setDefaultPresetId(presetId);
+    }
+
+    // Mark onboarding as completed
+    const settings = (await storage.getSettings()) || {};
+    settings.onboardingCompleted = true;
+    await storage.saveSettings(settings);
+
+    res.json({ success: true });
+  })
+);
 
 /**
  * Get provider-specific preset configuration
@@ -237,7 +270,7 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
       top_k: null,
       frequency_penalty: null,
       presence_penalty: null,
-      stop_sequences: [],
+      stop_sequences: []
     },
     lorebookSettings: {
       scanDepth: 2000,
@@ -272,7 +305,7 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
           maxContextTokens: 128000,
           temperature: 1.0,
           thinking: false,
-          reasoningEffort: 'high',
+          reasoningEffort: 'high'
         }
       };
 
@@ -331,7 +364,7 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
           timeout: 300000,
           rep_pen: 1.1,
           rep_pen_range: 320,
-          sampler_order: [6, 0, 1, 3, 4, 2, 5],
+          sampler_order: [6, 0, 1, 3, 4, 2, 5]
         },
         lorebookSettings: baseConfig.lorebookSettings,
         promptTemplates: baseConfig.promptTemplates

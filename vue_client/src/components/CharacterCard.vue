@@ -1,13 +1,6 @@
 <template>
-  <div
-    class="character-card"
-    :class="{ clickable: clickable }"
-    @click="handleClick"
-  >
-    <div
-      class="character-avatar"
-      :style="avatarStyle"
-    >
+  <div class="character-card" :class="{ clickable: clickable }" @click="handleClick">
+    <div class="character-avatar" :style="avatarStyle">
       <div v-if="!hasImage" class="character-initial">
         {{ characterInitial }}
       </div>
@@ -19,7 +12,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 const props = defineProps({
   character: {
@@ -30,34 +23,32 @@ const props = defineProps({
     type: Boolean,
     default: false
   }
-})
+});
 
-const emit = defineEmits(['click'])
+const emit = defineEmits(['click']);
 
 const characterInitial = computed(() => {
-  const name = props.character.name || 'U'
-  return name.charAt(0).toUpperCase()
-})
+  const name = props.character.name || 'U';
+  return name.charAt(0).toUpperCase();
+});
 
 const avatarStyle = computed(() => {
-  const url = props.character.thumbnailMediumUrl || props.character.imageUrl
+  const url = props.character.thumbnailMediumUrl || props.character.imageUrl;
   if (url) {
     return {
       backgroundImage: `url(${url})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center top'
-    }
+    };
   }
-  return {}
-})
+  return {};
+});
 
-const hasImage = computed(() =>
-  !!(props.character.thumbnailMediumUrl || props.character.imageUrl)
-)
+const hasImage = computed(() => !!(props.character.thumbnailMediumUrl || props.character.imageUrl));
 
 function handleClick() {
   if (props.clickable) {
-    emit('click', props.character)
+    emit('click', props.character);
   }
 }
 </script>

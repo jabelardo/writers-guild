@@ -126,16 +126,16 @@ describe('MacroProcessor', () => {
       const text = '{{roll:2d6+3}}';
       const result = processor.processDiceRolls(text);
       const num = parseInt(result);
-      expect(num).toBeGreaterThanOrEqual(5);  // min: 2+3
-      expect(num).toBeLessThanOrEqual(15);    // max: 12+3
+      expect(num).toBeGreaterThanOrEqual(5); // min: 2+3
+      expect(num).toBeLessThanOrEqual(15); // max: 12+3
     });
 
     it('should handle negative modifiers {{roll:2d6-2}}', () => {
       const text = '{{roll:2d6-2}}';
       const result = processor.processDiceRolls(text);
       const num = parseInt(result);
-      expect(num).toBeGreaterThanOrEqual(0);  // min: 2-2
-      expect(num).toBeLessThanOrEqual(10);    // max: 12-2
+      expect(num).toBeGreaterThanOrEqual(0); // min: 2-2
+      expect(num).toBeLessThanOrEqual(10); // max: 12-2
     });
 
     it('should handle d20 rolls', () => {
@@ -209,7 +209,7 @@ describe('MacroProcessor', () => {
       const result = processor.process(text);
 
       expect(result).toContain('Alice chooses');
-      expect(['red', 'blue'].some(color => result.includes(color))).toBe(true);
+      expect(['red', 'blue'].some((color) => result.includes(color))).toBe(true);
     });
 
     it('should return original text if no macros present', () => {

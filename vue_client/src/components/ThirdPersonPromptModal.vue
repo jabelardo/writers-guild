@@ -5,7 +5,8 @@
         Would you like to rewrite this text to third-person narrative style?
       </p>
       <p class="prompt-description">
-        This will convert the text to third-person past tense, which is the recommended format for story writing in Writers Guild.
+        This will convert the text to third-person past tense, which is the recommended format for
+        story writing in Writers Guild.
       </p>
       <div class="dont-ask-checkbox">
         <input type="checkbox" id="dont-ask-third-person" v-model="dontAskAgain" />
@@ -14,9 +15,7 @@
     </div>
 
     <template #footer>
-      <button class="btn btn-secondary" @click="handleSkip" :disabled="isProcessing">
-        Skip
-      </button>
+      <button class="btn btn-secondary" @click="handleSkip" :disabled="isProcessing">Skip</button>
       <button class="btn btn-primary" @click="handleRewrite" :disabled="isProcessing">
         <i class="fas fa-repeat"></i> Rewrite
       </button>
@@ -25,35 +24,35 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import Modal from './Modal.vue'
-import { SKIP_THIRD_PERSON_PROMPT_KEY } from '../config/storageKeys'
+import { ref } from 'vue';
+import Modal from './Modal.vue';
+import { SKIP_THIRD_PERSON_PROMPT_KEY } from '../config/storageKeys';
 
-const emit = defineEmits(['close', 'rewrite', 'skip'])
+const emit = defineEmits(['close', 'rewrite', 'skip']);
 
-const dontAskAgain = ref(false)
-const isProcessing = ref(false)
+const dontAskAgain = ref(false);
+const isProcessing = ref(false);
 
 function savePreference() {
   if (dontAskAgain.value) {
-    localStorage.setItem(SKIP_THIRD_PERSON_PROMPT_KEY, 'true')
+    localStorage.setItem(SKIP_THIRD_PERSON_PROMPT_KEY, 'true');
   }
 }
 
 function handleSkip() {
-  if (isProcessing.value) return
-  isProcessing.value = true
-  savePreference()
-  emit('skip')
-  emit('close')
+  if (isProcessing.value) return;
+  isProcessing.value = true;
+  savePreference();
+  emit('skip');
+  emit('close');
 }
 
 function handleRewrite() {
-  if (isProcessing.value) return
-  isProcessing.value = true
-  savePreference()
-  emit('rewrite')
-  emit('close')
+  if (isProcessing.value) return;
+  isProcessing.value = true;
+  savePreference();
+  emit('rewrite');
+  emit('close');
 }
 </script>
 
@@ -84,7 +83,7 @@ function handleRewrite() {
   font-size: 0.9rem;
 }
 
-.dont-ask-checkbox input[type="checkbox"] {
+.dont-ask-checkbox input[type='checkbox'] {
   width: 1rem;
   height: 1rem;
   cursor: pointer;

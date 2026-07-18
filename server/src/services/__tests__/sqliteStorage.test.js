@@ -100,7 +100,9 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
     });
 
     it('should create story with needsRewritePrompt option', async () => {
-      const story = await storage.createStory('Rewrite Story', 'Desc', { needsRewritePrompt: true });
+      const story = await storage.createStory('Rewrite Story', 'Desc', {
+        needsRewritePrompt: true
+      });
       expect(story.needsRewritePrompt).toBe(true);
     });
 
@@ -185,7 +187,11 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
         data: { name: 'Test Char', description: 'A character' }
       };
       await storage.saveCharacter('char-dup-1', characterData, null);
-      await storage.saveCharacter('char-dup-2', { ...characterData, data: { name: 'Char 2' } }, null);
+      await storage.saveCharacter(
+        'char-dup-2',
+        { ...characterData, data: { name: 'Char 2' } },
+        null
+      );
       await storage.addCharacterToStory(story.id, 'char-dup-1');
       await storage.addCharacterToStory(story.id, 'char-dup-2');
 
@@ -244,7 +250,7 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
     it('should create duplicate with new timestamps', async () => {
       const original = await storage.createStory('Old Story', 'Desc');
       // Small delay to ensure timestamps differ
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       const duplicate = await storage.duplicateStory(original.id);
 
@@ -384,13 +390,15 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
     });
 
     it('should throw error when adding character to non-existent story', async () => {
-      await expect(storage.addCharacterToStory('non-existent', characterId))
-        .rejects.toThrow('Story not found');
+      await expect(storage.addCharacterToStory('non-existent', characterId)).rejects.toThrow(
+        'Story not found'
+      );
     });
 
     it('should throw error when adding non-existent character to story', async () => {
-      await expect(storage.addCharacterToStory(storyId, 'non-existent'))
-        .rejects.toThrow('Character not found');
+      await expect(storage.addCharacterToStory(storyId, 'non-existent')).rejects.toThrow(
+        'Character not found'
+      );
     });
   });
 
@@ -494,13 +502,15 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
     });
 
     it('should throw error when adding lorebook to non-existent story', async () => {
-      await expect(storage.addLorebookToStory('non-existent', lorebookId))
-        .rejects.toThrow('Story not found');
+      await expect(storage.addLorebookToStory('non-existent', lorebookId)).rejects.toThrow(
+        'Story not found'
+      );
     });
 
     it('should throw error when adding non-existent lorebook to story', async () => {
-      await expect(storage.addLorebookToStory(storyId, 'non-existent'))
-        .rejects.toThrow('Lorebook not found');
+      await expect(storage.addLorebookToStory(storyId, 'non-existent')).rejects.toThrow(
+        'Lorebook not found'
+      );
     });
   });
 

@@ -45,7 +45,7 @@ describe('Presets API Routes', () => {
 
   beforeEach(() => {
     // Keep Date.now deterministic and unique per test to avoid cache bleed
-    fakeNow = 1700000000000 + (timeOffset++ * 10 * 60 * 1000);
+    fakeNow = 1700000000000 + timeOffset++ * 10 * 60 * 1000;
     vi.spyOn(Date, 'now').mockReturnValue(fakeNow);
 
     // Create Express app with the router
@@ -64,9 +64,7 @@ describe('Presets API Routes', () => {
 
   describe('GET / - List Presets', () => {
     it('should return presets array', async () => {
-      const response = await request(app)
-        .get('/api/presets')
-        .expect(200);
+      const response = await request(app).get('/api/presets').expect(200);
 
       expect(response.body).toHaveProperty('presets');
       expect(Array.isArray(response.body.presets)).toBe(true);
@@ -85,10 +83,7 @@ describe('Presets API Routes', () => {
         }
       };
 
-      const response = await request(app)
-        .post('/api/presets')
-        .send(presetData)
-        .expect(201);
+      const response = await request(app).post('/api/presets').send(presetData).expect(201);
 
       expect(response.body.preset).toHaveProperty('id');
       expect(response.body.preset.name).toBe('New Preset');
@@ -128,18 +123,14 @@ describe('Presets API Routes', () => {
 
       const presetId = createResponse.body.preset.id;
 
-      const response = await request(app)
-        .get(`/api/presets/${presetId}`)
-        .expect(200);
+      const response = await request(app).get(`/api/presets/${presetId}`).expect(200);
 
       expect(response.body.preset.name).toBe('Test Preset');
       expect(response.body.preset.provider).toBe('anthropic');
     });
 
     it('should return 500 for non-existent preset', async () => {
-      await request(app)
-        .get('/api/presets/non-existent')
-        .expect(500);
+      await request(app).get('/api/presets/non-existent').expect(500);
     });
   });
 
@@ -199,22 +190,16 @@ describe('Presets API Routes', () => {
 
       const presetId = createResponse.body.preset.id;
 
-      const response = await request(app)
-        .delete(`/api/presets/${presetId}`)
-        .expect(200);
+      const response = await request(app).delete(`/api/presets/${presetId}`).expect(200);
 
       expect(response.body.success).toBe(true);
 
       // Verify preset is deleted
-      await request(app)
-        .get(`/api/presets/${presetId}`)
-        .expect(500);
+      await request(app).get(`/api/presets/${presetId}`).expect(500);
     });
 
     it('should return 404 for non-existent preset', async () => {
-      const response = await request(app)
-        .delete('/api/presets/non-existent')
-        .expect(404);
+      const response = await request(app).delete('/api/presets/non-existent').expect(404);
 
       expect(response.body.error).toContain('Preset not found');
     });
@@ -222,9 +207,7 @@ describe('Presets API Routes', () => {
 
   describe('GET /default/id - Get Default Preset ID', () => {
     it('should return null when no default is set', async () => {
-      const response = await request(app)
-        .get('/api/presets/default/id')
-        .expect(200);
+      const response = await request(app).get('/api/presets/default/id').expect(200);
 
       expect(response.body.defaultPresetId).toBeNull();
     });
@@ -242,14 +225,9 @@ describe('Presets API Routes', () => {
       const presetId = createResponse.body.preset.id;
 
       // Set as default
-      await request(app)
-        .put('/api/presets/default/id')
-        .send({ presetId })
-        .expect(200);
+      await request(app).put('/api/presets/default/id').send({ presetId }).expect(200);
 
-      const response = await request(app)
-        .get('/api/presets/default/id')
-        .expect(200);
+      const response = await request(app).get('/api/presets/default/id').expect(200);
 
       expect(response.body.defaultPresetId).toBe(presetId);
     });
@@ -277,10 +255,7 @@ describe('Presets API Routes', () => {
     });
 
     it('should return 400 if presetId is missing', async () => {
-      const response = await request(app)
-        .put('/api/presets/default/id')
-        .send({})
-        .expect(400);
+      const response = await request(app).put('/api/presets/default/id').send({}).expect(400);
 
       expect(response.body.error).toContain('Preset ID is required');
     });
@@ -297,9 +272,7 @@ describe('Presets API Routes', () => {
 
   describe('POST /initialize-defaults - Initialize Default Presets', () => {
     it('should create default presets', async () => {
-      const response = await request(app)
-        .post('/api/presets/initialize-defaults')
-        .expect(200);
+      const response = await request(app).post('/api/presets/initialize-defaults').expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.presets).toBeInstanceOf(Array);
@@ -309,9 +282,7 @@ describe('Presets API Routes', () => {
 
   describe('GET /defaults/templates - Get Default Templates', () => {
     it('should return default prompt templates', async () => {
-      const response = await request(app)
-        .get('/api/presets/defaults/templates')
-        .expect(200);
+      const response = await request(app).get('/api/presets/defaults/templates').expect(200);
 
       expect(response.body).toHaveProperty('systemPrompt');
       expect(response.body).toHaveProperty('continue');
@@ -333,9 +304,7 @@ describe('Presets API Routes', () => {
       vi.spyOn(AIHordeProvider.prototype, 'getAvailableModels').mockResolvedValue(models);
       vi.spyOn(AIHordeProvider.prototype, 'autoSelectModels').mockReturnValue(autoSelected);
 
-      const response = await request(app)
-        .get('/api/presets/aihorde/models')
-        .expect(200);
+      const response = await request(app).get('/api/presets/aihorde/models').expect(200);
 
       expect(response.body.cached).toBe(false);
       expect(response.body.models).toEqual(models);
@@ -361,9 +330,7 @@ describe('Presets API Routes', () => {
         throw new Error('horde down');
       });
 
-      const response = await request(app)
-        .get('/api/presets/aihorde/models')
-        .expect(500);
+      const response = await request(app).get('/api/presets/aihorde/models').expect(500);
 
       expect(response.body.error).toContain('Failed to fetch models from AI Horde');
       expect(response.body.message).toBe('horde down');
@@ -375,9 +342,7 @@ describe('Presets API Routes', () => {
       const workers = [{ id: 'w1', online: true }];
       vi.spyOn(AIHordeProvider.prototype, 'getWorkerData').mockResolvedValue(workers);
 
-      const response = await request(app)
-        .get('/api/presets/aihorde/workers')
-        .expect(200);
+      const response = await request(app).get('/api/presets/aihorde/workers').expect(200);
 
       expect(response.body.workers).toEqual(workers);
     });
@@ -387,9 +352,7 @@ describe('Presets API Routes', () => {
         throw new Error('workers unavailable');
       });
 
-      const response = await request(app)
-        .get('/api/presets/aihorde/workers')
-        .expect(500);
+      const response = await request(app).get('/api/presets/aihorde/workers').expect(500);
 
       expect(response.body.error).toContain('Failed to fetch workers from AI Horde');
       expect(response.body.message).toBe('workers unavailable');
@@ -398,9 +361,7 @@ describe('Presets API Routes', () => {
 
   describe('GET /openrouter/models - Get OpenRouter Models', () => {
     it('should return 400 if API key is missing', async () => {
-      const response = await request(app)
-        .get('/api/presets/openrouter/models')
-        .expect(400);
+      const response = await request(app).get('/api/presets/openrouter/models').expect(400);
 
       expect(response.body.error).toContain('API key required');
     });
@@ -419,11 +380,11 @@ describe('Presets API Routes', () => {
     });
 
     it('should return cached response within cache duration', async () => {
-      vi.spyOn(OpenRouterProvider.prototype, 'getAvailableModels').mockResolvedValue([{ id: 'm1' }]);
+      vi.spyOn(OpenRouterProvider.prototype, 'getAvailableModels').mockResolvedValue([
+        { id: 'm1' }
+      ]);
 
-      await request(app)
-        .get('/api/presets/openrouter/models?apiKey=or-key')
-        .expect(200);
+      await request(app).get('/api/presets/openrouter/models?apiKey=or-key').expect(200);
 
       const response = await request(app)
         .get('/api/presets/openrouter/models?apiKey=or-key')
@@ -451,9 +412,7 @@ describe('Presets API Routes', () => {
 
   describe('GET /openai/models - Get OpenAI Models', () => {
     it('should return 400 if API key is missing', async () => {
-      const response = await request(app)
-        .get('/api/presets/openai/models')
-        .expect(400);
+      const response = await request(app).get('/api/presets/openai/models').expect(400);
 
       expect(response.body.error).toContain('API key required');
     });
@@ -471,11 +430,11 @@ describe('Presets API Routes', () => {
     });
 
     it('should return cached models on second request', async () => {
-      vi.spyOn(OpenAIProvider.prototype, 'getAvailableModels').mockResolvedValue([{ id: 'gpt-4.1' }]);
+      vi.spyOn(OpenAIProvider.prototype, 'getAvailableModels').mockResolvedValue([
+        { id: 'gpt-4.1' }
+      ]);
 
-      await request(app)
-        .get('/api/presets/openai/models?apiKey=sk-test')
-        .expect(200);
+      await request(app).get('/api/presets/openai/models?apiKey=sk-test').expect(200);
 
       const response = await request(app)
         .get('/api/presets/openai/models?apiKey=sk-test')
@@ -503,9 +462,7 @@ describe('Presets API Routes', () => {
 
   describe('GET /anthropic/models - Get Anthropic Models', () => {
     it('should return 400 if API key is missing', async () => {
-      const response = await request(app)
-        .get('/api/presets/anthropic/models')
-        .expect(400);
+      const response = await request(app).get('/api/presets/anthropic/models').expect(400);
 
       expect(response.body.error).toContain('API key required');
     });
@@ -523,11 +480,11 @@ describe('Presets API Routes', () => {
     });
 
     it('should return cached models on second request', async () => {
-      vi.spyOn(AnthropicProvider.prototype, 'getAvailableModels').mockResolvedValue([{ id: 'claude-3-5-sonnet-20241022' }]);
+      vi.spyOn(AnthropicProvider.prototype, 'getAvailableModels').mockResolvedValue([
+        { id: 'claude-3-5-sonnet-20241022' }
+      ]);
 
-      await request(app)
-        .get('/api/presets/anthropic/models?apiKey=ak-test')
-        .expect(200);
+      await request(app).get('/api/presets/anthropic/models?apiKey=ak-test').expect(200);
 
       const response = await request(app)
         .get('/api/presets/anthropic/models?apiKey=ak-test')
@@ -555,9 +512,7 @@ describe('Presets API Routes', () => {
 
   describe('GET /deepseek/models - Get DeepSeek Models', () => {
     it('should return 400 if API key is missing', async () => {
-      const response = await request(app)
-        .get('/api/presets/deepseek/models')
-        .expect(400);
+      const response = await request(app).get('/api/presets/deepseek/models').expect(400);
 
       expect(response.body.error).toContain('API key required');
     });
@@ -575,11 +530,11 @@ describe('Presets API Routes', () => {
     });
 
     it('should return cached models on second request', async () => {
-      vi.spyOn(DeepSeekProvider.prototype, 'getAvailableModels').mockResolvedValue([{ id: 'deepseek-v4-flash' }]);
+      vi.spyOn(DeepSeekProvider.prototype, 'getAvailableModels').mockResolvedValue([
+        { id: 'deepseek-v4-flash' }
+      ]);
 
-      await request(app)
-        .get('/api/presets/deepseek/models?apiKey=ds-test')
-        .expect(200);
+      await request(app).get('/api/presets/deepseek/models?apiKey=ds-test').expect(200);
 
       const response = await request(app)
         .get('/api/presets/deepseek/models?apiKey=ds-test')
@@ -607,9 +562,7 @@ describe('Presets API Routes', () => {
 
   describe('GET /koboldcpp/info - Inspect KoboldCpp Endpoint', () => {
     it('should return 400 when baseURL is missing', async () => {
-      const response = await request(app)
-        .get('/api/presets/koboldcpp/info')
-        .expect(400);
+      const response = await request(app).get('/api/presets/koboldcpp/info').expect(400);
 
       expect(response.body.error).toContain('baseURL query parameter is required');
     });
@@ -641,9 +594,7 @@ describe('Presets API Routes', () => {
 
   describe('GET /ollama/show - Inspect Ollama Model', () => {
     it('should return 400 when baseURL is missing', async () => {
-      const response = await request(app)
-        .get('/api/presets/ollama/show?name=llama3')
-        .expect(400);
+      const response = await request(app).get('/api/presets/ollama/show?name=llama3').expect(400);
 
       expect(response.body.error).toContain('baseURL query parameter is required');
     });
@@ -683,9 +634,7 @@ describe('Presets API Routes', () => {
 
   describe('GET /ollama/models - List Ollama Models', () => {
     it('should return 400 when baseURL is missing', async () => {
-      const response = await request(app)
-        .get('/api/presets/ollama/models')
-        .expect(400);
+      const response = await request(app).get('/api/presets/ollama/models').expect(400);
 
       expect(response.body.error).toContain('baseURL query parameter is required');
     });
@@ -717,9 +666,7 @@ describe('Presets API Routes', () => {
 
   describe('GET /openaicompatible/models - List OpenAI-Compatible Models', () => {
     it('should return 400 when baseURL is missing', async () => {
-      const response = await request(app)
-        .get('/api/presets/openaicompatible/models')
-        .expect(400);
+      const response = await request(app).get('/api/presets/openaicompatible/models').expect(400);
 
       expect(response.body.error).toContain('baseURL query parameter is required');
     });

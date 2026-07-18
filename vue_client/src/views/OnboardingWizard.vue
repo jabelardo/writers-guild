@@ -3,10 +3,7 @@
     <div class="onboarding-card">
       <!-- Progress indicator -->
       <div class="progress-bar">
-        <div
-          class="progress-fill"
-          :style="{ width: `${(currentStep / totalSteps) * 100}%` }"
-        ></div>
+        <div class="progress-fill" :style="{ width: `${(currentStep / totalSteps) * 100}%` }"></div>
       </div>
 
       <!-- Step 1: Welcome -->
@@ -16,18 +13,19 @@
         </div>
         <h1>Welcome to Writers Guild</h1>
         <p class="description">
-          Writers Guild is an AI-powered creative writing application that helps you
-          craft immersive stories with rich characters and dynamic worlds.
+          Writers Guild is an AI-powered creative writing application that helps you craft immersive
+          stories with rich characters and dynamic worlds.
         </p>
         <ul class="feature-list">
-          <li><i class="fas fa-users"></i> Create and manage character cards with detailed personalities</li>
+          <li>
+            <i class="fas fa-users"></i> Create and manage character cards with detailed
+            personalities
+          </li>
           <li><i class="fas fa-book"></i> Build interactive lorebooks for rich world-building</li>
           <li><i class="fas fa-magic"></i> Generate story content with various AI providers</li>
           <li><i class="fas fa-edit"></i> Write collaborative fiction with AI assistance</li>
         </ul>
-        <p class="description">
-          Let's get you set up in just a few steps.
-        </p>
+        <p class="description">Let's get you set up in just a few steps.</p>
         <div class="button-group">
           <button class="btn btn-secondary" @click="skipOnboarding">Skip Setup</button>
           <button class="btn btn-primary" @click="nextStep">Get Started</button>
@@ -41,8 +39,8 @@
         </div>
         <h1>Create Your Persona</h1>
         <p class="description">
-          Your persona represents you in the stories you write. It helps the AI understand
-          your role in the narrative.
+          Your persona represents you in the stories you write. It helps the AI understand your role
+          in the narrative.
         </p>
         <div class="form-group">
           <label for="firstName">What's your first name?</label>
@@ -62,9 +60,7 @@
             placeholder="e.g., A curious adventurer with a love for mystery and ancient lore..."
             rows="3"
           ></textarea>
-          <p class="help-text">
-            This helps the AI write you into stories more naturally.
-          </p>
+          <p class="help-text">This helps the AI write you into stories more naturally.</p>
         </div>
         <div class="button-group">
           <button class="btn btn-secondary" @click="prevStep">Back</button>
@@ -85,7 +81,8 @@
         </div>
         <h1>Configure AI Provider</h1>
         <p class="description">
-          Writers Guild uses AI to help generate story content. Choose a provider and enter your API key.
+          Writers Guild uses AI to help generate story content. Choose a provider and enter your API
+          key.
         </p>
 
         <div class="provider-selection" role="radiogroup" aria-label="Select AI provider">
@@ -93,7 +90,10 @@
             v-for="provider in providers"
             :key="provider.id"
             class="provider-option"
-            :class="{ selected: selectedProvider === provider.id, recommended: provider.recommended }"
+            :class="{
+              selected: selectedProvider === provider.id,
+              recommended: provider.recommended
+            }"
             role="radio"
             :aria-checked="selectedProvider === provider.id"
             tabindex="0"
@@ -109,7 +109,13 @@
           </div>
         </div>
 
-        <div v-if="selectedProvider && !['aihorde', 'koboldcpp', 'ollama', 'openaicompatible'].includes(selectedProvider)" class="form-group">
+        <div
+          v-if="
+            selectedProvider &&
+            !['aihorde', 'koboldcpp', 'ollama', 'openaicompatible'].includes(selectedProvider)
+          "
+          class="form-group"
+        >
           <label :for="'apiKey-' + selectedProvider">
             {{ getProviderName(selectedProvider) }} API Key
           </label>
@@ -121,16 +127,26 @@
           />
           <p class="help-text">
             <template v-if="selectedProvider === 'deepseek'">
-              Get your API key from <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">platform.deepseek.com</a>
+              Get your API key from
+              <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener"
+                >platform.deepseek.com</a
+              >
             </template>
             <template v-else-if="selectedProvider === 'openai'">
-              Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com</a>
+              Get your API key from
+              <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener"
+                >platform.openai.com</a
+              >
             </template>
             <template v-else-if="selectedProvider === 'anthropic'">
-              Get your API key from <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>
+              Get your API key from
+              <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener"
+                >console.anthropic.com</a
+              >
             </template>
             <template v-else-if="selectedProvider === 'openrouter'">
-              Get your API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai</a>
+              Get your API key from
+              <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai</a>
             </template>
           </p>
         </div>
@@ -138,8 +154,8 @@
         <div v-if="selectedProvider === 'aihorde'" class="info-box">
           <i class="fas fa-info-circle"></i>
           <p>
-            AI Horde is a free, community-powered option. No API key required,
-            but generation may be slower during peak times.
+            AI Horde is a free, community-powered option. No API key required, but generation may be
+            slower during peak times.
           </p>
         </div>
 
@@ -153,12 +169,14 @@
               placeholder="http://localhost:5001/api"
             />
             <p class="help-text">
-              URL of your running KoboldCpp instance. If Writer's Guild is running in Docker
-              and KoboldCpp is on the host or another machine, use that host's IP.
+              URL of your running KoboldCpp instance. If Writer's Guild is running in Docker and
+              KoboldCpp is on the host or another machine, use that host's IP.
             </p>
           </div>
           <div class="form-group">
-            <label for="koboldcpp-password">Password <span class="optional-label">(optional)</span></label>
+            <label for="koboldcpp-password"
+              >Password <span class="optional-label">(optional)</span></label
+            >
             <input
               id="koboldcpp-password"
               v-model="koboldPassword"
@@ -178,12 +196,14 @@
               placeholder="http://localhost:11434"
             />
             <p class="help-text">
-              URL of your running Ollama instance. You'll pick a specific model in preset
-              settings after onboarding (or run <code>ollama pull &lt;name&gt;</code> first).
+              URL of your running Ollama instance. You'll pick a specific model in preset settings
+              after onboarding (or run <code>ollama pull &lt;name&gt;</code> first).
             </p>
           </div>
           <div class="form-group">
-            <label for="ollama-password">Bearer Token <span class="optional-label">(optional)</span></label>
+            <label for="ollama-password"
+              >Bearer Token <span class="optional-label">(optional)</span></label
+            >
             <input
               id="ollama-password"
               v-model="ollamaPassword"
@@ -209,7 +229,9 @@
             </p>
           </div>
           <div class="form-group">
-            <label for="oaicompat-apiKey">Bearer Token <span class="optional-label">(optional)</span></label>
+            <label for="oaicompat-apiKey"
+              >Bearer Token <span class="optional-label">(optional)</span></label
+            >
             <input
               id="oaicompat-apiKey"
               v-model="oaiCompatApiKey"
@@ -221,11 +243,7 @@
 
         <div class="button-group">
           <button class="btn btn-secondary" @click="prevStep">Back</button>
-          <button
-            class="btn btn-primary"
-            :disabled="!canProceedFromProvider"
-            @click="createPreset"
-          >
+          <button class="btn btn-primary" :disabled="!canProceedFromProvider" @click="createPreset">
             Continue
           </button>
         </div>
@@ -238,8 +256,8 @@
         </div>
         <h1>Import Sample Content</h1>
         <p class="description">
-          Would you like to populate your library with sample characters and stories?
-          This is a great way to explore the app's features.
+          Would you like to populate your library with sample characters and stories? This is a
+          great way to explore the app's features.
         </p>
 
         <div class="import-options" role="radiogroup" aria-label="Import sample content choice">
@@ -298,26 +316,32 @@
         <div v-if="setupSummary" class="summary">
           <div class="summary-item" v-if="setupSummary.persona">
             <i class="fas fa-user"></i>
-            <span>Persona created: <strong>{{ setupSummary.persona }}</strong></span>
+            <span
+              >Persona created: <strong>{{ setupSummary.persona }}</strong></span
+            >
           </div>
           <div class="summary-item" v-if="setupSummary.provider">
             <i class="fas fa-robot"></i>
-            <span>AI Provider: <strong>{{ setupSummary.provider }}</strong></span>
+            <span
+              >AI Provider: <strong>{{ setupSummary.provider }}</strong></span
+            >
           </div>
           <div class="summary-item" v-if="setupSummary.importedCharacters">
             <i class="fas fa-users"></i>
-            <span>Imported <strong>{{ setupSummary.importedCharacters }}</strong> characters</span>
+            <span
+              >Imported <strong>{{ setupSummary.importedCharacters }}</strong> characters</span
+            >
           </div>
           <div class="summary-item" v-if="setupSummary.createdStories">
             <i class="fas fa-book"></i>
-            <span>Created <strong>{{ setupSummary.createdStories }}</strong> sample stories</span>
+            <span
+              >Created <strong>{{ setupSummary.createdStories }}</strong> sample stories</span
+            >
           </div>
         </div>
 
         <div class="button-group">
-          <button class="btn btn-primary btn-large" @click="finishOnboarding">
-            Start Writing
-          </button>
+          <button class="btn btn-primary btn-large" @click="finishOnboarding">Start Writing</button>
         </div>
       </div>
 
@@ -331,41 +355,42 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { onboardingAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
-import { markOnboardingComplete } from '../router'
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { onboardingAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
+import { markOnboardingComplete } from '../router';
 
-const router = useRouter()
-const toast = useToast()
+const router = useRouter();
+const toast = useToast();
 
-const currentStep = ref(1)
-const totalSteps = 5
-const isLoading = ref(false)
-const loadingMessage = ref('')
+const currentStep = ref(1);
+const totalSteps = 5;
+const isLoading = ref(false);
+const loadingMessage = ref('');
 
 // Step 2: Persona
 const persona = ref({
   firstName: '',
   description: ''
-})
+});
 
 // Step 3: Provider
-const selectedProvider = ref('deepseek')
-const apiKey = ref('')
-const koboldBaseURL = ref('http://localhost:5001/api')
-const koboldPassword = ref('')
-const ollamaBaseURL = ref('http://localhost:11434')
-const ollamaPassword = ref('')
-const oaiCompatBaseURL = ref('http://localhost:1234/v1')
-const oaiCompatApiKey = ref('')
+const selectedProvider = ref('deepseek');
+const apiKey = ref('');
+const koboldBaseURL = ref('http://localhost:5001/api');
+const koboldPassword = ref('');
+const ollamaBaseURL = ref('http://localhost:11434');
+const ollamaPassword = ref('');
+const oaiCompatBaseURL = ref('http://localhost:1234/v1');
+const oaiCompatApiKey = ref('');
 
 const providers = [
   {
     id: 'deepseek',
     name: 'DeepSeek',
-    description: 'High-quality reasoning model with excellent creative writing capabilities. Very affordable.',
+    description:
+      'High-quality reasoning model with excellent creative writing capabilities. Very affordable.',
     recommended: true
   },
   {
@@ -391,182 +416,186 @@ const providers = [
   {
     id: 'koboldcpp',
     name: 'KoboldCpp',
-    description: 'Connect to a local KoboldCpp endpoint you\'re already running.'
+    description: "Connect to a local KoboldCpp endpoint you're already running."
   },
   {
     id: 'ollama',
     name: 'Ollama',
-    description: 'Connect to a local Ollama endpoint you\'re already running.'
+    description: "Connect to a local Ollama endpoint you're already running."
   },
   {
     id: 'openaicompatible',
     name: 'OpenAI Compatible',
-    description: 'Any local server that speaks OpenAI\'s API (LM Studio, llama.cpp, vLLM).'
+    description: "Any local server that speaks OpenAI's API (LM Studio, llama.cpp, vLLM)."
   }
-]
+];
 
 // Step 4: Import defaults
-const importDefaults = ref(true)
+const importDefaults = ref(true);
 
 // Setup summary for final step
-const setupSummary = ref(null)
+const setupSummary = ref(null);
 
 const canProceedFromProvider = computed(() => {
-  if (!selectedProvider.value) return false
-  if (selectedProvider.value === 'aihorde') return true
-  if (selectedProvider.value === 'koboldcpp') return koboldBaseURL.value.trim().length > 0
-  if (selectedProvider.value === 'ollama') return ollamaBaseURL.value.trim().length > 0
-  if (selectedProvider.value === 'openaicompatible') return oaiCompatBaseURL.value.trim().length > 0
-  return apiKey.value.trim().length > 0
-})
+  if (!selectedProvider.value) return false;
+  if (selectedProvider.value === 'aihorde') return true;
+  if (selectedProvider.value === 'koboldcpp') return koboldBaseURL.value.trim().length > 0;
+  if (selectedProvider.value === 'ollama') return ollamaBaseURL.value.trim().length > 0;
+  if (selectedProvider.value === 'openaicompatible')
+    return oaiCompatBaseURL.value.trim().length > 0;
+  return apiKey.value.trim().length > 0;
+});
 
 function getProviderName(providerId) {
-  const provider = providers.find(p => p.id === providerId)
-  return provider?.name || providerId
+  const provider = providers.find((p) => p.id === providerId);
+  return provider?.name || providerId;
 }
 
 function selectProvider(providerId) {
   if (selectedProvider.value !== providerId) {
-    selectedProvider.value = providerId
-    apiKey.value = ''
+    selectedProvider.value = providerId;
+    apiKey.value = '';
   }
 }
 
 function nextStep() {
   if (currentStep.value < totalSteps) {
-    currentStep.value++
+    currentStep.value++;
   }
 }
 
 function prevStep() {
   if (currentStep.value > 1) {
-    currentStep.value--
+    currentStep.value--;
   }
 }
 
 async function skipOnboarding() {
-  isLoading.value = true
-  loadingMessage.value = 'Setting up defaults...'
+  isLoading.value = true;
+  loadingMessage.value = 'Setting up defaults...';
 
   try {
-    await onboardingAPI.skip()
-    markOnboardingComplete()
-    router.push('/')
+    await onboardingAPI.skip();
+    markOnboardingComplete();
+    router.push('/');
   } catch (error) {
-    toast.error('Failed to skip onboarding: ' + error.message)
+    toast.error('Failed to skip onboarding: ' + error.message);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
 async function createPersona() {
   if (!persona.value.firstName.trim()) {
-    toast.error('Please enter your first name')
-    return
+    toast.error('Please enter your first name');
+    return;
   }
 
-  isLoading.value = true
-  loadingMessage.value = 'Creating your persona...'
+  isLoading.value = true;
+  loadingMessage.value = 'Creating your persona...';
 
   try {
     const result = await onboardingAPI.createPersona(
       persona.value.firstName.trim(),
       persona.value.description.trim()
-    )
+    );
     setupSummary.value = {
       ...setupSummary.value,
       persona: result.name
-    }
-    nextStep()
+    };
+    nextStep();
   } catch (error) {
-    toast.error('Failed to create persona: ' + error.message)
+    toast.error('Failed to create persona: ' + error.message);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
 async function createPreset() {
   if (!selectedProvider.value) {
-    toast.error('Please select a provider')
-    return
+    toast.error('Please select a provider');
+    return;
   }
 
   if (selectedProvider.value === 'koboldcpp') {
     if (!koboldBaseURL.value.trim()) {
-      toast.error('Please enter a URL for your KoboldCpp endpoint')
-      return
+      toast.error('Please enter a URL for your KoboldCpp endpoint');
+      return;
     }
   } else if (selectedProvider.value === 'ollama') {
     if (!ollamaBaseURL.value.trim()) {
-      toast.error('Please enter a URL for your Ollama endpoint')
-      return
+      toast.error('Please enter a URL for your Ollama endpoint');
+      return;
     }
   } else if (selectedProvider.value === 'openaicompatible') {
     if (!oaiCompatBaseURL.value.trim()) {
-      toast.error('Please enter a URL for your OpenAI-compatible endpoint')
-      return
+      toast.error('Please enter a URL for your OpenAI-compatible endpoint');
+      return;
     }
   } else if (selectedProvider.value !== 'aihorde' && !apiKey.value.trim()) {
-    toast.error('Please enter your API key')
-    return
+    toast.error('Please enter your API key');
+    return;
   }
 
-  isLoading.value = true
-  loadingMessage.value = 'Configuring AI provider...'
+  isLoading.value = true;
+  loadingMessage.value = 'Configuring AI provider...';
 
   try {
-    let extraConfig = {}
+    let extraConfig = {};
     if (selectedProvider.value === 'koboldcpp') {
-      extraConfig = { baseURL: koboldBaseURL.value.trim(), password: koboldPassword.value.trim() }
+      extraConfig = { baseURL: koboldBaseURL.value.trim(), password: koboldPassword.value.trim() };
     } else if (selectedProvider.value === 'ollama') {
-      extraConfig = { baseURL: ollamaBaseURL.value.trim(), password: ollamaPassword.value.trim() }
+      extraConfig = { baseURL: ollamaBaseURL.value.trim(), password: ollamaPassword.value.trim() };
     } else if (selectedProvider.value === 'openaicompatible') {
-      extraConfig = { baseURL: oaiCompatBaseURL.value.trim(), apiKey: oaiCompatApiKey.value.trim() }
+      extraConfig = {
+        baseURL: oaiCompatBaseURL.value.trim(),
+        apiKey: oaiCompatApiKey.value.trim()
+      };
     }
     const result = await onboardingAPI.createPreset(
       selectedProvider.value,
       apiKey.value.trim(),
       extraConfig
-    )
+    );
     setupSummary.value = {
       ...setupSummary.value,
       provider: result.name
-    }
-    nextStep()
+    };
+    nextStep();
   } catch (error) {
-    toast.error('Failed to create preset: ' + error.message)
+    toast.error('Failed to create preset: ' + error.message);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
 async function handleImportChoice() {
-  isLoading.value = true
+  isLoading.value = true;
 
   try {
     if (importDefaults.value) {
-      loadingMessage.value = 'Importing sample content...'
-      const result = await onboardingAPI.importDefaults()
+      loadingMessage.value = 'Importing sample content...';
+      const result = await onboardingAPI.importDefaults();
       setupSummary.value = {
         ...setupSummary.value,
         importedCharacters: result.importedCharacters,
         createdStories: result.createdStories
-      }
+      };
     }
 
-    loadingMessage.value = 'Completing setup...'
-    await onboardingAPI.complete()
-    nextStep()
+    loadingMessage.value = 'Completing setup...';
+    await onboardingAPI.complete();
+    nextStep();
   } catch (error) {
-    toast.error('Failed to complete setup: ' + error.message)
+    toast.error('Failed to complete setup: ' + error.message);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 
 function finishOnboarding() {
-  markOnboardingComplete()
-  router.push('/')
+  markOnboardingComplete();
+  router.push('/');
 }
 </script>
 

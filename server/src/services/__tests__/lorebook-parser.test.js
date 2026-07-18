@@ -52,8 +52,9 @@ describe('LorebookParser', () => {
     it('should throw error for missing entries', () => {
       const invalidJson = { name: 'No entries' };
 
-      expect(() => LorebookParser.parseStandaloneLorebook(JSON.stringify(invalidJson)))
-        .toThrow('Invalid lorebook format: missing entries');
+      expect(() => LorebookParser.parseStandaloneLorebook(JSON.stringify(invalidJson))).toThrow(
+        'Invalid lorebook format: missing entries'
+      );
     });
 
     it('should use defaults for missing fields', () => {
@@ -110,13 +111,13 @@ describe('LorebookParser', () => {
     });
 
     it('should throw error for null input', () => {
-      expect(() => LorebookParser.parseEmbeddedLorebook(null))
-        .toThrow('Invalid embedded lorebook');
+      expect(() => LorebookParser.parseEmbeddedLorebook(null)).toThrow('Invalid embedded lorebook');
     });
 
     it('should throw error for missing entries', () => {
-      expect(() => LorebookParser.parseEmbeddedLorebook({ name: 'No entries' }))
-        .toThrow('Invalid embedded lorebook');
+      expect(() => LorebookParser.parseEmbeddedLorebook({ name: 'No entries' })).toThrow(
+        'Invalid embedded lorebook'
+      );
     });
 
     it('should use default name for embedded lorebook', () => {

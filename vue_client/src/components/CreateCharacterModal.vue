@@ -60,9 +60,7 @@
     </div>
 
     <template #footer>
-      <button class="btn btn-secondary" @click="$emit('close')">
-        Cancel
-      </button>
+      <button class="btn btn-secondary" @click="$emit('close')">Cancel</button>
       <button
         class="btn btn-primary"
         :disabled="!characterName.trim() || creating"
@@ -76,34 +74,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import Modal from './Modal.vue'
-import { charactersAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
+import { ref, onMounted } from 'vue';
+import Modal from './Modal.vue';
+import { charactersAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
 
-const emit = defineEmits(['close', 'created'])
-const toast = useToast()
+const emit = defineEmits(['close', 'created']);
+const toast = useToast();
 
-const characterName = ref('')
-const characterDescription = ref('')
-const characterPersonality = ref('')
-const characterScenario = ref('')
-const characterFirstMessage = ref('')
-const creating = ref(false)
-const nameInput = ref(null)
+const characterName = ref('');
+const characterDescription = ref('');
+const characterPersonality = ref('');
+const characterScenario = ref('');
+const characterFirstMessage = ref('');
+const creating = ref(false);
+const nameInput = ref(null);
 
 onMounted(() => {
   // Focus name input when modal opens
   if (nameInput.value) {
-    nameInput.value.focus()
+    nameInput.value.focus();
   }
-})
+});
 
 async function createCharacter() {
-  if (!characterName.value.trim() || creating.value) return
+  if (!characterName.value.trim() || creating.value) return;
 
   try {
-    creating.value = true
+    creating.value = true;
 
     const data = {
       name: characterName.value.trim(),
@@ -111,18 +109,18 @@ async function createCharacter() {
       personality: characterPersonality.value.trim(),
       scenario: characterScenario.value.trim(),
       first_mes: characterFirstMessage.value.trim()
-    }
+    };
 
-    const result = await charactersAPI.create(data)
+    const result = await charactersAPI.create(data);
 
-    toast.success(`Successfully created "${result.name}"!`)
-    emit('created', result)
-    emit('close')
+    toast.success(`Successfully created "${result.name}"!`);
+    emit('created', result);
+    emit('close');
   } catch (error) {
-    console.error('Failed to create character:', error)
-    toast.error('Failed to create character: ' + error.message)
+    console.error('Failed to create character:', error);
+    toast.error('Failed to create character: ' + error.message);
   } finally {
-    creating.value = false
+    creating.value = false;
   }
 }
 </script>

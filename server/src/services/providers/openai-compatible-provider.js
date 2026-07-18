@@ -116,7 +116,11 @@ export class OpenAICompatibleProvider extends OpenAIProvider {
         original: error
       };
     }
-    if (msg.includes('ECONNREFUSED') || msg.includes('fetch failed') || error.cause?.code === 'ECONNREFUSED') {
+    if (
+      msg.includes('ECONNREFUSED') ||
+      msg.includes('fetch failed') ||
+      error.cause?.code === 'ECONNREFUSED'
+    ) {
       return {
         code: 'CONNECTION_ERROR',
         message: `Could not reach endpoint at ${this.baseURL}`,

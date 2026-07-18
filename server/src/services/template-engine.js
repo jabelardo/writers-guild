@@ -118,7 +118,12 @@ export class TemplateEngine {
         if (conditionEnd !== -1) {
           const condition = result.substring(conditionStart, conditionEnd).trim();
           const contentStart = conditionEnd + 2;
-          const closePos = this.findMatchingClose(result, '{{#unless ', '{{/unless}}', contentStart);
+          const closePos = this.findMatchingClose(
+            result,
+            '{{#unless ',
+            '{{/unless}}',
+            contentStart
+          );
 
           if (closePos !== -1) {
             const content = result.substring(contentStart, closePos);

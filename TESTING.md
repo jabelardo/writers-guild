@@ -7,6 +7,7 @@ This document provides information about the testing setup and how to write and 
 Writers Guild uses **Vitest** as the primary testing framework for both backend and frontend code. Vitest is a fast, modern testing framework that works seamlessly with ES modules and provides a Jest-compatible API.
 
 **Test Coverage:**
+
 - **Server**: 223 tests covering services and providers
 - **Client**: 118 tests covering composables and components
 - **Total**: 341 tests
@@ -144,10 +145,7 @@ describe('AnthropicProvider', () => {
       })
     });
 
-    const result = await provider.generate(
-      'System prompt',
-      'User prompt'
-    );
+    const result = await provider.generate('System prompt', 'User prompt');
 
     expect(result.content).toBe('Generated response');
   });
@@ -247,6 +245,7 @@ afterEach(() => {
 ### 3. Mocking
 
 **Mock functions:**
+
 ```javascript
 const mockCallback = vi.fn();
 mockCallback('test');
@@ -254,6 +253,7 @@ expect(mockCallback).toHaveBeenCalledWith('test');
 ```
 
 **Mock timers:**
+
 ```javascript
 vi.useFakeTimers();
 setTimeout(() => doSomething(), 1000);
@@ -262,6 +262,7 @@ expect(doSomething).toHaveBeenCalled();
 ```
 
 **Mock modules:**
+
 ```javascript
 vi.mock('./module.js', () => ({
   default: vi.fn(() => 'mocked')
@@ -284,25 +285,29 @@ it('should reject with error', async () => {
 ### 5. Component Testing Tips
 
 **Finding elements:**
+
 ```javascript
-wrapper.find('.class-name')
-wrapper.findAll('button')
-wrapper.find('[data-testid="my-element"]')
+wrapper.find('.class-name');
+wrapper.findAll('button');
+wrapper.find('[data-testid="my-element"]');
 ```
 
 **Triggering events:**
+
 ```javascript
 await wrapper.find('button').trigger('click');
 await wrapper.find('input').setValue('value');
 ```
 
 **Checking emissions:**
+
 ```javascript
 expect(wrapper.emitted('event-name')).toBeTruthy();
 expect(wrapper.emitted('event-name')[0]).toEqual(['arg1', 'arg2']);
 ```
 
 **Using slots:**
+
 ```javascript
 mount(Component, {
   slots: {
@@ -314,6 +319,7 @@ mount(Component, {
 ## Coverage Reports
 
 After running tests with coverage, reports are available in:
+
 - `server/coverage/` - Server code coverage
 - `vue_client/coverage/` - Client code coverage
 
@@ -322,11 +328,13 @@ Open `coverage/index.html` in a browser to view detailed coverage reports.
 ## Continuous Integration
 
 Tests are automatically run on:
+
 - Pre-commit hooks (if configured)
 - Pull requests
 - Main branch commits
 
 Ensure all tests pass before submitting a PR:
+
 ```bash
 npm test
 ```
@@ -351,13 +359,13 @@ npm test
 
 ## Test Coverage Goals
 
-| Category | Current | Goal |
-|----------|---------|------|
-| Services | 100% | 100% |
-| Providers | 90% | 90% |
-| Composables | 95% | 95% |
-| Components | 70% | 80% |
-| Overall | 85% | 85% |
+| Category    | Current | Goal |
+| ----------- | ------- | ---- |
+| Services    | 100%    | 100% |
+| Providers   | 90%     | 90%  |
+| Composables | 95%     | 95%  |
+| Components  | 70%     | 80%  |
+| Overall     | 85%     | 85%  |
 
 ## Adding New Tests
 
@@ -379,6 +387,7 @@ When adding new features:
 ## Questions?
 
 If you have questions about testing or need help writing tests for a specific feature, feel free to:
+
 - Check existing test files for examples
 - Review this guide
 - Ask in the project discussions

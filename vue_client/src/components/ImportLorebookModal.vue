@@ -53,96 +53,98 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import Modal from './Modal.vue'
-import ImportProgress from './ImportProgress.vue'
-import { lorebooksAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
+import { ref, computed } from 'vue';
+import Modal from './Modal.vue';
+import ImportProgress from './ImportProgress.vue';
+import { lorebooksAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
 
-const emit = defineEmits(['close', 'imported'])
-const toast = useToast()
+const emit = defineEmits(['close', 'imported']);
+const toast = useToast();
 
-const selectedFile = ref(null)
-const fileInput = ref(null)
-const lorebookUrl = ref('')
-const importing = ref(null) // null | 'json' | 'url'
+const selectedFile = ref(null);
+const fileInput = ref(null);
+const lorebookUrl = ref('');
+const importing = ref(null); // null | 'json' | 'url'
 
 // Lorebook entries carry images too, and a large lorebook can take a while.
-const imageProgress = ref(null)
+const imageProgress = ref(null);
 
 const importStatusLabel = computed(() => {
-  const p = imageProgress.value
-  if (!p || !p.total) return 'Importing...'
-  return `Caching images ${p.completed}/${p.total}`
-})
+  const p = imageProgress.value;
+  if (!p || !p.total) return 'Importing...';
+  return `Caching images ${p.completed}/${p.total}`;
+});
 
 function handleImportProgress(event) {
   if (event.phase === 'start') {
-    imageProgress.value = { completed: 0, total: event.total, failed: 0, stage: 'lorebook' }
+    imageProgress.value = { completed: 0, total: event.total, failed: 0, stage: 'lorebook' };
   } else if (event.phase === 'image' && imageProgress.value) {
-    const p = imageProgress.value
+    const p = imageProgress.value;
     imageProgress.value = {
       ...p,
       completed: p.completed + 1,
-      failed: p.failed + (event.ok ? 0 : 1),
-    }
+      failed: p.failed + (event.ok ? 0 : 1)
+    };
   }
 }
 
 function resetImportState() {
-  importing.value = null
-  imageProgress.value = null
+  importing.value = null;
+  imageProgress.value = null;
 }
 
 function reportImportResult(name) {
-  const p = imageProgress.value
+  const p = imageProgress.value;
   if (p && p.failed > 0) {
-    toast.warning(`Imported "${name}" — ${p.failed} of ${p.total} image(s) could not be cached and still point at their original host`)
-    return
+    toast.warning(
+      `Imported "${name}" — ${p.failed} of ${p.total} image(s) could not be cached and still point at their original host`
+    );
+    return;
   }
-  toast.success(`Successfully imported "${name}"!`)
+  toast.success(`Successfully imported "${name}"!`);
 }
 
 function handleFileSelect(event) {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    selectedFile.value = file
+    selectedFile.value = file;
   }
 }
 
 async function importFromJSON() {
-  if (!selectedFile.value || importing.value) return
+  if (!selectedFile.value || importing.value) return;
 
   try {
-    importing.value = 'json'
-    const result = await lorebooksAPI.importJSON(selectedFile.value, handleImportProgress)
+    importing.value = 'json';
+    const result = await lorebooksAPI.importJSON(selectedFile.value, handleImportProgress);
 
-    reportImportResult(result.name)
-    emit('imported', result)
-    emit('close')
+    reportImportResult(result.name);
+    emit('imported', result);
+    emit('close');
   } catch (error) {
-    console.error('Failed to import lorebook:', error)
-    toast.error('Failed to import lorebook: ' + error.message)
+    console.error('Failed to import lorebook:', error);
+    toast.error('Failed to import lorebook: ' + error.message);
   } finally {
-    resetImportState()
+    resetImportState();
   }
 }
 
 async function importFromURL() {
-  if (!lorebookUrl.value.trim() || importing.value) return
+  if (!lorebookUrl.value.trim() || importing.value) return;
 
   try {
-    importing.value = 'url'
-    const result = await lorebooksAPI.importFromURL(lorebookUrl.value.trim(), handleImportProgress)
+    importing.value = 'url';
+    const result = await lorebooksAPI.importFromURL(lorebookUrl.value.trim(), handleImportProgress);
 
-    reportImportResult(result.name)
-    emit('imported', result)
-    emit('close')
+    reportImportResult(result.name);
+    emit('imported', result);
+    emit('close');
   } catch (error) {
-    console.error('Failed to import from URL:', error)
-    toast.error('Failed to import lorebook: ' + error.message)
+    console.error('Failed to import from URL:', error);
+    toast.error('Failed to import lorebook: ' + error.message);
   } finally {
-    resetImportState()
+    resetImportState();
   }
 }
 </script>

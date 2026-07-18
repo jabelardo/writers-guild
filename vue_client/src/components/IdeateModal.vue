@@ -11,9 +11,7 @@
       <div v-if="response" class="response-display">
         {{ response }}<span v-if="loading" class="cursor"></span>
       </div>
-      <div v-else class="no-response">
-        No response generated yet.
-      </div>
+      <div v-else class="no-response">No response generated yet.</div>
       <!-- Show subtle loading indicator while streaming -->
       <div v-if="loading && response" class="streaming-indicator">
         <span class="streaming-dot"></span>
@@ -22,15 +20,13 @@
     </div>
 
     <template #footer>
-      <button class="btn btn-secondary" @click="$emit('close')">
-        Close
-      </button>
+      <button class="btn btn-secondary" @click="$emit('close')">Close</button>
     </template>
   </Modal>
 </template>
 
 <script setup>
-import Modal from './Modal.vue'
+import Modal from './Modal.vue';
 
 defineProps({
   response: {
@@ -45,9 +41,9 @@ defineProps({
     type: String,
     default: 'Thinking...'
   }
-})
+});
 
-defineEmits(['close'])
+defineEmits(['close']);
 </script>
 
 <style scoped>
@@ -70,7 +66,9 @@ defineEmits(['close'])
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-container p {
@@ -112,7 +110,9 @@ defineEmits(['close'])
 }
 
 @keyframes blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 
 .streaming-indicator {
@@ -134,7 +134,14 @@ defineEmits(['close'])
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.4; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1); }
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>

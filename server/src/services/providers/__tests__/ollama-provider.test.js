@@ -245,7 +245,12 @@ describe('OllamaProvider', () => {
       const body = streamFrom([
         JSON.stringify({ message: { content: 'Hello' }, done: false }) + '\n',
         JSON.stringify({ message: { content: ' world' }, done: false }) + '\n',
-        JSON.stringify({ message: { content: '' }, done: true, prompt_eval_count: 5, eval_count: 2 }) + '\n'
+        JSON.stringify({
+          message: { content: '' },
+          done: true,
+          prompt_eval_count: 5,
+          eval_count: 2
+        }) + '\n'
       ]);
       const chunks = await collectStream(provider.parseStreamResponse(body));
       const contents = chunks.filter((c) => c.content).map((c) => c.content);

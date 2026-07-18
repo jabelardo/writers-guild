@@ -5,16 +5,16 @@
 }
 
 :root {
-  --primary-color: #8B5A2B;
-  --primary-hover: #6B4423;
+  --primary-color: #8b5a2b;
+  --primary-hover: #6b4423;
   --bg-primary: #ffffff;
   --bg-secondary: #f8f9fa;
   --bg-tertiary: #e9ecef;
   --text-primary: #212529;
   --text-secondary: #6c757d;
   --border-color: #dee2e6;
-  --accent-primary: #8B5A2B;
-  --accent-hover: #6B4423;
+  --accent-primary: #8b5a2b;
+  --accent-hover: #6b4423;
   --danger: #dc3545;
   --danger-hover: #c82333;
   --warning: #ff9800;
@@ -25,16 +25,16 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --primary-color: #C4915C;
-    --primary-hover: #A67B4D;
+    --primary-color: #c4915c;
+    --primary-hover: #a67b4d;
     --bg-primary: #1e1e1e;
     --bg-secondary: #2a2a2a;
     --bg-tertiary: #3a3a3a;
     --text-primary: #cfcfcf;
     --text-secondary: #a0a0a0;
     --border-color: #404040;
-    --accent-primary: #C4915C;
-    --accent-hover: #A67B4D;
+    --accent-primary: #c4915c;
+    --accent-hover: #a67b4d;
     --danger: #e74c3c;
     --danger-hover: #c0392b;
     --warning: #ffa726;
@@ -46,7 +46,8 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: var(--bg-secondary);
   color: var(--text-primary);
   line-height: 1.6;

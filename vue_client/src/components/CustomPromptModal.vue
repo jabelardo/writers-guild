@@ -2,8 +2,8 @@
   <Modal title="Continue with Instruction" :close-on-overlay-click="false" @close="$emit('close')">
     <div class="content-wrapper">
       <p class="instruction-text">
-        Enter an instruction to guide the AI's generation. For example:
-        "Add more dialogue" or "Describe the setting in detail".
+        Enter an instruction to guide the AI's generation. For example: "Add more dialogue" or
+        "Describe the setting in detail".
       </p>
 
       <textarea
@@ -17,13 +17,8 @@
       ></textarea>
 
       <div class="modal-actions">
-        <button class="btn btn-secondary" @click="$emit('close')">
-          Cancel
-        </button>
-        <button
-          class="btn btn-primary"
-          @click="handleGenerate"
-        >
+        <button class="btn btn-secondary" @click="$emit('close')">Cancel</button>
+        <button class="btn btn-primary" @click="handleGenerate">
           <i class="fas fa-wand-magic-sparkles"></i> Generate
         </button>
       </div>
@@ -37,29 +32,29 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import Modal from './Modal.vue'
+import { ref, computed, onMounted } from 'vue';
+import Modal from './Modal.vue';
 
-const emit = defineEmits(['close', 'generate'])
+const emit = defineEmits(['close', 'generate']);
 
-const instruction = ref('')
-const inputRef = ref(null)
+const instruction = ref('');
+const inputRef = ref(null);
 
 const isMac = computed(() => {
-  return navigator.platform.toUpperCase().indexOf('MAC') >= 0
-})
+  return navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+});
 
 onMounted(() => {
   // Focus the input when modal opens
   if (inputRef.value) {
-    inputRef.value.focus()
+    inputRef.value.focus();
   }
-})
+});
 
 function handleGenerate() {
   // Emit trimmed instruction (can be empty - server will fall back to normal continue)
-  emit('generate', instruction.value.trim())
-  emit('close')
+  emit('generate', instruction.value.trim());
+  emit('close');
 }
 </script>
 

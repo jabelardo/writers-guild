@@ -19,9 +19,10 @@
           placeholder="http://localhost:5001/api"
         />
         <small class="help-text">
-          URL of your running KoboldCpp instance (default port 5001). The trailing <code>/api</code>
-          is optional. If Writer's Guild runs in Docker and KoboldCpp runs on the host or another
-          machine, use that host's IP or <code>host.docker.internal</code> instead of localhost.
+          URL of your running KoboldCpp instance (default port 5001). The trailing
+          <code>/api</code> is optional. If Writer's Guild runs in Docker and KoboldCpp runs on the
+          host or another machine, use that host's IP or <code>host.docker.internal</code> instead
+          of localhost.
         </small>
       </div>
 
@@ -34,7 +35,9 @@
           class="text-input"
           placeholder="Leave empty if KoboldCpp has no --password set"
         />
-        <small class="help-text">Only needed if KoboldCpp was launched with <code>--password</code>.</small>
+        <small class="help-text"
+          >Only needed if KoboldCpp was launched with <code>--password</code>.</small
+        >
       </div>
 
       <div class="form-group">
@@ -63,78 +66,78 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import BaseProviderConfig from './shared/BaseProviderConfig.vue'
-import { presetsAPI } from '../../services/api'
-import { useToast } from '../../composables/useToast'
+import { ref, computed } from 'vue';
+import BaseProviderConfig from './shared/BaseProviderConfig.vue';
+import { presetsAPI } from '../../services/api';
+import { useToast } from '../../composables/useToast';
 
 const props = defineProps({
   config: {
     type: Object,
     required: true
   }
-})
+});
 
-const emit = defineEmits(['update:config'])
+const emit = defineEmits(['update:config']);
 
-const toast = useToast()
+const toast = useToast();
 
-const detecting = ref(false)
-const detectError = ref(null)
+const detecting = ref(false);
+const detectError = ref(null);
 
 const localApiConfig = computed({
   get() {
-    return props.config.apiConfig || {}
+    return props.config.apiConfig || {};
   },
   set(value) {
-    emit('update:config', { ...props.config, apiConfig: value })
+    emit('update:config', { ...props.config, apiConfig: value });
   }
-})
+});
 
 async function detectEndpoint() {
   try {
-    detecting.value = true
-    detectError.value = null
+    detecting.value = true;
+    detectError.value = null;
     const response = await presetsAPI.getKoboldCppInfo(
       localApiConfig.value.baseURL,
       localApiConfig.value.password
-    )
-    const modelName = response.model || ''
-    const maxContext = response.maxContextLength
-    const maxLength = response.maxLength
+    );
+    const modelName = response.model || '';
+    const maxContext = response.maxContextLength;
+    const maxLength = response.maxLength;
 
     // Emit a single update so reactive computed props in the parent pick up everything.
     const nextConfig = {
       ...props.config,
       apiConfig: { ...(props.config.apiConfig || {}), model: modelName }
-    }
-    const nextGenSettings = { ...(props.config.generationSettings || {}) }
-    let touched = false
+    };
+    const nextGenSettings = { ...(props.config.generationSettings || {}) };
+    let touched = false;
     if (typeof maxContext === 'number' && maxContext > 0) {
-      nextGenSettings.maxContextTokens = maxContext
-      touched = true
+      nextGenSettings.maxContextTokens = maxContext;
+      touched = true;
     }
     if (typeof maxLength === 'number' && maxLength > 0) {
-      nextGenSettings.maxTokens = maxLength
-      touched = true
+      nextGenSettings.maxTokens = maxLength;
+      touched = true;
     }
-    if (touched) nextConfig.generationSettings = nextGenSettings
-    emit('update:config', nextConfig)
+    if (touched) nextConfig.generationSettings = nextGenSettings;
+    emit('update:config', nextConfig);
 
-    const parts = []
-    if (modelName) parts.push(`Model: ${modelName}`)
-    if (typeof maxContext === 'number') parts.push(`Max context: ${maxContext}`)
-    if (typeof maxLength === 'number') parts.push(`Max gen: ${maxLength}`)
+    const parts = [];
+    if (modelName) parts.push(`Model: ${modelName}`);
+    if (typeof maxContext === 'number') parts.push(`Max context: ${maxContext}`);
+    if (typeof maxLength === 'number') parts.push(`Max gen: ${maxLength}`);
     if (parts.length > 0) {
-      toast.success(`Connected. ${parts.join(' · ')}`)
+      toast.success(`Connected. ${parts.join(' · ')}`);
     } else {
-      toast.success('Connected, but KoboldCpp did not report model or limits.')
+      toast.success('Connected, but KoboldCpp did not report model or limits.');
     }
   } catch (error) {
-    detectError.value = error.message || 'Failed to reach KoboldCpp'
-    console.error('Failed to inspect KoboldCpp endpoint:', error)
+    detectError.value = error.message || 'Failed to reach KoboldCpp';
+    console.error('Failed to inspect KoboldCpp endpoint:', error);
   } finally {
-    detecting.value = false
+    detecting.value = false;
   }
 }
 </script>
@@ -255,7 +258,11 @@ async function detectEndpoint() {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

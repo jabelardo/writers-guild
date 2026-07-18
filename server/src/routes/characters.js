@@ -69,7 +69,7 @@ async function cacheCardImages(characterId, cardData, dataRoot, onProgress) {
  * Modifies cardData.data.extensions.ursceal_lorebook_id in place.
  * @returns {{ embeddedLorebook: object|null, lorebookId: string|null }}
  */
-async function extractAndSaveEmbeddedLorebook(storageInstance, cardData, dataRoot) {
+async function extractAndSaveEmbeddedLorebook(storageInstance, cardData, dataRoot, onProgress) {
   let embeddedLorebook = null;
   let lorebookId = null;
 
@@ -86,7 +86,7 @@ async function extractAndSaveEmbeddedLorebook(storageInstance, cardData, dataRoo
 
       // Cache external images and rewrite URLs before saving, so the
       // rewritten local paths are what gets persisted.
-      await cacheAndRewriteLorebookImages(lorebookId, lorebookData, dataRoot);
+      await cacheAndRewriteLorebookImages(lorebookId, lorebookData, dataRoot, onProgress);
 
       // Save to global lorebook library
       await storageInstance.saveLorebook(lorebookId, lorebookData);
@@ -198,7 +198,7 @@ router.post('/import', upload.single('character'), asyncHandler(async (req, res)
     await cacheCardImages(characterId, cardData, req.app.locals.dataRoot, channel.send);
 
     // Extract embedded lorebook if present
-    const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot);
+    const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot, channel.send);
 
     // Save character data as JSON and image separately
     await storage.saveCharacter(characterId, cardData, req.file.buffer);
@@ -370,7 +370,7 @@ router.post('/import-json', jsonUpload.single('character'), asyncHandler(async (
   await cacheCardImages(characterId, cardData, req.app.locals.dataRoot, channel.send);
 
   // Extract embedded lorebook if present
-  const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot);
+  const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot, channel.send);
 
   // Save character data (no image for JSON import)
   await storage.saveCharacter(characterId, cardData, null);
@@ -419,7 +419,7 @@ router.post('/import-url', asyncHandler(async (req, res) => {
       await cacheCardImages(characterId, cardData, req.app.locals.dataRoot, channel.send);
 
       // Extract embedded lorebook if present
-      const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot);
+      const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot, channel.send);
 
       // Save character data as JSON and image separately
       await storage.saveCharacter(characterId, cardData, imageBuffer);
@@ -460,7 +460,7 @@ router.post('/import-url', asyncHandler(async (req, res) => {
     await cacheCardImages(characterId, characterData, req.app.locals.dataRoot, channel.send);
 
     // Extract embedded lorebook if present
-    const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, characterData, req.app.locals.dataRoot);
+    const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, characterData, req.app.locals.dataRoot, channel.send);
 
     // Save character with image
     await storage.saveCharacter(characterId, characterData, imageBuffer);

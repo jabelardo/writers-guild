@@ -5,7 +5,7 @@
            found external images worth downloading -->
       <div v-if="imageProgress && imageProgress.total" class="image-progress">
         <div class="image-progress-label">
-          <span>Caching images</span>
+          <span>{{ imageProgress.stage === 'lorebook' ? 'Caching lorebook images' : 'Caching images' }}</span>
           <span>{{ imageProgress.completed }} / {{ imageProgress.total }}</span>
         </div>
         <div
@@ -115,18 +115,30 @@ const storageFileInput = ref(null)
 const characterUrl = ref('')
 const importing = ref(null) // null | 'photo' | 'storage' | 'url'
 
-// Image caching progress for the active import. null until the server reports
-// it found images to download.
-const imageProgress = ref(null) // null | { completed, total, failed }
+// Image caching progress for the active import.
+//
+// One import can cache more than one set of images: a CHUB character with an
+// embedded lorebook caches the card first, then the lorebook (often the larger
+// set). Each set arrives as its own start/image/done sequence, so totals are
+// accumulated rather than replaced — otherwise the bar would jump backwards
+// when the lorebook stage begins.
+const imageProgress = ref(null) // null | { completed, total, failed, stage }
 
 function handleImportProgress(event) {
   if (event.phase === 'start') {
-    imageProgress.value = { completed: 0, total: event.total, failed: 0 }
-  } else if (event.phase === 'image' && imageProgress.value) {
+    const prev = imageProgress.value
     imageProgress.value = {
-      completed: event.completed,
-      total: event.total,
-      failed: imageProgress.value.failed + (event.ok ? 0 : 1),
+      completed: prev?.completed ?? 0,
+      total: (prev?.total ?? 0) + event.total,
+      failed: prev?.failed ?? 0,
+      stage: event.entityType === 'lorebooks' ? 'lorebook' : 'character',
+    }
+  } else if (event.phase === 'image' && imageProgress.value) {
+    const p = imageProgress.value
+    imageProgress.value = {
+      ...p,
+      completed: p.completed + 1,
+      failed: p.failed + (event.ok ? 0 : 1),
     }
   }
 }
@@ -136,11 +148,12 @@ function resetImportState() {
   imageProgress.value = null
 }
 
-/** "Caching images 3/9" — or a plain label before any image work starts. */
+/** "Caching lorebook images 12/30" — plain label before any image work. */
 const importStatusLabel = computed(() => {
   const p = imageProgress.value
   if (!p || !p.total) return 'Importing...'
-  return `Caching images ${p.completed}/${p.total}`
+  const what = p.stage === 'lorebook' ? 'lorebook images' : 'images'
+  return `Caching ${what} ${p.completed}/${p.total}`
 })
 
 /** Tell the user when some images could not be fetched — import still works. */

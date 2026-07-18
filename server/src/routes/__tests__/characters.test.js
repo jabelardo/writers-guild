@@ -1212,6 +1212,45 @@ describe('Characters API Routes', () => {
       expect(done.name).toBe('Partial');
     });
 
+    it('streams the embedded lorebook images as a second stage', async () => {
+      // A CHUB character with an embedded lorebook caches two sets: the card,
+      // then the lorebook — often the larger of the two. Both must report.
+      const card = Buffer.from(JSON.stringify({
+        name: 'With Lore',
+        description: 'Card image ![a](https://example.com/card.png)',
+        character_book: {
+          name: 'Embedded',
+          entries: [
+            { keys: ['k'], content: 'Lore one ![b](https://example.com/lore1.png)' },
+            { keys: ['j'], content: 'Lore two ![c](https://example.com/lore2.png)' },
+          ],
+        },
+      }));
+
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .set('Accept', 'text/event-stream')
+        .attach('character', card, 'card.json')
+        .expect(200);
+
+      const events = parseEvents(response.text);
+      const starts = events.filter(e => e.phase === 'start');
+
+      // Two distinct stages, tagged by entity type.
+      expect(starts).toHaveLength(2);
+      expect(starts[0].entityType).toBe('characters');
+      expect(starts[0].total).toBe(1);
+      expect(starts[1].entityType).toBe('lorebooks');
+      expect(starts[1].total).toBe(2);
+
+      const lorebookImages = events.filter(e => e.phase === 'image' && e.entityType === 'lorebooks');
+      expect(lorebookImages).toHaveLength(2);
+
+      const done = events.find(e => e.type === 'done');
+      expect(done.embeddedLorebook).toBeTruthy();
+      expect(done.embeddedLorebook.entryCount).toBe(2);
+    });
+
     it('still returns plain JSON when the client does not ask to stream', async () => {
       const response = await request(app)
         .post('/api/characters/import-json')

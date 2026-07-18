@@ -10,6 +10,7 @@ import { SqliteStorageService } from '../services/sqliteStorage.js';
 import { LorebookParser } from '../services/lorebook-parser.js';
 import { cacheAndRewriteLorebookImages } from '../services/image-cacher.js';
 import { AssetManager } from '../services/asset-manager.js';
+import { sseChannel } from '../utils/sse.js';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -92,6 +93,8 @@ router.post('/import', upload.single('lorebook'), asyncHandler(async (req, res) 
     throw new AppError('No lorebook file provided', 400);
   }
 
+  const channel = sseChannel(req, res);
+
   try {
     // Parse lorebook
     const parsed = LorebookParser.parseStandaloneLorebook(req.file.buffer);
@@ -101,19 +104,26 @@ router.post('/import', upload.single('lorebook'), asyncHandler(async (req, res) 
 
     // Cache external images and rewrite URLs before saving, so the rewritten
     // local paths are what gets persisted.
-    await cacheAndRewriteLorebookImages(lorebookId, parsed, req.app.locals.dataRoot);
+    await cacheAndRewriteLorebookImages(lorebookId, parsed, req.app.locals.dataRoot, channel.send);
 
     // Save to storage
     await storage.saveLorebook(lorebookId, parsed);
 
-    res.json({
-      id: lorebookId,
-      name: parsed.name,
-      description: parsed.description,
-      entryCount: parsed.entries.length
+    channel.finish({
+      statusCode: 200,
+      body: {
+        id: lorebookId,
+        name: parsed.name,
+        description: parsed.description,
+        entryCount: parsed.entries.length
+      }
     });
   } catch (error) {
     console.error('Failed to import lorebook:', error);
+    if (channel.streaming) {
+      channel.fail(`Failed to import lorebook: ${error.message}`);
+      return;
+    }
     throw new AppError(`Failed to import lorebook: ${error.message}`, 400);
   }
 }));
@@ -123,6 +133,7 @@ router.post('/import', upload.single('lorebook'), asyncHandler(async (req, res) 
  */
 router.post('/import-url', asyncHandler(async (req, res) => {
   const { url } = req.body;
+  const channel = sseChannel(req, res);
 
   if (!url || typeof url !== 'string') {
     throw new AppError('URL is required', 400);
@@ -152,19 +163,26 @@ router.post('/import-url', asyncHandler(async (req, res) => {
 
     // Cache external images and rewrite URLs before saving, so the rewritten
     // local paths are what gets persisted.
-    await cacheAndRewriteLorebookImages(lorebookId, parsed, req.app.locals.dataRoot);
+    await cacheAndRewriteLorebookImages(lorebookId, parsed, req.app.locals.dataRoot, channel.send);
 
     // Save to storage
     await storage.saveLorebook(lorebookId, parsed);
 
-    res.json({
-      id: lorebookId,
-      name: parsed.name,
-      description: parsed.description,
-      entryCount: parsed.entries.length
+    channel.finish({
+      statusCode: 200,
+      body: {
+        id: lorebookId,
+        name: parsed.name,
+        description: parsed.description,
+        entryCount: parsed.entries.length
+      }
     });
   } catch (error) {
     console.error('Failed to import lorebook from URL:', error);
+    if (channel.streaming) {
+      channel.fail(`Failed to import lorebook from URL: ${error.message}`);
+      return;
+    }
     throw new AppError(`Failed to import lorebook from URL: ${error.message}`, 400);
   }
 }));

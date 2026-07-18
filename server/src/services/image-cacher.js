@@ -349,10 +349,12 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
   const concurrency = options.concurrency ?? MAX_CONCURRENT_DOWNLOADS;
 
   // A broken progress reporter must never take an import down with it.
+  // Every event carries the entity it belongs to, so a single import that
+  // caches a character AND its embedded lorebook can be labelled per stage.
   const report = (event) => {
     if (!options.onProgress) return;
     try {
-      options.onProgress(event);
+      options.onProgress({ entityType, label: label || entityId, ...event });
     } catch (err) {
       console.warn(`[ImageCacher] progress reporter threw: ${err.message}`);
     }
@@ -498,9 +500,9 @@ export async function cacheLorebookImages(lorebookId, lorebookData, dataRoot, op
  * @param {string} dataRoot
  * @returns {Promise<number>} number of image URLs rewritten
  */
-export async function cacheAndRewriteLorebookImages(lorebookId, lorebookData, dataRoot) {
+export async function cacheAndRewriteLorebookImages(lorebookId, lorebookData, dataRoot, onProgress) {
   try {
-    const imageMap = await cacheLorebookImages(lorebookId, lorebookData, dataRoot);
+    const imageMap = await cacheLorebookImages(lorebookId, lorebookData, dataRoot, { onProgress });
     if (imageMap.size > 0) {
       rewriteLorebookImageUrls(lorebookData, imageMap);
       console.log(`[ImageCacher] Rewrote ${imageMap.size} image URL(s) in lorebook ${lorebookId}`);

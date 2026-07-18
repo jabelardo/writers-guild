@@ -339,13 +339,27 @@ async function downloadImage(url) {
  * @param {string}   [label]      — human-readable label for log messages
  * @param {object}   [options]
  * @param {number}   [options.concurrency]
+ * @param {(event: {phase: string, total?: number, completed?: number, url?: string, ok?: boolean, cached?: boolean}) => void} [options.onProgress]
+ *   Called as work proceeds so callers can stream progress. Never throws into
+ *   the pipeline — a failing reporter must not fail an import.
  * @returns {Promise<Map<string, string>>}
  */
 async function cacheImageSet(entityId, urls, dataRoot, entityType, label, options = {}) {
   const assetManager = new AssetManager(dataRoot, entityType);
   const concurrency = options.concurrency ?? MAX_CONCURRENT_DOWNLOADS;
 
+  // A broken progress reporter must never take an import down with it.
+  const report = (event) => {
+    if (!options.onProgress) return;
+    try {
+      options.onProgress(event);
+    } catch (err) {
+      console.warn(`[ImageCacher] progress reporter threw: ${err.message}`);
+    }
+  };
+
   if (urls.size === 0) {
+    report({ phase: 'none', total: 0, completed: 0 });
     return new Map();
   }
 
@@ -357,6 +371,10 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
   const urlArray = [...urls];
   const imageMap = new Map();
 
+  let completed = 0;
+  let failed = 0;
+  report({ phase: 'start', total: urlArray.length, completed: 0 });
+
   for (let i = 0; i < urlArray.length; i += concurrency) {
     const batch = urlArray.slice(i, i + concurrency);
     const results = await Promise.allSettled(
@@ -366,12 +384,15 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
           if (existing) {
             imageMap.set(url, `/api/assets/${entityType}/${entityId}/${existing.filename}`);
           }
+          report({ phase: 'image', completed: ++completed, total: urlArray.length, url, ok: true, cached: true });
           return;
         }
 
         const result = await downloadImage(url);
         if (!result) {
           console.warn(`[ImageCacher] Could not cache image: ${url}`);
+          failed++;
+          report({ phase: 'image', completed: ++completed, total: urlArray.length, url, ok: false });
           return;
         }
 
@@ -396,12 +417,16 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
         await assetManager.writeFileOnly(entityId, filename, finalBuffer);
         newEntries.push({ originalUrl: url, hash, filename, mimeType: finalMimeType });
         imageMap.set(url, localPath);
+        report({ phase: 'image', completed: ++completed, total: urlArray.length, url, ok: true, cached: false });
       })
     );
 
     for (const result of results) {
       if (result.status === 'rejected') {
         console.error('[ImageCacher] Unexpected error in download batch:', result.reason);
+        // The per-image report never ran for a thrown batch entry.
+        failed++;
+        report({ phase: 'image', completed: ++completed, total: urlArray.length, ok: false });
       }
     }
   }
@@ -412,6 +437,7 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
   }
 
   console.log(`[ImageCacher] Cached ${imageMap.size}/${urls.size} image(s) for ${entityType.slice(0, -1)} "${label || entityId}"`);
+  report({ phase: 'done', total: urlArray.length, completed, cached: imageMap.size, failed });
   return imageMap;
 }
 

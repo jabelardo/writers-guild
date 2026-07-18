@@ -1,6 +1,30 @@
 <template>
   <Modal title="Import Character" @close="$emit('close')">
     <div class="import-content">
+      <!-- Image caching progress: only shown once the server reports it
+           found external images worth downloading -->
+      <div v-if="imageProgress && imageProgress.total" class="image-progress">
+        <div class="image-progress-label">
+          <span>Caching images</span>
+          <span>{{ imageProgress.completed }} / {{ imageProgress.total }}</span>
+        </div>
+        <div
+          class="progress-track"
+          role="progressbar"
+          :aria-valuenow="imageProgress.completed"
+          aria-valuemin="0"
+          :aria-valuemax="imageProgress.total"
+        >
+          <div
+            class="progress-fill"
+            :style="{ width: `${(imageProgress.completed / imageProgress.total) * 100}%` }"
+          ></div>
+        </div>
+        <small v-if="imageProgress.failed > 0" class="progress-failed">
+          {{ imageProgress.failed }} image(s) couldn't be downloaded — import will continue
+        </small>
+      </div>
+
       <!-- Import from Photos -->
       <section class="import-section">
         <h3><i class="fas fa-images"></i> Import from Photos</h3>
@@ -18,7 +42,7 @@
           @click="importFromPhoto"
         >
           <i :class="importing === 'photo' ? 'fas fa-spinner fa-spin' : 'fas fa-upload'"></i>
-          {{ importing === 'photo' ? 'Importing...' : 'Import from Photos' }}
+          {{ importing === 'photo' ? importStatusLabel : 'Import from Photos' }}
         </button>
       </section>
 
@@ -42,7 +66,7 @@
           @click="importFromStorage"
         >
           <i :class="importing === 'storage' ? 'fas fa-spinner fa-spin' : 'fas fa-upload'"></i>
-          {{ importing === 'storage' ? 'Importing...' : 'Import from Storage' }}
+          {{ importing === 'storage' ? importStatusLabel : 'Import from Storage' }}
         </button>
       </section>
 
@@ -67,7 +91,7 @@
           @click="importFromURL"
         >
           <i :class="importing === 'url' ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
-          {{ importing === 'url' ? 'Importing...' : 'Import from URL' }}
+          {{ importing === 'url' ? importStatusLabel : 'Import from URL' }}
         </button>
         <small class="hint">Supported: chub.ai, direct image URLs (PNG, JPEG, WebP)</small>
       </section>
@@ -76,7 +100,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import Modal from './Modal.vue'
 import { charactersAPI } from '../services/api'
 import { useToast } from '../composables/useToast'
@@ -90,6 +114,44 @@ const selectedStorageFile = ref(null)
 const storageFileInput = ref(null)
 const characterUrl = ref('')
 const importing = ref(null) // null | 'photo' | 'storage' | 'url'
+
+// Image caching progress for the active import. null until the server reports
+// it found images to download.
+const imageProgress = ref(null) // null | { completed, total, failed }
+
+function handleImportProgress(event) {
+  if (event.phase === 'start') {
+    imageProgress.value = { completed: 0, total: event.total, failed: 0 }
+  } else if (event.phase === 'image' && imageProgress.value) {
+    imageProgress.value = {
+      completed: event.completed,
+      total: event.total,
+      failed: imageProgress.value.failed + (event.ok ? 0 : 1),
+    }
+  }
+}
+
+function resetImportState() {
+  importing.value = null
+  imageProgress.value = null
+}
+
+/** "Caching images 3/9" — or a plain label before any image work starts. */
+const importStatusLabel = computed(() => {
+  const p = imageProgress.value
+  if (!p || !p.total) return 'Importing...'
+  return `Caching images ${p.completed}/${p.total}`
+})
+
+/** Tell the user when some images could not be fetched — import still works. */
+function reportImportResult(name) {
+  const p = imageProgress.value
+  if (p && p.failed > 0) {
+    toast.warning(`Imported "${name}" — ${p.failed} of ${p.total} image(s) could not be cached and still point at their original host`)
+    return
+  }
+  toast.success(`Successfully imported "${name}"!`)
+}
 
 function handleFileSelect(event) {
   const file = event.target.files[0]
@@ -110,16 +172,16 @@ async function importFromPhoto() {
 
   try {
     importing.value = 'photo'
-    const result = await charactersAPI.importPNG(selectedFile.value)
+    const result = await charactersAPI.importPNG(selectedFile.value, handleImportProgress)
 
-    toast.success(`Successfully imported "${result.name}"!`)
+    reportImportResult(result.name)
     emit('imported', result)
     emit('close')
   } catch (error) {
     console.error('Failed to import photo:', error)
     toast.error('Failed to import character: ' + error.message)
   } finally {
-    importing.value = null
+    resetImportState()
   }
 }
 
@@ -128,16 +190,16 @@ async function importFromURL() {
 
   try {
     importing.value = 'url'
-    const result = await charactersAPI.importFromURL(characterUrl.value.trim())
+    const result = await charactersAPI.importFromURL(characterUrl.value.trim(), handleImportProgress)
 
-    toast.success(`Successfully imported "${result.name}"!`)
+    reportImportResult(result.name)
     emit('imported', result)
     emit('close')
   } catch (error) {
     console.error('Failed to import from URL:', error)
     toast.error('Failed to import character: ' + error.message)
   } finally {
-    importing.value = null
+    resetImportState()
   }
 }
 
@@ -154,19 +216,19 @@ async function importFromStorage() {
 
     let result
     if (isImage) {
-      result = await charactersAPI.importPNG(file)
+      result = await charactersAPI.importPNG(file, handleImportProgress)
     } else {
-      result = await charactersAPI.importJSON(file)
+      result = await charactersAPI.importJSON(file, handleImportProgress)
     }
 
-    toast.success(`Successfully imported "${result.name}"!`)
+    reportImportResult(result.name)
     emit('imported', result)
     emit('close')
   } catch (error) {
     console.error('Failed to import character from storage:', error)
     toast.error('Failed to import character: ' + error.message)
   } finally {
-    importing.value = null
+    resetImportState()
   }
 }
 </script>
@@ -176,6 +238,36 @@ async function importFromStorage() {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.image-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.image-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.progress-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-tertiary, rgba(127, 127, 127, 0.25));
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent, #4a9eff);
+  transition: width 0.2s ease;
+}
+
+.progress-failed {
+  color: var(--warning, #d08b28);
 }
 
 .import-section {

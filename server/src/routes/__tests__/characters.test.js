@@ -1136,6 +1136,94 @@ describe('Characters API Routes', () => {
     });
   });
 
+  describe('import progress streaming', () => {
+    let origFetch;
+
+    beforeEach(() => {
+      const pngBuffer = createTestPng();
+      origFetch = globalThis.fetch;
+      globalThis.fetch = async () => new Response(pngBuffer, {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      });
+    });
+
+    afterEach(() => {
+      globalThis.fetch = origFetch;
+    });
+
+    /** Parse an SSE body into the sequence of JSON events it carried. */
+    function parseEvents(text) {
+      return text
+        .split('\n\n')
+        .filter(block => block.startsWith('data: '))
+        .map(block => JSON.parse(block.slice('data: '.length)));
+    }
+
+    function cardWithImages(name) {
+      return Buffer.from(JSON.stringify({
+        name,
+        description: 'One ![a](https://example.com/one.png)',
+        first_mes: 'Two ![b](https://example.com/two.png)',
+      }));
+    }
+
+    it('streams per-image progress and a terminal done event', async () => {
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .set('Accept', 'text/event-stream')
+        .attach('character', cardWithImages('Streamed'), 'card.json')
+        .expect(200);
+
+      expect(response.headers['content-type']).toContain('text/event-stream');
+
+      const events = parseEvents(response.text);
+      const start = events.find(e => e.phase === 'start');
+      const images = events.filter(e => e.phase === 'image');
+      const done = events.find(e => e.type === 'done');
+
+      expect(start.total).toBe(2);
+      expect(images).toHaveLength(2);
+      // Progress is monotonic and terminates at the total.
+      expect(images.map(e => e.completed)).toEqual([1, 2]);
+      expect(images.every(e => e.ok)).toBe(true);
+
+      // The done event carries the same payload the JSON response would.
+      expect(done.id).toBeTruthy();
+      expect(done.name).toBe('Streamed');
+    });
+
+    it('reports failed downloads without failing the import', async () => {
+      globalThis.fetch = async () => new Response('nope', { status: 404 });
+
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .set('Accept', 'text/event-stream')
+        .attach('character', cardWithImages('Partial'), 'card.json')
+        .expect(200);
+
+      const events = parseEvents(response.text);
+      const images = events.filter(e => e.phase === 'image');
+      const done = events.find(e => e.type === 'done');
+
+      expect(images.every(e => e.ok === false)).toBe(true);
+      // Import still succeeds — caching is non-fatal by design.
+      expect(done.id).toBeTruthy();
+      expect(done.name).toBe('Partial');
+    });
+
+    it('still returns plain JSON when the client does not ask to stream', async () => {
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', cardWithImages('Plain'), 'card.json')
+        .expect(201);
+
+      expect(response.headers['content-type']).toContain('application/json');
+      expect(response.body.name).toBe('Plain');
+      expect(response.text).not.toContain('data:');
+    });
+  });
+
   describe('image caching persistence', () => {
     // Regression guard: the cacher rewrites cardData in place, so it must run
     // BEFORE saveCharacter. If the order flips, the download still happens and

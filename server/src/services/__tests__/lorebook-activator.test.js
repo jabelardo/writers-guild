@@ -457,8 +457,8 @@ describe('LorebookActivator', () => {
 
       const result = activator.activate([lorebook], 'A dragon appeared');
       expect(result).toHaveLength(2);
-      expect(result.some(e => e.id === '1')).toBe(true);
-      expect(result.some(e => e.id === '2')).toBe(true);
+      expect(result.some((e) => e.id === '1')).toBe(true);
+      expect(result.some((e) => e.id === '2')).toBe(true);
     });
 
     it('should respect recursion depth limit', () => {

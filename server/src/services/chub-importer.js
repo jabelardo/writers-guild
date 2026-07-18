@@ -14,10 +14,7 @@ export class ChubImporter {
    */
   static extractCharacterPath(url) {
     // Handle both character page URLs and API URLs
-    const patterns = [
-      /chub\.ai\/characters\/(.+)/,
-      /api\.chub\.ai\/api\/characters\/(.+)/,
-    ];
+    const patterns = [/chub\.ai\/characters\/(.+)/, /api\.chub\.ai\/api\/characters\/(.+)/];
 
     for (const pattern of patterns) {
       const match = url.match(pattern);
@@ -46,10 +43,11 @@ export class ChubImporter {
     try {
       const response = await fetch(apiUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'application/json',
-          'Referer': 'https://chub.ai/',
-        },
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: 'application/json',
+          Referer: 'https://chub.ai/'
+        }
       });
 
       if (!response.ok) {
@@ -80,15 +78,18 @@ export class ChubImporter {
 
       const response = await fetch(url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': '*/*',
-          'Origin': 'https://chub.ai',
-          'Referer': 'https://chub.ai/',
-        },
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Accept: '*/*',
+          Origin: 'https://chub.ai',
+          Referer: 'https://chub.ai/'
+        }
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch character JSON: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch character JSON: ${response.status} ${response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -107,9 +108,10 @@ export class ChubImporter {
     try {
       const response = await fetch(imageUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Referer': 'https://chub.ai/',
-        },
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Referer: 'https://chub.ai/'
+        }
       });
 
       if (!response.ok) {
@@ -148,11 +150,14 @@ export class ChubImporter {
     const characterData = await this.fetchCharacterJson(projectId);
 
     // Log lorebook status
-    const hasLorebook = characterData.data?.character_book &&
-                       characterData.data.character_book.entries &&
-                       characterData.data.character_book.entries.length > 0;
+    const hasLorebook =
+      characterData.data?.character_book &&
+      characterData.data.character_book.entries &&
+      characterData.data.character_book.entries.length > 0;
     if (hasLorebook) {
-      console.log(`[CHUB Import] Imported character with ${characterData.data.character_book.entries.length} lorebook entries`);
+      console.log(
+        `[CHUB Import] Imported character with ${characterData.data.character_book.entries.length} lorebook entries`
+      );
     }
 
     // Download the character image separately
@@ -175,7 +180,7 @@ export class ChubImporter {
     return {
       characterData,
       imageBuffer,
-      imageMimetype: 'image/png',
+      imageMimetype: 'image/png'
     };
   }
 }

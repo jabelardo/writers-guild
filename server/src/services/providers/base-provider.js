@@ -15,7 +15,9 @@ export class LLMProvider {
    */
   constructor(config) {
     if (new.target === LLMProvider) {
-      throw new TypeError("Cannot construct LLMProvider instances directly - must extend this class");
+      throw new TypeError(
+        'Cannot construct LLMProvider instances directly - must extend this class'
+      );
     }
 
     this.config = config;
@@ -36,7 +38,7 @@ export class LLMProvider {
    * @returns {number} capabilities.maxContextWindow - Maximum context window in tokens
    */
   getCapabilities() {
-    throw new Error("getCapabilities() must be implemented by subclass");
+    throw new Error('getCapabilities() must be implemented by subclass');
   }
 
   /**
@@ -46,7 +48,7 @@ export class LLMProvider {
    * @returns {string} [result.error] - Error message if invalid
    */
   validateConfig() {
-    throw new Error("validateConfig() must be implemented by subclass");
+    throw new Error('validateConfig() must be implemented by subclass');
   }
 
   /**
@@ -123,7 +125,7 @@ export class LLMProvider {
    * @returns {Object} [result.metadata] - Provider-specific metadata
    */
   async generate(systemPrompt, userPrompt, options = {}) {
-    throw new Error("generate() must be implemented by subclass");
+    throw new Error('generate() must be implemented by subclass');
   }
 
   /**
@@ -146,7 +148,7 @@ export class LLMProvider {
    * @yields {Object} [chunk.usage] - Token usage (typically only on final chunk)
    */
   async generateStreaming(systemPrompt, userPrompt, options = {}) {
-    throw new Error("generateStreaming() must be implemented by subclass");
+    throw new Error('generateStreaming() must be implemented by subclass');
   }
 
   /**

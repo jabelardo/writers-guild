@@ -31,7 +31,9 @@
       <!-- Import from URL -->
       <section class="import-section">
         <h3><i class="fas fa-link"></i> Import from URL</h3>
-        <p class="help-text">Paste a character URL from CHUB or a direct image URL (PNG, JPEG, WebP)</p>
+        <p class="help-text">
+          Paste a character URL from CHUB or a direct image URL (PNG, JPEG, WebP)
+        </p>
         <input
           v-model="characterUrl"
           type="text"
@@ -55,19 +57,19 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import Modal from './Modal.vue'
-import ImportProgress from './ImportProgress.vue'
-import { charactersAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
+import { ref, computed } from 'vue';
+import Modal from './Modal.vue';
+import ImportProgress from './ImportProgress.vue';
+import { charactersAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
 
-const emit = defineEmits(['close', 'imported'])
-const toast = useToast()
+const emit = defineEmits(['close', 'imported']);
+const toast = useToast();
 
-const selectedFile = ref(null)
-const fileInput = ref(null)
-const characterUrl = ref('')
-const importing = ref(null) // null | 'file' | 'url'
+const selectedFile = ref(null);
+const fileInput = ref(null);
+const characterUrl = ref('');
+const importing = ref(null); // null | 'file' | 'url'
 
 // Image caching progress for the active import.
 //
@@ -76,99 +78,104 @@ const importing = ref(null) // null | 'file' | 'url'
 // set). Each set arrives as its own start/image/done sequence, so totals are
 // accumulated rather than replaced — otherwise the bar would jump backwards
 // when the lorebook stage begins.
-const imageProgress = ref(null) // null | { completed, total, failed, stage }
+const imageProgress = ref(null); // null | { completed, total, failed, stage }
 
 function handleImportProgress(event) {
   if (event.phase === 'start') {
-    const prev = imageProgress.value
+    const prev = imageProgress.value;
     imageProgress.value = {
       completed: prev?.completed ?? 0,
       total: (prev?.total ?? 0) + event.total,
       failed: prev?.failed ?? 0,
-      stage: event.entityType === 'lorebooks' ? 'lorebook' : 'character',
-    }
+      stage: event.entityType === 'lorebooks' ? 'lorebook' : 'character'
+    };
   } else if (event.phase === 'image' && imageProgress.value) {
-    const p = imageProgress.value
+    const p = imageProgress.value;
     imageProgress.value = {
       ...p,
       completed: p.completed + 1,
-      failed: p.failed + (event.ok ? 0 : 1),
-    }
+      failed: p.failed + (event.ok ? 0 : 1)
+    };
   }
 }
 
 function resetImportState() {
-  importing.value = null
-  imageProgress.value = null
+  importing.value = null;
+  imageProgress.value = null;
 }
 
 /** "Caching lorebook images 12/30" — plain label before any image work. */
 const importStatusLabel = computed(() => {
-  const p = imageProgress.value
-  if (!p || !p.total) return 'Importing...'
-  const what = p.stage === 'lorebook' ? 'lorebook images' : 'images'
-  return `Caching ${what} ${p.completed}/${p.total}`
-})
+  const p = imageProgress.value;
+  if (!p || !p.total) return 'Importing...';
+  const what = p.stage === 'lorebook' ? 'lorebook images' : 'images';
+  return `Caching ${what} ${p.completed}/${p.total}`;
+});
 
 /** Tell the user when some images could not be fetched — import still works. */
 function reportImportResult(name) {
-  const p = imageProgress.value
+  const p = imageProgress.value;
   if (p && p.failed > 0) {
-    toast.warning(`Imported "${name}" — ${p.failed} of ${p.total} image(s) could not be cached and still point at their original host`)
-    return
+    toast.warning(
+      `Imported "${name}" — ${p.failed} of ${p.total} image(s) could not be cached and still point at their original host`
+    );
+    return;
   }
-  toast.success(`Successfully imported "${name}"!`)
+  toast.success(`Successfully imported "${name}"!`);
 }
 
 function handleFileSelect(event) {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    selectedFile.value = file
+    selectedFile.value = file;
   }
 }
 
 async function importFromURL() {
-  if (!characterUrl.value.trim() || importing.value) return
+  if (!characterUrl.value.trim() || importing.value) return;
 
   try {
-    importing.value = 'url'
-    const result = await charactersAPI.importFromURL(characterUrl.value.trim(), handleImportProgress)
+    importing.value = 'url';
+    const result = await charactersAPI.importFromURL(
+      characterUrl.value.trim(),
+      handleImportProgress
+    );
 
-    reportImportResult(result.name)
-    emit('imported', result)
-    emit('close')
+    reportImportResult(result.name);
+    emit('imported', result);
+    emit('close');
   } catch (error) {
-    console.error('Failed to import from URL:', error)
-    toast.error('Failed to import character: ' + error.message)
+    console.error('Failed to import from URL:', error);
+    toast.error('Failed to import character: ' + error.message);
   } finally {
-    resetImportState()
+    resetImportState();
   }
 }
 
 async function importFromFile() {
-  if (!selectedFile.value || importing.value) return
+  if (!selectedFile.value || importing.value) return;
 
   try {
-    importing.value = 'file'
+    importing.value = 'file';
 
     // Card images and card JSON are the same action to the user; the file
     // type decides which endpoint handles it.
-    const file = selectedFile.value
-    const isImage = file.type.startsWith('image/') ||
-      /\.(png|jpg|jpeg|webp|avif)$/i.test(file.name)
+    const file = selectedFile.value;
+    const isImage =
+      file.type.startsWith('image/') || /\.(png|jpg|jpeg|webp|avif)$/i.test(file.name);
 
     const result = isImage
       ? await charactersAPI.importPNG(file, handleImportProgress)
-      : await charactersAPI.importJSON(file, handleImportProgress)
+      : await charactersAPI.importJSON(file, handleImportProgress);
 
-    reportImportResult(result.name)
-    emit('imported', result)
-    emit('close')
+    reportImportResult(result.name);
+    emit('imported', result);
+    emit('close');
   } catch (error) {
-    console.error('Failed to import character from file:', error)
-    toast.error('Failed to import character: ' + error.message)
+    console.error('Failed to import character from file:', error);
+    toast.error('Failed to import character: ' + error.message);
   } finally {
-    resetImportState()
+    resetImportState();
   }
 }
 </script>
@@ -179,7 +186,6 @@ async function importFromFile() {
   flex-direction: column;
   gap: 1.5rem;
 }
-
 
 .import-section {
   display: flex;

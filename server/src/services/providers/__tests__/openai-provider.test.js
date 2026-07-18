@@ -207,10 +207,7 @@ describe('OpenAIProvider', () => {
         })
       });
 
-      const result = await provider.generate(
-        'You are a helpful assistant',
-        'Hello, how are you?'
-      );
+      const result = await provider.generate('You are a helpful assistant', 'Hello, how are you?');
 
       expect(result.content).toBe('Generated response');
       expect(mockFetch).toHaveBeenCalledTimes(1);
@@ -249,9 +246,7 @@ describe('OpenAIProvider', () => {
     it('should throw error when API key is missing', async () => {
       const noKeyProvider = new OpenAIProvider({ apiKey: '' });
 
-      await expect(
-        noKeyProvider.generate('System', 'User')
-      ).rejects.toThrow('API key not set');
+      await expect(noKeyProvider.generate('System', 'User')).rejects.toThrow('API key not set');
     });
 
     it('should handle API errors with error message', async () => {
@@ -263,9 +258,7 @@ describe('OpenAIProvider', () => {
         })
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('Invalid request');
+      await expect(provider.generate('System', 'User')).rejects.toThrow('Invalid request');
     });
 
     it('should handle API errors without error message', async () => {
@@ -275,9 +268,9 @@ describe('OpenAIProvider', () => {
         json: async () => ({})
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('API request failed: Internal Server Error');
+      await expect(provider.generate('System', 'User')).rejects.toThrow(
+        'API request failed: Internal Server Error'
+      );
     });
 
     it('should handle malformed error response', async () => {
@@ -289,9 +282,9 @@ describe('OpenAIProvider', () => {
         }
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('API request failed: Bad Request');
+      await expect(provider.generate('System', 'User')).rejects.toThrow(
+        'API request failed: Bad Request'
+      );
     });
 
     it('should pass abort signal to fetch', async () => {

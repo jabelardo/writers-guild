@@ -129,10 +129,19 @@ describe('KoboldCppProvider', () => {
 
     it('passes through sampler params when set', () => {
       const body = provider.buildRequestBody('', '', {
-        top_p: 0.9, top_k: 40, top_a: 0.1, typical: 0.95, tfs: 0.95, min_p: 0.05,
-        rep_pen: 1.15, rep_pen_range: 512, rep_pen_slope: 0.7,
+        top_p: 0.9,
+        top_k: 40,
+        top_a: 0.1,
+        typical: 0.95,
+        tfs: 0.95,
+        min_p: 0.05,
+        rep_pen: 1.15,
+        rep_pen_range: 512,
+        rep_pen_slope: 0.7,
         sampler_order: [6, 0, 1, 3, 4, 2, 5],
-        mirostat: 2, mirostat_tau: 5.0, mirostat_eta: 0.1
+        mirostat: 2,
+        mirostat_tau: 5.0,
+        mirostat_eta: 0.1
       });
       expect(body.top_p).toBe(0.9);
       expect(body.top_k).toBe(40);
@@ -238,7 +247,7 @@ describe('KoboldCppProvider', () => {
         'event: message\ndata: {"token": " world"}\n\n'
       ]);
       const chunks = await collectStream(provider.parseStreamResponse(body));
-      const contents = chunks.filter(c => c.content).map(c => c.content);
+      const contents = chunks.filter((c) => c.content).map((c) => c.content);
       expect(contents).toEqual(['Hello', ' world']);
       expect(chunks[chunks.length - 1].finished).toBe(true);
     });
@@ -249,7 +258,7 @@ describe('KoboldCppProvider', () => {
         'en": "split"}\n\nevent: message\ndata: {"token": "ok"}\n\n'
       ]);
       const chunks = await collectStream(provider.parseStreamResponse(body));
-      const contents = chunks.filter(c => c.content).map(c => c.content);
+      const contents = chunks.filter((c) => c.content).map((c) => c.content);
       expect(contents).toEqual(['split', 'ok']);
     });
 
@@ -260,7 +269,7 @@ describe('KoboldCppProvider', () => {
         'event: message\ndata: {"token": "after-finish"}\n\n'
       ]);
       const chunks = await collectStream(provider.parseStreamResponse(body));
-      const contents = chunks.filter(c => c.content).map(c => c.content);
+      const contents = chunks.filter((c) => c.content).map((c) => c.content);
       expect(contents).toEqual(['x']);
       expect(chunks.at(-1).finished).toBe(true);
     });
@@ -271,7 +280,7 @@ describe('KoboldCppProvider', () => {
         'event: message\ndata: {"token": "good"}\n\n'
       ]);
       const chunks = await collectStream(provider.parseStreamResponse(body));
-      const contents = chunks.filter(c => c.content).map(c => c.content);
+      const contents = chunks.filter((c) => c.content).map((c) => c.content);
       expect(contents).toEqual(['good']);
     });
   });
@@ -290,7 +299,7 @@ describe('KoboldCppProvider', () => {
       expect(result.metadata.genkey).toMatch(/^KCPP_/);
 
       const chunks = await collectStream(result.stream);
-      expect(chunks.some(c => c.content === 'hi')).toBe(true);
+      expect(chunks.some((c) => c.content === 'hi')).toBe(true);
     });
 
     it('fires POST /api/extra/abort with genkey when caller signal aborts', async () => {
@@ -367,7 +376,9 @@ describe('KoboldCppProvider', () => {
         json: async () => ({ value: 8192 })
       });
       const ctx = await provider.getMaxContextLength();
-      expect(mockFetch.mock.calls[0][0]).toBe('http://localhost:5001/api/extra/true_max_context_length');
+      expect(mockFetch.mock.calls[0][0]).toBe(
+        'http://localhost:5001/api/extra/true_max_context_length'
+      );
       expect(ctx).toBe(8192);
     });
 

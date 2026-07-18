@@ -39,9 +39,11 @@ export function initializeDatabase(dataRoot) {
  */
 function createSchema(db) {
   // Check current schema version
-  const versionRow = db.prepare(`
+  const versionRow = db
+    .prepare(`
     SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'
-  `).get();
+  `)
+    .get();
 
   if (!versionRow) {
     // Fresh database - create all tables

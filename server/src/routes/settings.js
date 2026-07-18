@@ -19,56 +19,74 @@ router.use((req, res, next) => {
 });
 
 // Get all settings
-router.get('/', asyncHandler(async (req, res) => {
-  const settings = await storage.getSettings();
-  res.json({ settings });
-}));
+router.get(
+  '/',
+  asyncHandler(async (req, res) => {
+    const settings = await storage.getSettings();
+    res.json({ settings });
+  })
+);
 
 // Update settings
-router.put('/', asyncHandler(async (req, res) => {
-  const {
-    apiKey,
-    maxTokens,
-    temperature,
-    showReasoning,
-    autoSave,
-    showPrompt,
-    thirdPerson,
-    filterAsterisks,
-    includeDialogueExamples,
-    lorebookScanDepth,
-    lorebookTokenBudget,
-    lorebookRecursionDepth,
-    lorebookEnableRecursion,
-    defaultPersonaId,
-    onboardingCompleted,
-  } = req.body;
+router.put(
+  '/',
+  asyncHandler(async (req, res) => {
+    const {
+      apiKey,
+      maxTokens,
+      temperature,
+      showReasoning,
+      autoSave,
+      showPrompt,
+      thirdPerson,
+      filterAsterisks,
+      includeDialogueExamples,
+      lorebookScanDepth,
+      lorebookTokenBudget,
+      lorebookRecursionDepth,
+      lorebookEnableRecursion,
+      defaultPersonaId,
+      onboardingCompleted
+    } = req.body;
 
-  // Get current settings
-  const current = await storage.getSettings() || {};
+    // Get current settings
+    const current = (await storage.getSettings()) || {};
 
-  // Merge with updates
-  const updated = {
-    ...current,
-    ...(apiKey !== undefined && { apiKey }),
-    ...(maxTokens !== undefined && { maxTokens: parseInt(maxTokens) || 4000 }),
-    ...(temperature !== undefined && { temperature: parseFloat(temperature) || 1.5 }),
-    ...(showReasoning !== undefined && { showReasoning: Boolean(showReasoning) }),
-    ...(autoSave !== undefined && { autoSave: Boolean(autoSave) }),
-    ...(showPrompt !== undefined && { showPrompt: Boolean(showPrompt) }),
-    ...(thirdPerson !== undefined && { thirdPerson: Boolean(thirdPerson) }),
-    ...(filterAsterisks !== undefined && { filterAsterisks: Boolean(filterAsterisks) }),
-    ...(includeDialogueExamples !== undefined && { includeDialogueExamples: Boolean(includeDialogueExamples) }),
-    ...(lorebookScanDepth !== undefined && { lorebookScanDepth: parseInt(lorebookScanDepth) || 2000 }),
-    ...(lorebookTokenBudget !== undefined && { lorebookTokenBudget: parseInt(lorebookTokenBudget) || 1800 }),
-    ...(lorebookRecursionDepth !== undefined && { lorebookRecursionDepth: parseInt(lorebookRecursionDepth) || 3 }),
-    ...(lorebookEnableRecursion !== undefined && { lorebookEnableRecursion: Boolean(lorebookEnableRecursion) }),
-    ...(defaultPersonaId !== undefined && { defaultPersonaId: defaultPersonaId || null }),
-    ...(onboardingCompleted !== undefined && { onboardingCompleted: Boolean(onboardingCompleted) }),
-  };
+    // Merge with updates
+    const updated = {
+      ...current,
+      ...(apiKey !== undefined && { apiKey }),
+      ...(maxTokens !== undefined && { maxTokens: parseInt(maxTokens) || 4000 }),
+      ...(temperature !== undefined && { temperature: parseFloat(temperature) || 1.5 }),
+      ...(showReasoning !== undefined && { showReasoning: Boolean(showReasoning) }),
+      ...(autoSave !== undefined && { autoSave: Boolean(autoSave) }),
+      ...(showPrompt !== undefined && { showPrompt: Boolean(showPrompt) }),
+      ...(thirdPerson !== undefined && { thirdPerson: Boolean(thirdPerson) }),
+      ...(filterAsterisks !== undefined && { filterAsterisks: Boolean(filterAsterisks) }),
+      ...(includeDialogueExamples !== undefined && {
+        includeDialogueExamples: Boolean(includeDialogueExamples)
+      }),
+      ...(lorebookScanDepth !== undefined && {
+        lorebookScanDepth: parseInt(lorebookScanDepth) || 2000
+      }),
+      ...(lorebookTokenBudget !== undefined && {
+        lorebookTokenBudget: parseInt(lorebookTokenBudget) || 1800
+      }),
+      ...(lorebookRecursionDepth !== undefined && {
+        lorebookRecursionDepth: parseInt(lorebookRecursionDepth) || 3
+      }),
+      ...(lorebookEnableRecursion !== undefined && {
+        lorebookEnableRecursion: Boolean(lorebookEnableRecursion)
+      }),
+      ...(defaultPersonaId !== undefined && { defaultPersonaId: defaultPersonaId || null }),
+      ...(onboardingCompleted !== undefined && {
+        onboardingCompleted: Boolean(onboardingCompleted)
+      })
+    };
 
-  const saved = await storage.saveSettings(updated);
-  res.json({ settings: saved });
-}));
+    const saved = await storage.saveSettings(updated);
+    res.json({ settings: saved });
+  })
+);
 
 export default router;

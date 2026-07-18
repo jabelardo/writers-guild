@@ -62,12 +62,18 @@ const serveAsset = async (req, res, entityType) => {
   res.send(buffer);
 };
 
-router.get('/characters/:entityId/:filename', asyncHandler(async (req, res) => {
-  await serveAsset(req, res, 'characters');
-}));
+router.get(
+  '/characters/:entityId/:filename',
+  asyncHandler(async (req, res) => {
+    await serveAsset(req, res, 'characters');
+  })
+);
 
-router.get('/lorebooks/:entityId/:filename', asyncHandler(async (req, res) => {
-  await serveAsset(req, res, 'lorebooks');
-}));
+router.get(
+  '/lorebooks/:entityId/:filename',
+  asyncHandler(async (req, res) => {
+    await serveAsset(req, res, 'lorebooks');
+  })
+);
 
 export default router;

@@ -84,9 +84,19 @@ export class KoboldCppProvider extends LLMProvider {
     if (genkey) body.genkey = genkey;
 
     const passthrough = [
-      'top_p', 'top_k', 'top_a', 'typical', 'tfs', 'min_p',
-      'rep_pen', 'rep_pen_range', 'rep_pen_slope',
-      'sampler_order', 'mirostat', 'mirostat_tau', 'mirostat_eta'
+      'top_p',
+      'top_k',
+      'top_a',
+      'typical',
+      'tfs',
+      'min_p',
+      'rep_pen',
+      'rep_pen_range',
+      'rep_pen_slope',
+      'sampler_order',
+      'mirostat',
+      'mirostat_tau',
+      'mirostat_eta'
     ];
     for (const key of passthrough) {
       if (options[key] !== null && options[key] !== undefined) {
@@ -160,7 +170,9 @@ export class KoboldCppProvider extends LLMProvider {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.detail?.msg || errorData.msg || `KoboldCpp stream request failed: ${response.statusText}`
+        errorData.detail?.msg ||
+          errorData.msg ||
+          `KoboldCpp stream request failed: ${response.statusText}`
       );
     }
 
@@ -325,7 +337,11 @@ export class KoboldCppProvider extends LLMProvider {
         original: error
       };
     }
-    if (msg.includes('ECONNREFUSED') || msg.includes('fetch failed') || error.cause?.code === 'ECONNREFUSED') {
+    if (
+      msg.includes('ECONNREFUSED') ||
+      msg.includes('fetch failed') ||
+      error.cause?.code === 'ECONNREFUSED'
+    ) {
       return {
         code: 'CONNECTION_ERROR',
         message: `Could not reach KoboldCpp at ${this.baseURL}`,

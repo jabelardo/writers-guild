@@ -3,9 +3,7 @@
     <h3 class="section-title">Lorebook Settings</h3>
 
     <div class="form-group">
-      <label for="scanDepth">
-        Scan Depth: {{ localSettings.scanDepth }} tokens
-      </label>
+      <label for="scanDepth"> Scan Depth: {{ localSettings.scanDepth }} tokens </label>
       <input
         id="scanDepth"
         v-model.number="localSettings.scanDepth"
@@ -19,9 +17,7 @@
     </div>
 
     <div class="form-group">
-      <label for="tokenBudget">
-        Token Budget: {{ localSettings.tokenBudget }} tokens
-      </label>
+      <label for="tokenBudget"> Token Budget: {{ localSettings.tokenBudget }} tokens </label>
       <input
         id="tokenBudget"
         v-model.number="localSettings.tokenBudget"
@@ -35,9 +31,7 @@
     </div>
 
     <div class="form-group">
-      <label for="recursionDepth">
-        Recursion Depth: {{ localSettings.recursionDepth }}
-      </label>
+      <label for="recursionDepth"> Recursion Depth: {{ localSettings.recursionDepth }} </label>
       <input
         id="recursionDepth"
         v-model.number="localSettings.recursionDepth"
@@ -52,10 +46,7 @@
 
     <div class="form-group checkbox-group">
       <label>
-        <input
-          type="checkbox"
-          v-model="localSettings.enableRecursion"
-        />
+        <input type="checkbox" v-model="localSettings.enableRecursion" />
         Enable recursive activation
       </label>
       <small class="help-text">Allow lorebook entries to trigger other entries</small>
@@ -64,25 +55,25 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 const props = defineProps({
   modelValue: {
     type: Object,
     required: true
   }
-})
+});
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue']);
 
 const localSettings = computed({
   get() {
-    return props.modelValue || {}
+    return props.modelValue || {};
   },
   set(value) {
-    emit('update:modelValue', value)
+    emit('update:modelValue', value);
   }
-})
+});
 </script>
 
 <style scoped>
@@ -121,7 +112,7 @@ const localSettings = computed({
   font-weight: normal;
 }
 
-.checkbox-group input[type="checkbox"] {
+.checkbox-group input[type='checkbox'] {
   width: auto;
   margin: 0;
 }

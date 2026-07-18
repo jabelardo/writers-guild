@@ -335,7 +335,9 @@ describe('ImagePreserver', () => {
       // would write a literal "[WG_IMAGE_99]" into the user's story.
       preserver.preserve('![a](1.png)', 'story');
 
-      const result = preserver.restoreImages('Text [WG_IMAGE_0] more [WG_IMAGE_99] end.', { appendMissing: false });
+      const result = preserver.restoreImages('Text [WG_IMAGE_0] more [WG_IMAGE_99] end.', {
+        appendMissing: false
+      });
 
       expect(result.finalContent).toContain('![a](1.png)');
       expect(result.finalContent).not.toContain('[WG_IMAGE_99]');
@@ -375,15 +377,15 @@ describe('ImagePreserver', () => {
       // A continue returns new prose; the card and lorebook images were never
       // expected back. Counting them reported every healthy generation as
       // having lost its entire gallery.
-      preserver.preserve('![card](portrait.png)', 'context')
-      preserver.preserve('![lore](map.png)', 'context')
-      preserver.preserve('![story](scene.png)', 'story')
+      preserver.preserve('![card](portrait.png)', 'context');
+      preserver.preserve('![lore](map.png)', 'context');
+      preserver.preserve('![story](scene.png)', 'story');
 
-      const result = preserver.restoreImages('New prose.', { appendMissing: false })
+      const result = preserver.restoreImages('New prose.', { appendMissing: false });
 
-      expect(result.imagesPreserved).toBe(3)
-      expect(result.imagesMissing).toBe(1) // only the story image
-    })
+      expect(result.imagesPreserved).toBe(3);
+      expect(result.imagesMissing).toBe(1); // only the story image
+    });
 
     it('should never append context images the model dropped', () => {
       // Card and lorebook images are context, not part of the story being

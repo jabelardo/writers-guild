@@ -51,23 +51,35 @@ export class SqliteStorageService {
         INSERT INTO stories (id, title, description, content, word_count, needs_rewrite_prompt, persona_character_id, config_preset_id, created, modified)
         VALUES (@id, @title, @description, @content, @wordCount, @needsRewritePrompt, @personaCharacterId, @configPresetId, @created, @modified)
       `),
-      setStoryNeedsRewritePrompt: this.db.prepare('UPDATE stories SET needs_rewrite_prompt = ? WHERE id = ?'),
-      updateStoryAvatarWindows: this.db.prepare('UPDATE stories SET avatar_windows = ? WHERE id = ?'),
+      setStoryNeedsRewritePrompt: this.db.prepare(
+        'UPDATE stories SET needs_rewrite_prompt = ? WHERE id = ?'
+      ),
+      updateStoryAvatarWindows: this.db.prepare(
+        'UPDATE stories SET avatar_windows = ? WHERE id = ?'
+      ),
       updateStoryMetadata: this.db.prepare(`
         UPDATE stories SET title = @title, description = @description, scenario = @scenario,
                           persona_character_id = @personaCharacterId,
                           config_preset_id = @configPresetId, modified = @modified
         WHERE id = @id
       `),
-      updateStoryContent: this.db.prepare('UPDATE stories SET content = ?, word_count = ?, modified = ? WHERE id = ?'),
+      updateStoryContent: this.db.prepare(
+        'UPDATE stories SET content = ?, word_count = ?, modified = ? WHERE id = ?'
+      ),
       deleteStory: this.db.prepare('DELETE FROM stories WHERE id = ?'),
 
       // Characters
-      listCharacters: this.db.prepare('SELECT id, name, created, modified FROM characters ORDER BY name'),
-      getCharacter: this.db.prepare('SELECT id, name, data, created, modified FROM characters WHERE id = ?'),
+      listCharacters: this.db.prepare(
+        'SELECT id, name, created, modified FROM characters ORDER BY name'
+      ),
+      getCharacter: this.db.prepare(
+        'SELECT id, name, data, created, modified FROM characters WHERE id = ?'
+      ),
       getCharacterImage: this.db.prepare('SELECT image FROM characters WHERE id = ?'),
       getCharacterThumbnail: this.db.prepare('SELECT thumbnail FROM characters WHERE id = ?'),
-      getCharacterThumbnailMedium: this.db.prepare('SELECT thumbnail_medium FROM characters WHERE id = ?'),
+      getCharacterThumbnailMedium: this.db.prepare(
+        'SELECT thumbnail_medium FROM characters WHERE id = ?'
+      ),
       updateCharacterThumbnails: this.db.prepare(`
         UPDATE characters SET thumbnail = @thumbnail, thumbnail_medium = @thumbnailMedium WHERE id = @id
       `),
@@ -85,17 +97,27 @@ export class SqliteStorageService {
       characterExists: this.db.prepare('SELECT 1 FROM characters WHERE id = ?'),
 
       // Story-Character relationships
-      getStoryCharacterIds: this.db.prepare('SELECT character_id FROM story_characters WHERE story_id = ?'),
-      addStoryCharacter: this.db.prepare('INSERT OR IGNORE INTO story_characters (story_id, character_id) VALUES (?, ?)'),
-      removeStoryCharacter: this.db.prepare('DELETE FROM story_characters WHERE story_id = ? AND character_id = ?'),
+      getStoryCharacterIds: this.db.prepare(
+        'SELECT character_id FROM story_characters WHERE story_id = ?'
+      ),
+      addStoryCharacter: this.db.prepare(
+        'INSERT OR IGNORE INTO story_characters (story_id, character_id) VALUES (?, ?)'
+      ),
+      removeStoryCharacter: this.db.prepare(
+        'DELETE FROM story_characters WHERE story_id = ? AND character_id = ?'
+      ),
       getStoriesUsingCharacter: this.db.prepare(`
         SELECT s.id, s.title FROM stories s
         JOIN story_characters sc ON s.id = sc.story_id
         WHERE sc.character_id = ?
       `),
       updateStoryModified: this.db.prepare('UPDATE stories SET modified = ? WHERE id = ?'),
-      clearStoryPersona: this.db.prepare('UPDATE stories SET persona_character_id = NULL WHERE id = ?'),
-      setStoryPersona: this.db.prepare('UPDATE stories SET persona_character_id = ?, modified = ? WHERE id = ?'),
+      clearStoryPersona: this.db.prepare(
+        'UPDATE stories SET persona_character_id = NULL WHERE id = ?'
+      ),
+      setStoryPersona: this.db.prepare(
+        'UPDATE stories SET persona_character_id = ?, modified = ? WHERE id = ?'
+      ),
 
       // Lorebooks
       listLorebooks: this.db.prepare(`
@@ -106,7 +128,9 @@ export class SqliteStorageService {
         ORDER BY l.name
       `),
       getLorebook: this.db.prepare('SELECT * FROM lorebooks WHERE id = ?'),
-      getLorebookEntries: this.db.prepare('SELECT * FROM lorebook_entries WHERE lorebook_id = ? ORDER BY display_index'),
+      getLorebookEntries: this.db.prepare(
+        'SELECT * FROM lorebook_entries WHERE lorebook_id = ? ORDER BY display_index'
+      ),
       insertLorebook: this.db.prepare(`
         INSERT INTO lorebooks (id, name, description, scan_depth, token_budget, recursive_scanning, extensions, created, modified)
         VALUES (@id, @name, @description, @scanDepth, @tokenBudget, @recursiveScanning, @extensions, @created, @modified)
@@ -146,16 +170,26 @@ export class SqliteStorageService {
           display_index = @displayIndex, extensions = @extensions
         WHERE id = @id AND lorebook_id = @lorebookId
       `),
-      deleteLorebookEntry: this.db.prepare('DELETE FROM lorebook_entries WHERE id = ? AND lorebook_id = ?'),
+      deleteLorebookEntry: this.db.prepare(
+        'DELETE FROM lorebook_entries WHERE id = ? AND lorebook_id = ?'
+      ),
       deleteLorebookEntries: this.db.prepare('DELETE FROM lorebook_entries WHERE lorebook_id = ?'),
 
       // Story-Lorebook relationships
-      getStoryLorebookIds: this.db.prepare('SELECT lorebook_id FROM story_lorebooks WHERE story_id = ?'),
-      addStoryLorebook: this.db.prepare('INSERT OR IGNORE INTO story_lorebooks (story_id, lorebook_id) VALUES (?, ?)'),
-      removeStoryLorebook: this.db.prepare('DELETE FROM story_lorebooks WHERE story_id = ? AND lorebook_id = ?'),
+      getStoryLorebookIds: this.db.prepare(
+        'SELECT lorebook_id FROM story_lorebooks WHERE story_id = ?'
+      ),
+      addStoryLorebook: this.db.prepare(
+        'INSERT OR IGNORE INTO story_lorebooks (story_id, lorebook_id) VALUES (?, ?)'
+      ),
+      removeStoryLorebook: this.db.prepare(
+        'DELETE FROM story_lorebooks WHERE story_id = ? AND lorebook_id = ?'
+      ),
 
       // Presets
-      listPresets: this.db.prepare('SELECT id, name, provider, is_default FROM presets ORDER BY name'),
+      listPresets: this.db.prepare(
+        'SELECT id, name, provider, is_default FROM presets ORDER BY name'
+      ),
       getPreset: this.db.prepare('SELECT * FROM presets WHERE id = ?'),
       insertPreset: this.db.prepare(`
         INSERT INTO presets (id, name, provider, api_config, generation_settings, lorebook_settings, prompt_templates, is_default)
@@ -175,7 +209,9 @@ export class SqliteStorageService {
         INSERT INTO story_history (story_id, content, word_count, created)
         VALUES (?, ?, ?, ?)
       `),
-      getHistoryPosition: this.db.prepare('SELECT history_id FROM story_history_position WHERE story_id = ?'),
+      getHistoryPosition: this.db.prepare(
+        'SELECT history_id FROM story_history_position WHERE story_id = ?'
+      ),
       setHistoryPosition: this.db.prepare(`
         INSERT INTO story_history_position (story_id, history_id) VALUES (?, ?)
         ON CONFLICT(story_id) DO UPDATE SET history_id = excluded.history_id
@@ -219,7 +255,9 @@ export class SqliteStorageService {
           LIMIT ?
         )
       `),
-      countHistory: this.db.prepare('SELECT COUNT(*) as count FROM story_history WHERE story_id = ?'),
+      countHistory: this.db.prepare(
+        'SELECT COUNT(*) as count FROM story_history WHERE story_id = ?'
+      )
     };
   }
 
@@ -317,10 +355,10 @@ export class SqliteStorageService {
 
   async listStories() {
     const rows = this.stmts.listStories.all();
-    return rows.map(row => {
+    return rows.map((row) => {
       // Get character IDs for this story
       const characterRows = this.stmts.getStoryCharacterIds.all(row.id);
-      const characterIds = characterRows.map(r => r.character_id);
+      const characterIds = characterRows.map((r) => r.character_id);
 
       return {
         id: row.id,
@@ -345,14 +383,14 @@ export class SqliteStorageService {
 
     // Get character IDs for this story
     const characterRows = this.stmts.getStoryCharacterIds.all(storyId);
-    const characterIds = characterRows.map(r => r.character_id);
+    const characterIds = characterRows.map((r) => r.character_id);
 
     // Get lorebook IDs for this story
     const lorebookRows = this.stmts.getStoryLorebookIds.all(storyId);
-    const lorebookIds = lorebookRows.map(r => r.lorebook_id);
+    const lorebookIds = lorebookRows.map((r) => r.lorebook_id);
 
     // Get characters info
-    const characters = characterIds.map(id => ({ id }));
+    const characters = characterIds.map((id) => ({ id }));
 
     return {
       id: row.id,
@@ -435,9 +473,13 @@ export class SqliteStorageService {
       id: storyId,
       title: updates.title ?? existing.title,
       description: updates.description ?? existing.description,
-      scenario: updates.scenario !== undefined ? updates.scenario : (existing.scenario || ''),
-      personaCharacterId: updates.personaCharacterId !== undefined ? updates.personaCharacterId : existing.persona_character_id,
-      configPresetId: updates.configPresetId !== undefined ? updates.configPresetId : existing.config_preset_id,
+      scenario: updates.scenario !== undefined ? updates.scenario : existing.scenario || '',
+      personaCharacterId:
+        updates.personaCharacterId !== undefined
+          ? updates.personaCharacterId
+          : existing.persona_character_id,
+      configPresetId:
+        updates.configPresetId !== undefined ? updates.configPresetId : existing.config_preset_id,
       modified
     });
 
@@ -512,7 +554,9 @@ export class SqliteStorageService {
 
       // Copy scenario if present
       if (existing.scenario) {
-        this.db.prepare('UPDATE stories SET scenario = ? WHERE id = ?').run(existing.scenario, newId);
+        this.db
+          .prepare('UPDATE stories SET scenario = ? WHERE id = ?')
+          .run(existing.scenario, newId);
       }
 
       // Copy avatar windows if present
@@ -543,7 +587,7 @@ export class SqliteStorageService {
 
   async listAllCharacters() {
     const rows = this.stmts.listCharacters.all();
-    return rows.map(row => ({
+    return rows.map((row) => ({
       id: row.id,
       name: row.name,
       created: row.created,
@@ -553,7 +597,7 @@ export class SqliteStorageService {
 
   async listStoryCharacters(storyId) {
     const rows = this.stmts.getStoryCharacterIds.all(storyId);
-    return rows.map(row => ({ id: row.character_id }));
+    return rows.map((row) => ({ id: row.character_id }));
   }
 
   async getCharacter(characterId) {
@@ -745,7 +789,7 @@ export class SqliteStorageService {
 
   async listAllLorebooks() {
     const rows = this.stmts.listLorebooks.all();
-    return rows.map(row => ({
+    return rows.map((row) => ({
       id: row.id,
       name: row.name,
       description: row.description,
@@ -789,7 +833,7 @@ export class SqliteStorageService {
       tokenBudget: row.token_budget,
       recursiveScanning: !!row.recursive_scanning,
       extensions: JSON.parse(row.extensions || '{}'),
-      entries: entries.map(e => ({
+      entries: entries.map((e) => ({
         id: e.id,
         keys: JSON.parse(e.keys || '[]'),
         secondaryKeys: JSON.parse(e.secondary_keys || '[]'),
@@ -932,7 +976,7 @@ export class SqliteStorageService {
 
   async listPresets() {
     const rows = this.stmts.listPresets.all();
-    return rows.map(row => ({
+    return rows.map((row) => ({
       id: row.id,
       name: row.name,
       provider: row.provider,
@@ -992,7 +1036,7 @@ export class SqliteStorageService {
   }
 
   async setDefaultPresetId(presetId) {
-    const settings = await this.getSettings() || {};
+    const settings = (await this.getSettings()) || {};
     settings.defaultPresetId = presetId;
     await this.saveSettings(settings);
     return { success: true };
@@ -1144,7 +1188,12 @@ export class SqliteStorageService {
       this.stmts.setHistoryPosition.run(storyId, previousEntry.id);
 
       // Update the story content (skip history save since this is an undo)
-      this.stmts.updateStoryContent.run(previousEntry.content, previousEntry.word_count, modified, storyId);
+      this.stmts.updateStoryContent.run(
+        previousEntry.content,
+        previousEntry.word_count,
+        modified,
+        storyId
+      );
     });
     transaction();
 

@@ -1,10 +1,5 @@
 <template>
-  <DataTable
-    :columns="columns"
-    :data="characters"
-    default-sort="created"
-    row-key="id"
-  >
+  <DataTable :columns="columns" :data="characters" default-sort="created" row-key="id">
     <!-- Avatar column -->
     <template #cell-avatar="{ row }">
       <CharacterAvatar :character="row" />
@@ -25,22 +20,13 @@
         >
           <i class="fas fa-play"></i> Continue
         </button>
-        <button
-          class="btn btn-small btn-primary"
-          @click="$emit('new-story', row.id)"
-        >
+        <button class="btn btn-small btn-primary" @click="$emit('new-story', row.id)">
           <i class="fas fa-plus"></i> New Story
         </button>
-        <button
-          class="btn btn-small btn-secondary"
-          @click="$emit('edit', row.id)"
-        >
+        <button class="btn btn-small btn-secondary" @click="$emit('edit', row.id)">
           <i class="fas fa-circle-info"></i> Details
         </button>
-        <button
-          class="btn btn-small btn-secondary"
-          @click="$emit('delete', row)"
-        >
+        <button class="btn btn-small btn-secondary" @click="$emit('delete', row)">
           <i class="fas fa-trash"></i> Delete
         </button>
       </div>
@@ -49,10 +35,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import DataTable from './DataTable.vue'
-import CharacterAvatar from './CharacterAvatar.vue'
-import { useDataCache } from '../composables/useDataCache'
+import { computed } from 'vue';
+import DataTable from './DataTable.vue';
+import CharacterAvatar from './CharacterAvatar.vue';
+import { useDataCache } from '../composables/useDataCache';
 
 const props = defineProps({
   characters: {
@@ -63,42 +49,42 @@ const props = defineProps({
     type: Array,
     default: () => []
   }
-})
+});
 
-defineEmits(['continue', 'new-story', 'edit', 'delete'])
+defineEmits(['continue', 'new-story', 'edit', 'delete']);
 
 // Use centralized memoized story counts for O(1) lookup
-const { getStoryCount: getCachedStoryCount, storyCountsByCharacter } = useDataCache()
+const { getStoryCount: getCachedStoryCount, storyCountsByCharacter } = useDataCache();
 
 // Memoize story counts for sorting - computed once, reused for all rows
 const storyCountMap = computed(() => {
   // If using cache, return its pre-computed map
   if (storyCountsByCharacter.value.size > 0) {
-    return storyCountsByCharacter.value
+    return storyCountsByCharacter.value;
   }
   // Fallback: compute from props.stories if cache not populated
-  const counts = new Map()
+  const counts = new Map();
   for (const story of props.stories) {
     if (story.characterIds) {
       for (const charId of story.characterIds) {
-        counts.set(charId, (counts.get(charId) || 0) + 1)
+        counts.set(charId, (counts.get(charId) || 0) + 1);
       }
     }
     if (story.personaCharacterId && !story.characterIds?.includes(story.personaCharacterId)) {
-      counts.set(story.personaCharacterId, (counts.get(story.personaCharacterId) || 0) + 1)
+      counts.set(story.personaCharacterId, (counts.get(story.personaCharacterId) || 0) + 1);
     }
   }
-  return counts
-})
+  return counts;
+});
 
 function getStoryCount(characterId) {
-  return storyCountMap.value.get(characterId) || 0
+  return storyCountMap.value.get(characterId) || 0;
 }
 
 function sortByStoryCount(aCharacter, bCharacter, asc) {
-  const aCount = storyCountMap.value.get(aCharacter.id) || 0
-  const bCount = storyCountMap.value.get(bCharacter.id) || 0
-  return asc ? aCount - bCount : bCount - aCount
+  const aCount = storyCountMap.value.get(aCharacter.id) || 0;
+  const bCount = storyCountMap.value.get(bCharacter.id) || 0;
+  return asc ? aCount - bCount : bCount - aCount;
 }
 
 const columns = [
@@ -121,7 +107,7 @@ const columns = [
     label: 'Created',
     sortable: true,
     cellClass: 'date-cell',
-    format: (value) => value ? new Date(value).toLocaleDateString() : 'Unknown'
+    format: (value) => (value ? new Date(value).toLocaleDateString() : 'Unknown')
   },
   {
     key: 'storyCount',
@@ -144,5 +130,5 @@ const columns = [
     sortable: false,
     headerClass: 'actions-col'
   }
-]
+];
 </script>

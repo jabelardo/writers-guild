@@ -3,8 +3,8 @@
  * Used by provider configuration components to handle model fetching and selection
  */
 
-import { ref, computed } from 'vue'
-import { useToast } from './useToast'
+import { ref, computed } from 'vue';
+import { useToast } from './useToast';
 
 /**
  * Create a model selector with fetching and selection logic
@@ -17,12 +17,12 @@ import { useToast } from './useToast'
  * @returns {Object} Model selector state and methods
  */
 export function useModelSelector({ apiConfig, fetchModels, onModelSelect, updateConfig }) {
-  const toast = useToast()
+  const toast = useToast();
 
   // Model selection state
-  const availableModels = ref([])
-  const loadingModels = ref(false)
-  const modelsError = ref(null)
+  const availableModels = ref([]);
+  const loadingModels = ref(false);
+  const modelsError = ref(null);
 
   /**
    * Fetch available models from the provider
@@ -30,27 +30,29 @@ export function useModelSelector({ apiConfig, fetchModels, onModelSelect, update
    */
   async function fetchAvailableModels(silent = false) {
     if (!apiConfig.value.apiKey) {
-      modelsError.value = 'API key is required to fetch models'
-      return
+      modelsError.value = 'API key is required to fetch models';
+      return;
     }
 
     try {
-      loadingModels.value = true
-      modelsError.value = null
+      loadingModels.value = true;
+      modelsError.value = null;
 
-      const response = await fetchModels(apiConfig.value.apiKey)
-      availableModels.value = response.models || []
+      const response = await fetchModels(apiConfig.value.apiKey);
+      availableModels.value = response.models || [];
 
       if (availableModels.value.length === 0) {
-        modelsError.value = 'No models available at this time'
+        modelsError.value = 'No models available at this time';
       } else if (!silent) {
-        toast.success(`Loaded ${availableModels.value.length} model${availableModels.value.length !== 1 ? 's' : ''}`)
+        toast.success(
+          `Loaded ${availableModels.value.length} model${availableModels.value.length !== 1 ? 's' : ''}`
+        );
       }
     } catch (error) {
-      console.error('Failed to fetch models:', error)
-      modelsError.value = 'Failed to fetch models: ' + error.message
+      console.error('Failed to fetch models:', error);
+      modelsError.value = 'Failed to fetch models: ' + error.message;
     } finally {
-      loadingModels.value = false
+      loadingModels.value = false;
     }
   }
 
@@ -61,7 +63,7 @@ export function useModelSelector({ apiConfig, fetchModels, onModelSelect, update
   function selectModel(model) {
     // Call the optional callback first
     if (onModelSelect) {
-      onModelSelect(model)
+      onModelSelect(model);
     } else {
       // Default behavior: just update the model in API config
       // If updateConfig is provided, use it to update both model and context
@@ -69,11 +71,11 @@ export function useModelSelector({ apiConfig, fetchModels, onModelSelect, update
         updateConfig({
           model: model.id,
           contextLength: model.contextLength
-        })
+        });
       }
     }
 
-    toast.success(`Selected model: ${model.name || model.id}`)
+    toast.success(`Selected model: ${model.name || model.id}`);
   }
 
   /**
@@ -82,7 +84,7 @@ export function useModelSelector({ apiConfig, fetchModels, onModelSelect, update
    * @returns {boolean}
    */
   function isModelSelected(modelId) {
-    return apiConfig.value.model === modelId
+    return apiConfig.value.model === modelId;
   }
 
   /**
@@ -91,13 +93,13 @@ export function useModelSelector({ apiConfig, fetchModels, onModelSelect, update
    * @returns {string}
    */
   function formatContextLength(length) {
-    if (!length) return 'Unknown'
+    if (!length) return 'Unknown';
     if (length >= 1000000) {
-      return `${(length / 1000000).toFixed(1)}M context`
+      return `${(length / 1000000).toFixed(1)}M context`;
     } else if (length >= 1000) {
-      return `${(length / 1000).toFixed(0)}k context`
+      return `${(length / 1000).toFixed(0)}k context`;
     }
-    return `${length} tokens`
+    return `${length} tokens`;
   }
 
   return {
@@ -114,6 +116,6 @@ export function useModelSelector({ apiConfig, fetchModels, onModelSelect, update
     fetchAvailableModels,
     selectModel,
     isModelSelected,
-    formatContextLength,
-  }
+    formatContextLength
+  };
 }

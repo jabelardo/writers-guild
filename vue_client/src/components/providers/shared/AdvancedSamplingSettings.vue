@@ -8,7 +8,8 @@
     <!-- Universal Parameters (Most Providers) -->
     <div v-if="supportsTopP" class="form-group">
       <label for="top_p">
-        Top P (Nucleus Sampling): {{ localSettings.top_p != null ? localSettings.top_p.toFixed(2) : 'Default' }}
+        Top P (Nucleus Sampling):
+        {{ localSettings.top_p != null ? localSettings.top_p.toFixed(2) : 'Default' }}
       </label>
       <div class="input-with-clear">
         <input
@@ -20,7 +21,11 @@
           step="0.01"
           class="range-input"
         />
-        <button v-if="localSettings.top_p != null" @click="localSettings.top_p = null" class="clear-btn">
+        <button
+          v-if="localSettings.top_p != null"
+          @click="localSettings.top_p = null"
+          class="clear-btn"
+        >
           Clear
         </button>
       </div>
@@ -43,7 +48,11 @@
           step="1"
           class="range-input"
         />
-        <button v-if="localSettings.top_k != null" @click="localSettings.top_k = null" class="clear-btn">
+        <button
+          v-if="localSettings.top_k != null"
+          @click="localSettings.top_k = null"
+          class="clear-btn"
+        >
           Clear
         </button>
       </div>
@@ -55,7 +64,12 @@
     <!-- OpenAI / DeepSeek / OpenRouter Parameters -->
     <div v-if="supportsFrequencyPenalty" class="form-group">
       <label for="frequency_penalty">
-        Frequency Penalty: {{ localSettings.frequency_penalty != null ? localSettings.frequency_penalty.toFixed(2) : 'Default' }}
+        Frequency Penalty:
+        {{
+          localSettings.frequency_penalty != null
+            ? localSettings.frequency_penalty.toFixed(2)
+            : 'Default'
+        }}
       </label>
       <div class="input-with-clear">
         <input
@@ -67,7 +81,11 @@
           step="0.1"
           class="range-input"
         />
-        <button v-if="localSettings.frequency_penalty != null" @click="localSettings.frequency_penalty = null" class="clear-btn">
+        <button
+          v-if="localSettings.frequency_penalty != null"
+          @click="localSettings.frequency_penalty = null"
+          class="clear-btn"
+        >
           Clear
         </button>
       </div>
@@ -78,7 +96,12 @@
 
     <div v-if="supportsPresencePenalty" class="form-group">
       <label for="presence_penalty">
-        Presence Penalty: {{ localSettings.presence_penalty != null ? localSettings.presence_penalty.toFixed(2) : 'Default' }}
+        Presence Penalty:
+        {{
+          localSettings.presence_penalty != null
+            ? localSettings.presence_penalty.toFixed(2)
+            : 'Default'
+        }}
       </label>
       <div class="input-with-clear">
         <input
@@ -90,7 +113,11 @@
           step="0.1"
           class="range-input"
         />
-        <button v-if="localSettings.presence_penalty != null" @click="localSettings.presence_penalty = null" class="clear-btn">
+        <button
+          v-if="localSettings.presence_penalty != null"
+          @click="localSettings.presence_penalty = null"
+          class="clear-btn"
+        >
           Clear
         </button>
       </div>
@@ -101,9 +128,7 @@
 
     <!-- Stop Sequences (All Providers) -->
     <div class="form-group">
-      <label for="stop_sequences">
-        Stop Sequences
-      </label>
+      <label for="stop_sequences"> Stop Sequences </label>
       <textarea
         id="stop_sequences"
         v-model="stopSequencesText"
@@ -122,7 +147,8 @@
 
       <div class="form-group">
         <label for="rep_pen">
-          Repetition Penalty: {{ localSettings.rep_pen != null ? localSettings.rep_pen.toFixed(2) : 'Default (1.1)' }}
+          Repetition Penalty:
+          {{ localSettings.rep_pen != null ? localSettings.rep_pen.toFixed(2) : 'Default (1.1)' }}
         </label>
         <div class="input-with-clear">
           <input
@@ -134,7 +160,11 @@
             step="0.05"
             class="range-input"
           />
-          <button v-if="localSettings.rep_pen != null" @click="localSettings.rep_pen = null" class="clear-btn">
+          <button
+            v-if="localSettings.rep_pen != null"
+            @click="localSettings.rep_pen = null"
+            class="clear-btn"
+          >
             Clear
           </button>
         </div>
@@ -145,7 +175,8 @@
 
       <div class="form-group">
         <label for="rep_pen_range">
-          Repetition Penalty Range: {{ localSettings.rep_pen_range != null ? localSettings.rep_pen_range : 'Default (320)' }}
+          Repetition Penalty Range:
+          {{ localSettings.rep_pen_range != null ? localSettings.rep_pen_range : 'Default (320)' }}
         </label>
         <div class="input-with-clear">
           <input
@@ -157,7 +188,11 @@
             step="32"
             class="number-input"
           />
-          <button v-if="localSettings.rep_pen_range != null" @click="localSettings.rep_pen_range = null" class="clear-btn">
+          <button
+            v-if="localSettings.rep_pen_range != null"
+            @click="localSettings.rep_pen_range = null"
+            class="clear-btn"
+          >
             Clear
           </button>
         </div>
@@ -180,18 +215,21 @@
             step="0.01"
             class="range-input"
           />
-          <button v-if="localSettings.top_a != null" @click="localSettings.top_a = null" class="clear-btn">
+          <button
+            v-if="localSettings.top_a != null"
+            @click="localSettings.top_a = null"
+            class="clear-btn"
+          >
             Clear
           </button>
         </div>
-        <small class="help-text">
-          Top-A sampling (0-1). Alternative to Top-K/Top-P.
-        </small>
+        <small class="help-text"> Top-A sampling (0-1). Alternative to Top-K/Top-P. </small>
       </div>
 
       <div class="form-group">
         <label for="typical">
-          Typical (Tau): {{ localSettings.typical != null ? localSettings.typical.toFixed(2) : 'Default' }}
+          Typical (Tau):
+          {{ localSettings.typical != null ? localSettings.typical.toFixed(2) : 'Default' }}
         </label>
         <div class="input-with-clear">
           <input
@@ -203,18 +241,21 @@
             step="0.01"
             class="range-input"
           />
-          <button v-if="localSettings.typical != null" @click="localSettings.typical = null" class="clear-btn">
+          <button
+            v-if="localSettings.typical != null"
+            @click="localSettings.typical = null"
+            class="clear-btn"
+          >
             Clear
           </button>
         </div>
-        <small class="help-text">
-          Typical sampling (0-1). Selects "typical" tokens.
-        </small>
+        <small class="help-text"> Typical sampling (0-1). Selects "typical" tokens. </small>
       </div>
 
       <div class="form-group">
         <label for="tfs">
-          Tail Free Sampling (TFS): {{ localSettings.tfs != null ? localSettings.tfs.toFixed(2) : 'Default' }}
+          Tail Free Sampling (TFS):
+          {{ localSettings.tfs != null ? localSettings.tfs.toFixed(2) : 'Default' }}
         </label>
         <div class="input-with-clear">
           <input
@@ -226,7 +267,11 @@
             step="0.01"
             class="range-input"
           />
-          <button v-if="localSettings.tfs != null" @click="localSettings.tfs = null" class="clear-btn">
+          <button
+            v-if="localSettings.tfs != null"
+            @click="localSettings.tfs = null"
+            class="clear-btn"
+          >
             Clear
           </button>
         </div>
@@ -243,11 +288,7 @@
       <div class="form-group">
         <label for="mirostat">Mirostat Mode</label>
         <div class="input-with-clear">
-          <select
-            id="mirostat"
-            v-model.number="localSettings.mirostat"
-            class="text-input"
-          >
+          <select id="mirostat" v-model.number="localSettings.mirostat" class="text-input">
             <option :value="null">Default (off)</option>
             <option :value="0">0 — Disabled</option>
             <option :value="1">1 — Mirostat v1</option>
@@ -261,7 +302,12 @@
 
       <div v-if="localSettings.mirostat" class="form-group">
         <label for="mirostat_tau">
-          Mirostat Tau: {{ localSettings.mirostat_tau != null ? localSettings.mirostat_tau.toFixed(2) : 'Default (5.0)' }}
+          Mirostat Tau:
+          {{
+            localSettings.mirostat_tau != null
+              ? localSettings.mirostat_tau.toFixed(2)
+              : 'Default (5.0)'
+          }}
         </label>
         <div class="input-with-clear">
           <input
@@ -273,7 +319,11 @@
             step="0.1"
             class="range-input"
           />
-          <button v-if="localSettings.mirostat_tau != null" @click="localSettings.mirostat_tau = null" class="clear-btn">
+          <button
+            v-if="localSettings.mirostat_tau != null"
+            @click="localSettings.mirostat_tau = null"
+            class="clear-btn"
+          >
             Clear
           </button>
         </div>
@@ -282,7 +332,12 @@
 
       <div v-if="localSettings.mirostat" class="form-group">
         <label for="mirostat_eta">
-          Mirostat Eta: {{ localSettings.mirostat_eta != null ? localSettings.mirostat_eta.toFixed(2) : 'Default (0.1)' }}
+          Mirostat Eta:
+          {{
+            localSettings.mirostat_eta != null
+              ? localSettings.mirostat_eta.toFixed(2)
+              : 'Default (0.1)'
+          }}
         </label>
         <div class="input-with-clear">
           <input
@@ -294,7 +349,11 @@
             step="0.01"
             class="range-input"
           />
-          <button v-if="localSettings.mirostat_eta != null" @click="localSettings.mirostat_eta = null" class="clear-btn">
+          <button
+            v-if="localSettings.mirostat_eta != null"
+            @click="localSettings.mirostat_eta = null"
+            class="clear-btn"
+          >
             Clear
           </button>
         </div>
@@ -305,7 +364,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 const props = defineProps({
   modelValue: {
@@ -320,53 +379,62 @@ const props = defineProps({
     type: String,
     default: ''
   }
-})
+});
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue']);
 
 // Provider capability checks
 const supportsTopP = computed(() => {
-  return ['anthropic', 'openai', 'deepseek', 'openrouter', 'aihorde', 'koboldcpp', 'ollama', 'openaicompatible'].includes(props.provider)
-})
+  return [
+    'anthropic',
+    'openai',
+    'deepseek',
+    'openrouter',
+    'aihorde',
+    'koboldcpp',
+    'ollama',
+    'openaicompatible'
+  ].includes(props.provider);
+});
 
 const supportsTopK = computed(() => {
-  return ['anthropic', 'deepseek', 'aihorde', 'koboldcpp', 'ollama'].includes(props.provider)
-})
+  return ['anthropic', 'deepseek', 'aihorde', 'koboldcpp', 'ollama'].includes(props.provider);
+});
 
 const supportsFrequencyPenalty = computed(() => {
   // DeepSeek ignores these when thinking mode is enabled
   if (props.provider === 'deepseek' && props.modelValue?.thinking) {
-    return false
+    return false;
   }
-  return ['openai', 'deepseek', 'openrouter', 'openaicompatible'].includes(props.provider)
-})
+  return ['openai', 'deepseek', 'openrouter', 'openaicompatible'].includes(props.provider);
+});
 
 const supportsPresencePenalty = computed(() => {
   // DeepSeek ignores these when thinking mode is enabled
   if (props.provider === 'deepseek' && props.modelValue?.thinking) {
-    return false
+    return false;
   }
-  return ['openai', 'deepseek', 'openrouter', 'openaicompatible'].includes(props.provider)
-})
+  return ['openai', 'deepseek', 'openrouter', 'openaicompatible'].includes(props.provider);
+});
 
 const localSettings = computed({
   get() {
-    return props.modelValue || {}
+    return props.modelValue || {};
   },
   set(value) {
-    emit('update:modelValue', value)
+    emit('update:modelValue', value);
   }
-})
+});
 
 // Convert stop_sequences array to text and back
 const stopSequencesText = computed({
   get() {
-    return (localSettings.value.stop_sequences || []).join('\n')
+    return (localSettings.value.stop_sequences || []).join('\n');
   },
   set(value) {
-    localSettings.value.stop_sequences = value.split('\n').filter(s => s.trim() !== '')
+    localSettings.value.stop_sequences = value.split('\n').filter((s) => s.trim() !== '');
   }
-})
+});
 </script>
 
 <style scoped>

@@ -19,8 +19,8 @@
           placeholder="http://localhost:1234/v1"
         />
         <small class="help-text">
-          OpenAI-shaped endpoint, e.g. LM Studio (port 1234), llama.cpp <code>--api</code>
-          (port 8080), or vLLM. The URL should end in <code>/v1</code> so request paths like
+          OpenAI-shaped endpoint, e.g. LM Studio (port 1234), llama.cpp <code>--api</code> (port
+          8080), or vLLM. The URL should end in <code>/v1</code> so request paths like
           <code>/chat/completions</code> resolve correctly.
         </small>
       </div>
@@ -35,8 +35,8 @@
           placeholder="Leave empty if your endpoint doesn't require auth"
         />
         <small class="help-text">
-          Only needed if you've put auth in front of the endpoint. Most local servers accept
-          any token (or none).
+          Only needed if you've put auth in front of the endpoint. Most local servers accept any
+          token (or none).
         </small>
       </div>
 
@@ -57,60 +57,62 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import BaseProviderConfig from './shared/BaseProviderConfig.vue'
-import ModelSelector from './shared/ModelSelector.vue'
-import { presetsAPI } from '../../services/api'
-import { useToast } from '../../composables/useToast'
+import { ref, computed, onMounted } from 'vue';
+import BaseProviderConfig from './shared/BaseProviderConfig.vue';
+import ModelSelector from './shared/ModelSelector.vue';
+import { presetsAPI } from '../../services/api';
+import { useToast } from '../../composables/useToast';
 
 const props = defineProps({
   config: {
     type: Object,
     required: true
   }
-})
+});
 
-const emit = defineEmits(['update:config'])
+const emit = defineEmits(['update:config']);
 
-const toast = useToast()
+const toast = useToast();
 
-const availableModels = ref([])
-const loadingModels = ref(false)
-const modelsError = ref(null)
+const availableModels = ref([]);
+const loadingModels = ref(false);
+const modelsError = ref(null);
 
 const localApiConfig = computed({
   get() {
-    return props.config.apiConfig || {}
+    return props.config.apiConfig || {};
   },
   set(value) {
-    emit('update:config', { ...props.config, apiConfig: value })
+    emit('update:config', { ...props.config, apiConfig: value });
   }
-})
+});
 
 async function fetchModels(silent = false) {
   if (!localApiConfig.value.baseURL) {
-    modelsError.value = 'Base URL is required to fetch models'
-    return
+    modelsError.value = 'Base URL is required to fetch models';
+    return;
   }
 
   try {
-    loadingModels.value = true
-    modelsError.value = null
+    loadingModels.value = true;
+    modelsError.value = null;
     const response = await presetsAPI.getOpenAICompatibleModels(
       localApiConfig.value.baseURL,
       localApiConfig.value.apiKey
-    )
-    availableModels.value = response.models || []
+    );
+    availableModels.value = response.models || [];
     if (availableModels.value.length === 0) {
-      modelsError.value = 'Endpoint returned no models. Load one in your server first.'
+      modelsError.value = 'Endpoint returned no models. Load one in your server first.';
     } else if (!silent) {
-      toast.success(`Loaded ${availableModels.value.length} model${availableModels.value.length !== 1 ? 's' : ''}`)
+      toast.success(
+        `Loaded ${availableModels.value.length} model${availableModels.value.length !== 1 ? 's' : ''}`
+      );
     }
   } catch (error) {
-    modelsError.value = error.message || 'Failed to reach endpoint'
-    console.error('Failed to fetch OpenAI-compatible models:', error)
+    modelsError.value = error.message || 'Failed to reach endpoint';
+    console.error('Failed to fetch OpenAI-compatible models:', error);
   } finally {
-    loadingModels.value = false
+    loadingModels.value = false;
   }
 }
 
@@ -118,15 +120,15 @@ function selectModel(model) {
   localApiConfig.value = {
     ...localApiConfig.value,
     model: model.id
-  }
-  toast.success(`Selected model: ${model.name || model.id}`)
+  };
+  toast.success(`Selected model: ${model.name || model.id}`);
 }
 
 onMounted(() => {
   if (localApiConfig.value.baseURL && localApiConfig.value.model) {
-    fetchModels(true)
+    fetchModels(true);
   }
-})
+});
 </script>
 
 <style scoped>

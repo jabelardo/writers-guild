@@ -34,9 +34,9 @@ defineProps({
     type: String,
     required: true
   }
-})
+});
 
-defineEmits(['update:modelValue'])
+defineEmits(['update:modelValue']);
 </script>
 
 <style scoped>
@@ -51,7 +51,7 @@ defineEmits(['update:modelValue'])
   gap: 0;
   background-color: var(--bg-tertiary);
   border-radius: 100px;
-  overflow:hidden;
+  overflow: hidden;
 }
 
 .tab-button {

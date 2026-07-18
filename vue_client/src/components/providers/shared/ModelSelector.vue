@@ -114,25 +114,25 @@ const props = defineProps({
   formatContext: {
     type: Function,
     default: (length) => {
-      if (!length) return 'Unknown'
+      if (!length) return 'Unknown';
       if (length >= 1000000) {
-        return `${(length / 1000000).toFixed(1)}M context`
+        return `${(length / 1000000).toFixed(1)}M context`;
       } else if (length >= 1000) {
-        return `${(length / 1000).toFixed(0)}k context`
+        return `${(length / 1000).toFixed(0)}k context`;
       }
-      return `${length} tokens`
+      return `${length} tokens`;
     }
   }
-})
+});
 
-const emit = defineEmits(['fetch', 'select'])
+const emit = defineEmits(['fetch', 'select']);
 
 function handleSelect(model) {
-  emit('select', model)
+  emit('select', model);
 }
 
 function isSelected(modelId) {
-  return props.selectedModel === modelId
+  return props.selectedModel === modelId;
 }
 </script>
 
@@ -309,7 +309,11 @@ function isSelected(modelId) {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

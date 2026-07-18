@@ -121,26 +121,27 @@ renderCharacterLibrary() {
 
 <script setup>
 const sortedData = computed(() => {
-  const sorted = [...props.data]
+  const sorted = [...props.data];
   // Generic sorting for ANY column, ANY data type
   sorted.sort((a, b) => {
-    const aVal = getCellValue(a, sortColumn.value)
-    const bVal = getCellValue(b, sortColumn.value)
+    const aVal = getCellValue(a, sortColumn.value);
+    const bVal = getCellValue(b, sortColumn.value);
 
     if (typeof aVal === 'string') {
-      return sortAsc.value ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)
+      return sortAsc.value ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     }
     if (aVal instanceof Date || !isNaN(Date.parse(aVal))) {
-      return sortAsc.value ? new Date(aVal) - new Date(bVal) : new Date(bVal) - new Date(aVal)
+      return sortAsc.value ? new Date(aVal) - new Date(bVal) : new Date(bVal) - new Date(aVal);
     }
-    return sortAsc.value ? aVal - bVal : bVal - aVal
-  })
-  return sorted
-})
+    return sortAsc.value ? aVal - bVal : bVal - aVal;
+  });
+  return sorted;
+});
 </script>
 ```
 
 **Use for Stories (~45 lines):**
+
 ```vue
 <!-- StoriesTable.vue -->
 <template>
@@ -155,17 +156,21 @@ const sortedData = computed(() => {
 <script setup>
 const columns = [
   { key: 'title', label: 'Title', sortable: true },
-  { key: 'created', label: 'Created', sortable: true,
-    format: (v) => new Date(v).toLocaleDateString() },
+  {
+    key: 'created',
+    label: 'Created',
+    sortable: true,
+    format: (v) => new Date(v).toLocaleDateString()
+  },
   { key: 'modified', label: 'Modified', sortable: true },
-  { key: 'wordCount', label: 'Words', sortable: true,
-    format: (v) => v.toLocaleString() },
+  { key: 'wordCount', label: 'Words', sortable: true, format: (v) => v.toLocaleString() },
   { key: 'actions', label: 'Actions', sortable: false }
-]
+];
 </script>
 ```
 
 **Use for Characters (~50 lines):**
+
 ```vue
 <!-- CharactersTable.vue -->
 <template>
@@ -184,11 +189,12 @@ const columns = [
   { key: 'created', label: 'Created', sortable: true },
   { key: 'totalWords', label: 'Words', sortable: true },
   { key: 'actions', label: 'Actions', sortable: false }
-]
+];
 </script>
 ```
 
 **Total: ~195 lines total (100 generic + 45 stories + 50 characters)**
+
 - **Reusable for ANY future table**
 - **No event listener management**
 - **No duplicated sorting logic**
@@ -198,19 +204,21 @@ const columns = [
 ## Event Handling
 
 ### Vanilla JS
+
 ```javascript
 // Must re-attach listeners after EVERY render
-document.querySelectorAll('.btn').forEach(btn => {
-  btn.addEventListener('click', handler)
-})
+document.querySelectorAll('.btn').forEach((btn) => {
+  btn.addEventListener('click', handler);
+});
 
 // Easy to forget, causes bugs
-renderTable()
+renderTable();
 // Oops! Forgot to call attachEventListeners()
 // Now buttons don't work!
 ```
 
 ### Vue
+
 ```vue
 <!-- Events always work, automatically managed -->
 <button @click="handleClick">Click Me</button>
@@ -221,21 +229,23 @@ renderTable()
 ## State Management
 
 ### Vanilla JS
+
 ```javascript
 // Update data
-this.stories.push(newStory)
+this.stories.push(newStory);
 
 // Manually update ALL places that show this data
-this.renderStories()
-this.renderCharacters()
-this.updateCounts()
-this.attachEventListeners() // Don't forget!
+this.renderStories();
+this.renderCharacters();
+this.updateCounts();
+this.attachEventListeners(); // Don't forget!
 ```
 
 ### Vue
+
 ```javascript
 // Update data - UI updates automatically everywhere
-stories.value.push(newStory)
+stories.value.push(newStory);
 // That's it! All components showing stories auto-update
 ```
 
@@ -244,7 +254,9 @@ stories.value.push(newStory)
 ## Adding a New Table
 
 ### Vanilla JS
+
 **Estimate: 2-3 hours**
+
 1. Copy existing table code (~150 lines)
 2. Modify HTML template strings
 3. Write new sorting logic
@@ -254,7 +266,9 @@ stories.value.push(newStory)
 7. Test sorting
 
 ### Vue
+
 **Estimate: 15 minutes**
+
 1. Define columns array (10 lines)
 2. Use `<DataTable>` (5 lines)
 3. Done! Sorting, formatting, events all work
@@ -267,8 +281,8 @@ stories.value.push(newStory)
 <script setup>
 const myColumns = [
   { key: 'id', label: 'ID', sortable: true },
-  { key: 'name', label: 'Name', sortable: true },
-]
+  { key: 'name', label: 'Name', sortable: true }
+];
 </script>
 ```
 
@@ -276,20 +290,21 @@ const myColumns = [
 
 ## Code Metrics
 
-| Metric | Vanilla JS | Vue | Improvement |
-|--------|-----------|-----|-------------|
-| Lines of code (2 tables) | ~200 | ~195 | Similar |
-| Lines for 3rd table | +150 | +15 | **90% less** |
-| Sorting logic duplication | 2× | 1× | **50% less** |
-| Event listener code | ~50 lines | 0 lines | **100% less** |
-| Bug-prone re-renders | Many | None | **∞ better** |
-| Maintainability | 😰 | 😊 | **Much better** |
+| Metric                    | Vanilla JS | Vue     | Improvement     |
+| ------------------------- | ---------- | ------- | --------------- |
+| Lines of code (2 tables)  | ~200       | ~195    | Similar         |
+| Lines for 3rd table       | +150       | +15     | **90% less**    |
+| Sorting logic duplication | 2×         | 1×      | **50% less**    |
+| Event listener code       | ~50 lines  | 0 lines | **100% less**   |
+| Bug-prone re-renders      | Many       | None    | **∞ better**    |
+| Maintainability           | 😰         | 😊      | **Much better** |
 
 ---
 
 ## Real-World Benefits
 
 **Vanilla JS Issues We Had:**
+
 1. ✗ Forgetting to reattach listeners after sort → buttons stop working
 2. ✗ Duplicated sorting logic between tables
 3. ✗ Manual state synchronization
@@ -297,6 +312,7 @@ const myColumns = [
 5. ✗ Adding new table = copy/paste nightmare
 
 **Vue Advantages:**
+
 1. ✓ Events always work (Vue manages listeners)
 2. ✓ One sorting implementation for all tables
 3. ✓ Reactive state (update once, reflects everywhere)
@@ -308,6 +324,7 @@ const myColumns = [
 ## Conclusion
 
 Vue doesn't just make code shorter—it makes it:
+
 - **More maintainable** (DRY principle actually works)
 - **Less bug-prone** (no manual event/state management)
 - **Faster to develop** (reusable components)

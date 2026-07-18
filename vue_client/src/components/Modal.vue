@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import { computed, useSlots } from 'vue'
+import { computed, useSlots } from 'vue';
 
 const props = defineProps({
   title: {
@@ -49,30 +49,30 @@ const props = defineProps({
     type: Boolean,
     default: true
   }
-})
+});
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close']);
 
-const slots = useSlots()
+const slots = useSlots();
 
 const hasFooter = computed(() => {
-  return !!slots.footer
-})
+  return !!slots.footer;
+});
 
 const contentStyle = computed(() => {
   return {
     maxWidth: props.maxWidth,
     maxHeight: props.maxHeight
-  }
-})
+  };
+});
 
 function handleClose() {
-  emit('close')
+  emit('close');
 }
 
 function handleOverlayClick() {
   if (props.closeOnOverlayClick) {
-    handleClose()
+    handleClose();
   }
 }
 </script>

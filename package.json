@@ -1,30 +1,35 @@
 {
   "name": "writers-guild",
   "version": "2.0.0",
-  "description": "Writers Guild - AI-powered short story writing application",
   "private": true,
+  "description": "Writers Guild - AI-powered short story writing application",
+  "keywords": [
+    "ai",
+    "deepseek",
+    "novel",
+    "writing"
+  ],
+  "license": "MIT",
+  "author": "",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
     "server:dev": "cd server && npm run dev",
     "client:dev": "cd vue_client && npm run dev",
     "build": "cd vue_client && npm run build",
     "server:start": "cd server && npm start",
+    "format": "dprint fmt",
+    "format:check": "dprint check",
     "test": "npm run test:server && npm run test:client",
     "test:server": "cd server && npm test",
     "test:client": "cd vue_client && npm test",
     "test:coverage": "npm run test:server:coverage && npm run test:client:coverage",
     "test:server:coverage": "cd server && npm run test:coverage",
-    "test:client:coverage": "cd vue_client && npm run test:coverage"
+    "test:client:coverage": "cd vue_client && npm run test:coverage",
+    "fmt": "oxfmt --no-error-on-unmatched-pattern",
+    "fmt:check": "oxfmt --check"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
-  },
-  "keywords": [
-    "novel",
-    "writing",
-    "ai",
-    "deepseek"
-  ],
-  "author": "",
-  "license": "MIT"
+    "concurrently": "^9.1.2",
+    "oxfmt": "^0.58.0"
+  }
 }

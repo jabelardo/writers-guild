@@ -306,20 +306,22 @@ export class OllamaProvider extends LLMProvider {
     const data = await response.json();
     const models = Array.isArray(data.models) ? data.models : [];
 
-    return models.map((m) => {
-      const details = m.details || {};
-      const parts = [details.parameter_size, details.quantization_level].filter(Boolean);
-      return {
-        id: m.name,
-        name: m.name,
-        description: parts.length ? parts.join(' · ') : (details.family || ''),
-        contextLength: 0, // unknown without /api/show
-        size: m.size,
-        parameterSize: details.parameter_size,
-        family: details.family,
-        modifiedAt: m.modified_at
-      };
-    }).sort((a, b) => (b.modifiedAt || '').localeCompare(a.modifiedAt || ''));
+    return models
+      .map((m) => {
+        const details = m.details || {};
+        const parts = [details.parameter_size, details.quantization_level].filter(Boolean);
+        return {
+          id: m.name,
+          name: m.name,
+          description: parts.length ? parts.join(' · ') : details.family || '',
+          contextLength: 0, // unknown without /api/show
+          size: m.size,
+          parameterSize: details.parameter_size,
+          family: details.family,
+          modifiedAt: m.modified_at
+        };
+      })
+      .sort((a, b) => (b.modifiedAt || '').localeCompare(a.modifiedAt || ''));
   }
 
   /**
@@ -359,7 +361,11 @@ export class OllamaProvider extends LLMProvider {
         original: error
       };
     }
-    if (msg.includes('ECONNREFUSED') || msg.includes('fetch failed') || error.cause?.code === 'ECONNREFUSED') {
+    if (
+      msg.includes('ECONNREFUSED') ||
+      msg.includes('fetch failed') ||
+      error.cause?.code === 'ECONNREFUSED'
+    ) {
       return {
         code: 'CONNECTION_ERROR',
         message: `Could not reach Ollama at ${this.baseURL}`,

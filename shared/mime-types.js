@@ -4,7 +4,7 @@ export const IMAGE_MIME_TYPES_MAP = {
   'image/jpeg': 'jpg',
   'image/jpg': 'jpg',
   'image/png': 'png',
-  'image/webp': 'webp',
+  'image/webp': 'webp'
 };
 
 export const mimeTypeFromExt = (ext) => {

@@ -15,11 +15,16 @@
 </template>
 
 <script setup>
-import ToastContainer from './components/ToastContainer.vue'
-import ConfirmDialog from './components/ConfirmDialog.vue'
-import { useConfirm } from './composables/useConfirm'
+import ToastContainer from './components/ToastContainer.vue';
+import ConfirmDialog from './components/ConfirmDialog.vue';
+import { useConfirm } from './composables/useConfirm';
 
-const { isVisible: isConfirmVisible, config: confirmConfig, handleConfirm, handleCancel } = useConfirm()
+const {
+  isVisible: isConfirmVisible,
+  config: confirmConfig,
+  handleConfirm,
+  handleCancel
+} = useConfirm();
 </script>
 
 <style scoped>

@@ -16,8 +16,8 @@ import { vi } from 'vitest';
 
 vi.mock('dns/promises', () => ({
   default: {
-    lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }]),
-  },
+    lookup: vi.fn(async () => [{ address: '93.184.216.34', family: 4 }])
+  }
 }));
 
 /**

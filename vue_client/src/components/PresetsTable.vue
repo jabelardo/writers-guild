@@ -1,10 +1,5 @@
 <template>
-  <DataTable
-    :columns="columns"
-    :data="presets"
-    default-sort="name"
-    row-key="id"
-  >
+  <DataTable :columns="columns" :data="presets" default-sort="name" row-key="id">
     <!-- Provider column -->
     <template #cell-provider="{ row }">
       <span class="provider-badge">
@@ -23,22 +18,13 @@
           <i :class="row.id === defaultPresetId ? 'fas fa-check' : 'fas fa-star'"></i>
           Set Default
         </button>
-        <button
-          class="btn btn-small btn-secondary"
-          @click="$emit('edit', row.id)"
-        >
+        <button class="btn btn-small btn-secondary" @click="$emit('edit', row.id)">
           <i class="fas fa-edit"></i> Edit
         </button>
-        <button
-          class="btn btn-small btn-secondary"
-          @click="$emit('duplicate', row.id)"
-        >
+        <button class="btn btn-small btn-secondary" @click="$emit('duplicate', row.id)">
           <i class="fas fa-copy"></i> Duplicate
         </button>
-        <button
-          class="btn btn-small btn-secondary"
-          @click="$emit('delete', row)"
-        >
+        <button class="btn btn-small btn-secondary" @click="$emit('delete', row)">
           <i class="fas fa-trash"></i> Delete
         </button>
       </div>
@@ -47,7 +33,7 @@
 </template>
 
 <script setup>
-import DataTable from './DataTable.vue'
+import DataTable from './DataTable.vue';
 
 const props = defineProps({
   presets: {
@@ -58,9 +44,9 @@ const props = defineProps({
     type: String,
     default: null
   }
-})
+});
 
-defineEmits(['edit', 'duplicate', 'delete', 'set-default'])
+defineEmits(['edit', 'duplicate', 'delete', 'set-default']);
 
 function getProviderDisplayName(provider) {
   const names = {
@@ -69,8 +55,8 @@ function getProviderDisplayName(provider) {
     openai: 'OpenAI',
     anthropic: 'Claude',
     openrouter: 'OpenRouter'
-  }
-  return names[provider] || provider
+  };
+  return names[provider] || provider;
 }
 
 const columns = [
@@ -92,7 +78,7 @@ const columns = [
     sortable: false,
     headerClass: 'actions-col-wide'
   }
-]
+];
 </script>
 
 <style scoped>

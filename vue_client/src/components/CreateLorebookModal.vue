@@ -27,9 +27,7 @@
     </div>
 
     <template #footer>
-      <button class="btn btn-secondary" @click="$emit('close')">
-        Cancel
-      </button>
+      <button class="btn btn-secondary" @click="$emit('close')">Cancel</button>
       <button
         class="btn btn-primary"
         :disabled="!lorebookName.trim() || creating"
@@ -43,50 +41,50 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import Modal from './Modal.vue'
-import { lorebooksAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import Modal from './Modal.vue';
+import { lorebooksAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
 
-const emit = defineEmits(['close', 'created'])
-const router = useRouter()
-const toast = useToast()
+const emit = defineEmits(['close', 'created']);
+const router = useRouter();
+const toast = useToast();
 
-const lorebookName = ref('')
-const lorebookDescription = ref('')
-const creating = ref(false)
-const nameInput = ref(null)
+const lorebookName = ref('');
+const lorebookDescription = ref('');
+const creating = ref(false);
+const nameInput = ref(null);
 
 onMounted(() => {
   // Focus name input when modal opens
   if (nameInput.value) {
-    nameInput.value.focus()
+    nameInput.value.focus();
   }
-})
+});
 
 async function createLorebook() {
-  if (!lorebookName.value.trim() || creating.value) return
+  if (!lorebookName.value.trim() || creating.value) return;
 
   try {
-    creating.value = true
+    creating.value = true;
 
     const result = await lorebooksAPI.create(
       lorebookName.value.trim(),
       lorebookDescription.value.trim()
-    )
+    );
 
-    toast.success(`Successfully created "${result.name}"!`)
-    emit('created', result)
-    emit('close')
+    toast.success(`Successfully created "${result.name}"!`);
+    emit('created', result);
+    emit('close');
 
     // Navigate to the lorebook editor
-    router.push(`/lorebooks/${result.id}`)
+    router.push(`/lorebooks/${result.id}`);
   } catch (error) {
-    console.error('Failed to create lorebook:', error)
-    toast.error('Failed to create lorebook: ' + error.message)
+    console.error('Failed to create lorebook:', error);
+    toast.error('Failed to create lorebook: ' + error.message);
   } finally {
-    creating.value = false
+    creating.value = false;
   }
 }
 </script>

@@ -1,8 +1,6 @@
 <template>
   <Modal title="Select Character" @close="$emit('close')">
-    <p class="instruction-text">
-      Which character should respond?
-    </p>
+    <p class="instruction-text">Which character should respond?</p>
 
     <div v-if="characters.length === 0" class="empty-state">
       <i class="fas fa-user"></i>
@@ -22,17 +20,17 @@
 </template>
 
 <script setup>
-import Modal from './Modal.vue'
-import CharacterCard from './CharacterCard.vue'
+import Modal from './Modal.vue';
+import CharacterCard from './CharacterCard.vue';
 
 defineProps({
   characters: {
     type: Array,
     default: () => []
   }
-})
+});
 
-defineEmits(['close', 'select'])
+defineEmits(['close', 'select']);
 </script>
 
 <style scoped>

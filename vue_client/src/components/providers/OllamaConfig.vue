@@ -19,8 +19,8 @@
           placeholder="http://localhost:11434"
         />
         <small class="help-text">
-          URL of your running Ollama instance (default port 11434). If Writer's Guild runs in
-          Docker and Ollama runs on the host or another machine, use that host's IP or
+          URL of your running Ollama instance (default port 11434). If Writer's Guild runs in Docker
+          and Ollama runs on the host or another machine, use that host's IP or
           <code>host.docker.internal</code> instead of localhost.
         </small>
       </div>
@@ -57,60 +57,62 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import BaseProviderConfig from './shared/BaseProviderConfig.vue'
-import ModelSelector from './shared/ModelSelector.vue'
-import { presetsAPI } from '../../services/api'
-import { useToast } from '../../composables/useToast'
+import { ref, computed, onMounted } from 'vue';
+import BaseProviderConfig from './shared/BaseProviderConfig.vue';
+import ModelSelector from './shared/ModelSelector.vue';
+import { presetsAPI } from '../../services/api';
+import { useToast } from '../../composables/useToast';
 
 const props = defineProps({
   config: {
     type: Object,
     required: true
   }
-})
+});
 
-const emit = defineEmits(['update:config'])
+const emit = defineEmits(['update:config']);
 
-const toast = useToast()
+const toast = useToast();
 
-const availableModels = ref([])
-const loadingModels = ref(false)
-const modelsError = ref(null)
+const availableModels = ref([]);
+const loadingModels = ref(false);
+const modelsError = ref(null);
 
 const localApiConfig = computed({
   get() {
-    return props.config.apiConfig || {}
+    return props.config.apiConfig || {};
   },
   set(value) {
-    emit('update:config', { ...props.config, apiConfig: value })
+    emit('update:config', { ...props.config, apiConfig: value });
   }
-})
+});
 
 async function fetchModels(silent = false) {
   if (!localApiConfig.value.baseURL) {
-    modelsError.value = 'Base URL is required to fetch models'
-    return
+    modelsError.value = 'Base URL is required to fetch models';
+    return;
   }
 
   try {
-    loadingModels.value = true
-    modelsError.value = null
+    loadingModels.value = true;
+    modelsError.value = null;
     const response = await presetsAPI.getOllamaModels(
       localApiConfig.value.baseURL,
       localApiConfig.value.password
-    )
-    availableModels.value = response.models || []
+    );
+    availableModels.value = response.models || [];
     if (availableModels.value.length === 0) {
-      modelsError.value = 'No models installed. Run `ollama pull <name>` on the host first.'
+      modelsError.value = 'No models installed. Run `ollama pull <name>` on the host first.';
     } else if (!silent) {
-      toast.success(`Loaded ${availableModels.value.length} model${availableModels.value.length !== 1 ? 's' : ''}`)
+      toast.success(
+        `Loaded ${availableModels.value.length} model${availableModels.value.length !== 1 ? 's' : ''}`
+      );
     }
   } catch (error) {
-    modelsError.value = error.message || 'Failed to reach Ollama'
-    console.error('Failed to fetch Ollama models:', error)
+    modelsError.value = error.message || 'Failed to reach Ollama';
+    console.error('Failed to fetch Ollama models:', error);
   } finally {
-    loadingModels.value = false
+    loadingModels.value = false;
   }
 }
 
@@ -128,49 +130,48 @@ const PARAM_TO_PRESET = {
   mirostat: 'mirostat',
   mirostat_tau: 'mirostat_tau',
   mirostat_eta: 'mirostat_eta'
-}
+};
 
 function applyModelDefaults(baseConfig, info) {
-  const currentGen = baseConfig.generationSettings || {}
-  const nextGen = { ...currentGen }
-  const applied = []
+  const currentGen = baseConfig.generationSettings || {};
+  const nextGen = { ...currentGen };
+  const applied = [];
 
   // Context length: the architectural max is the real ceiling. If parameters
   // override it (some Modelfiles do via num_ctx), prefer that — Ollama uses it.
-  const modelfileCtx = info.parameters?.num_ctx
-  const ctx = typeof modelfileCtx === 'number' && modelfileCtx > 0
-    ? modelfileCtx
-    : info.contextLength
+  const modelfileCtx = info.parameters?.num_ctx;
+  const ctx =
+    typeof modelfileCtx === 'number' && modelfileCtx > 0 ? modelfileCtx : info.contextLength;
   if (typeof ctx === 'number' && ctx > 0 && ctx !== currentGen.maxContextTokens) {
-    nextGen.maxContextTokens = ctx
-    applied.push(`max ctx ${ctx}`)
+    nextGen.maxContextTokens = ctx;
+    applied.push(`max ctx ${ctx}`);
   }
 
   // Sampler fields: only fill ones the user hasn't explicitly set (null = blank).
   // Don't clobber existing tuning.
-  const params = info.parameters || {}
+  const params = info.parameters || {};
   for (const [ollamaKey, presetKey] of Object.entries(PARAM_TO_PRESET)) {
-    const value = params[ollamaKey]
-    if (value === undefined || value === null) continue
-    if (currentGen[presetKey] != null) continue // user has set it; respect that
-    nextGen[presetKey] = value
-    applied.push(`${presetKey}=${value}`)
+    const value = params[ollamaKey];
+    if (value === undefined || value === null) continue;
+    if (currentGen[presetKey] != null) continue; // user has set it; respect that
+    nextGen[presetKey] = value;
+    applied.push(`${presetKey}=${value}`);
   }
 
   // Stop sequences: union with existing (some user-set, some from Modelfile).
   if (Array.isArray(params.stop) && params.stop.length > 0) {
-    const existing = Array.isArray(currentGen.stop_sequences) ? currentGen.stop_sequences : []
-    const combined = [...new Set([...existing, ...params.stop])]
+    const existing = Array.isArray(currentGen.stop_sequences) ? currentGen.stop_sequences : [];
+    const combined = [...new Set([...existing, ...params.stop])];
     if (combined.length > existing.length) {
-      nextGen.stop_sequences = combined
-      applied.push(`${combined.length - existing.length} stop seq`)
+      nextGen.stop_sequences = combined;
+      applied.push(`${combined.length - existing.length} stop seq`);
     }
   }
 
   return {
     config: applied.length > 0 ? { ...baseConfig, generationSettings: nextGen } : baseConfig,
     applied
-  }
+  };
 }
 
 async function selectModel(model) {
@@ -179,28 +180,28 @@ async function selectModel(model) {
   let nextConfig = {
     ...props.config,
     apiConfig: { ...(props.config.apiConfig || {}), model: model.id }
-  }
+  };
 
-  let toastMsg = `Selected ${model.name || model.id}`
+  let toastMsg = `Selected ${model.name || model.id}`;
 
   try {
     const info = await presetsAPI.getOllamaModelInfo(
       props.config.apiConfig?.baseURL,
       model.id,
       props.config.apiConfig?.password
-    )
-    const { config: enriched, applied } = applyModelDefaults(nextConfig, info)
-    nextConfig = enriched
+    );
+    const { config: enriched, applied } = applyModelDefaults(nextConfig, info);
+    nextConfig = enriched;
     if (applied.length > 0) {
-      toastMsg += ` · Applied: ${applied.join(', ')}`
+      toastMsg += ` · Applied: ${applied.join(', ')}`;
     }
   } catch (err) {
     // Model selection succeeds even if /api/show isn't reachable — just less smart.
-    console.warn('Could not load Ollama model info:', err)
+    console.warn('Could not load Ollama model info:', err);
   }
 
-  emit('update:config', nextConfig)
-  toast.success(toastMsg)
+  emit('update:config', nextConfig);
+  toast.success(toastMsg);
 }
 
 // If a model was already saved on this preset and the user has a URL, prefetch
@@ -208,9 +209,9 @@ async function selectModel(model) {
 // errors when Ollama isn't running while the user is editing.
 onMounted(() => {
   if (localApiConfig.value.baseURL && localApiConfig.value.model) {
-    fetchModels(true)
+    fetchModels(true);
   }
-})
+});
 </script>
 
 <style scoped>

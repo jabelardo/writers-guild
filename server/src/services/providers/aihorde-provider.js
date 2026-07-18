@@ -11,8 +11,8 @@ export class AIHordeProvider extends LLMProvider {
     // AI Horde-specific defaults
     const hordeConfig = {
       ...config,
-      baseURL: config.baseURL || "https://aihorde.net/api/v2",
-      models: config.models || [],  // Empty = use auto-selected models
+      baseURL: config.baseURL || 'https://aihorde.net/api/v2',
+      models: config.models || [], // Empty = use auto-selected models
       workers: config.workers || [],
       trustedWorkers: config.trustedWorkers || false,
       slowWorkers: config.slowWorkers !== false // Default true
@@ -25,15 +25,27 @@ export class AIHordeProvider extends LLMProvider {
 
     // Default model patterns (for auto-selection)
     this.defaultModelPatterns = [
-      "llama-3", "llama3", "mistral", "mixtral", "qwen2.5", "deepseek",
-      "gemma", "magnum", "mythomax", "noromaid", "hermes", "wizard",
-      "airoboros", "chronos", "stheno", "euryale", "fimbulvetr"
+      'llama-3',
+      'llama3',
+      'mistral',
+      'mixtral',
+      'qwen2.5',
+      'deepseek',
+      'gemma',
+      'magnum',
+      'mythomax',
+      'noromaid',
+      'hermes',
+      'wizard',
+      'airoboros',
+      'chronos',
+      'stheno',
+      'euryale',
+      'fimbulvetr'
     ];
 
     // Patterns to exclude from auto-selection
-    this.excludeModelPatterns = [
-      "tinyllama", "debug", "-1b", "-270m", "test"
-    ];
+    this.excludeModelPatterns = ['tinyllama', 'debug', '-1b', '-270m', 'test'];
   }
 
   /**
@@ -41,11 +53,11 @@ export class AIHordeProvider extends LLMProvider {
    */
   getCapabilities() {
     return {
-      streaming: false,  // AI Horde does not support streaming
-      reasoning: false,  // AI Horde does not provide reasoning
+      streaming: false, // AI Horde does not support streaming
+      reasoning: false, // AI Horde does not provide reasoning
       visionAPI: false,
       maxContextWindow: 8192, // Varies by model, but typically around 8k
-      requiresPolling: true  // Special flag for queue-based providers
+      requiresPolling: true // Special flag for queue-based providers
     };
   }
 
@@ -132,7 +144,9 @@ export class AIHordeProvider extends LLMProvider {
     const maxTokens = Math.min(options.maxTokens || 150, 1024);
 
     if (options.maxTokens && options.maxTokens > 1024) {
-      console.warn(`[AI Horde] Requested maxTokens (${options.maxTokens}) exceeds AI Horde limit. Capping at 1024.`);
+      console.warn(
+        `[AI Horde] Requested maxTokens (${options.maxTokens}) exceeds AI Horde limit. Capping at 1024.`
+      );
     }
 
     // Build params object with configurable samplers
@@ -143,9 +157,12 @@ export class AIHordeProvider extends LLMProvider {
       temperature: options.temperature !== undefined ? options.temperature : 0.7,
       // Now configurable via options (with fallback to defaults)
       rep_pen: options.rep_pen !== undefined && options.rep_pen !== null ? options.rep_pen : 1.1,
-      rep_pen_range: options.rep_pen_range !== undefined && options.rep_pen_range !== null ? options.rep_pen_range : 320,
+      rep_pen_range:
+        options.rep_pen_range !== undefined && options.rep_pen_range !== null
+          ? options.rep_pen_range
+          : 320,
       sampler_order: options.sampler_order || [6, 0, 1, 3, 4, 2, 5],
-      use_default_badwordsids: true,  // Prevent EOS token issues
+      use_default_badwordsids: true // Prevent EOS token issues
     };
 
     // Add optional advanced samplers if provided
@@ -189,7 +206,7 @@ export class AIHordeProvider extends LLMProvider {
     const payload = {
       prompt: fullPrompt,
       params: params,
-      models: this.config.models || []  // Empty array = any available model
+      models: this.config.models || [] // Empty array = any available model
     };
 
     // Only add optional fields if explicitly configured
@@ -208,10 +225,10 @@ export class AIHordeProvider extends LLMProvider {
     console.log('[AI Horde] Submitting request with payload:', JSON.stringify(payload, null, 2));
 
     const response = await fetch(`${this.baseURL}/generate/text/async`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "apikey": this.apiKey,
+        'Content-Type': 'application/json',
+        apikey: this.apiKey
       },
       body: JSON.stringify(payload),
       signal: options.signal
@@ -246,17 +263,15 @@ export class AIHordeProvider extends LLMProvider {
    */
   async checkStatus(requestId) {
     const response = await fetch(`${this.baseURL}/generate/text/status/${requestId}`, {
-      method: "GET",
+      method: 'GET',
       headers: {
-        "apikey": this.apiKey,
+        apikey: this.apiKey
       }
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `AI Horde status check failed: ${response.statusText}`
-      );
+      throw new Error(errorData.message || `AI Horde status check failed: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -278,9 +293,9 @@ export class AIHordeProvider extends LLMProvider {
   async cancelRequest(requestId) {
     console.log(`[AI Horde] Cancelling request ${requestId}...`);
     const response = await fetch(`${this.baseURL}/generate/text/status/${requestId}`, {
-      method: "DELETE",
+      method: 'DELETE',
       headers: {
-        "apikey": this.apiKey,
+        apikey: this.apiKey
       }
     });
 
@@ -329,7 +344,7 @@ export class AIHordeProvider extends LLMProvider {
         // Extract result
         const generation = status.generations[0];
         // Strip leading newlines from response
-        const cleanedText = (generation.text || "").replace(/^\n+/, "");
+        const cleanedText = (generation.text || '').replace(/^\n+/, '');
         return {
           content: cleanedText,
           reasoning: null, // AI Horde doesn't provide reasoning
@@ -346,7 +361,7 @@ export class AIHordeProvider extends LLMProvider {
       }
 
       // Wait before next poll
-      await new Promise(resolve => setTimeout(resolve, this.pollingInterval));
+      await new Promise((resolve) => setTimeout(resolve, this.pollingInterval));
     }
   }
 
@@ -357,7 +372,9 @@ export class AIHordeProvider extends LLMProvider {
   async *generateStreamingWithStatus(systemPrompt, userPrompt, options = {}) {
     // Submit request
     const requestId = await this.submitRequest(systemPrompt, userPrompt, options);
-    console.log(`[AI Horde] Started polling for request ${requestId}, signal present: ${!!options.signal}`);
+    console.log(
+      `[AI Horde] Started polling for request ${requestId}, signal present: ${!!options.signal}`
+    );
 
     // Poll for completion and yield status updates
     const timeout = options.timeout || 300000;
@@ -397,7 +414,7 @@ export class AIHordeProvider extends LLMProvider {
           // Yield final result
           const generation = status.generations[0];
           // Strip leading newlines from response
-          const cleanedText = (generation.text || "").replace(/^\n+/, "");
+          const cleanedText = (generation.text || '').replace(/^\n+/, '');
           yield {
             type: 'complete',
             content: cleanedText,
@@ -454,7 +471,9 @@ export class AIHordeProvider extends LLMProvider {
    * Required by base class but not supported by AI Horde
    */
   async generateStreaming(systemPrompt, userPrompt, options = {}) {
-    throw new Error('AI Horde does not support streaming. Use generate() instead or generateStreamingWithStatus() for status updates.');
+    throw new Error(
+      'AI Horde does not support streaming. Use generate() instead or generateStreamingWithStatus() for status updates.'
+    );
   }
 
   /**
@@ -495,9 +514,9 @@ export class AIHordeProvider extends LLMProvider {
   async getAvailableModels() {
     try {
       const response = await fetch(`${this.baseURL}/status/models?type=text`, {
-        method: "GET",
+        method: 'GET',
         headers: {
-          "apikey": this.apiKey,
+          apikey: this.apiKey
         }
       });
 
@@ -508,14 +527,16 @@ export class AIHordeProvider extends LLMProvider {
       const models = await response.json();
 
       // Transform and enrich model data
-      return models.map(model => ({
-        name: model.name,
-        count: model.count || 0,  // Number of workers running this model
-        performance: model.performance || 0,
-        queued: model.queued || 0,
-        eta: model.eta || 0,
-        type: model.type || 'text'
-      })).sort((a, b) => b.count - a.count);  // Sort by worker count
+      return models
+        .map((model) => ({
+          name: model.name,
+          count: model.count || 0, // Number of workers running this model
+          performance: model.performance || 0,
+          queued: model.queued || 0,
+          eta: model.eta || 0,
+          type: model.type || 'text'
+        }))
+        .sort((a, b) => b.count - a.count); // Sort by worker count
     } catch (error) {
       console.error('Failed to fetch AI Horde models:', error);
       return [];
@@ -529,9 +550,9 @@ export class AIHordeProvider extends LLMProvider {
   async getWorkerData() {
     try {
       const response = await fetch(`${this.baseURL}/workers?type=text`, {
-        method: "GET",
+        method: 'GET',
         headers: {
-          "apikey": this.apiKey,
+          apikey: this.apiKey
         }
       });
 
@@ -541,16 +562,18 @@ export class AIHordeProvider extends LLMProvider {
 
       const workers = await response.json();
 
-      return workers.map(worker => ({
-        id: worker.id,
-        name: worker.name,
-        models: worker.models || [],
-        max_context_length: worker.max_context_length || 2048,
-        max_length: worker.max_length || 512,
-        online: worker.online || false,
-        trusted: worker.trusted || false,
-        performance: worker.performance || 0
-      })).filter(w => w.online);  // Only return online workers
+      return workers
+        .map((worker) => ({
+          id: worker.id,
+          name: worker.name,
+          models: worker.models || [],
+          max_context_length: worker.max_context_length || 2048,
+          max_length: worker.max_length || 512,
+          online: worker.online || false,
+          trusted: worker.trusted || false,
+          performance: worker.performance || 0
+        }))
+        .filter((w) => w.online); // Only return online workers
     } catch (error) {
       console.error('Failed to fetch AI Horde workers:', error);
       return [];
@@ -570,9 +593,9 @@ export class AIHordeProvider extends LLMProvider {
     const selected = [];
 
     // Filter out excluded models first
-    const filtered = availableModels.filter(model => {
+    const filtered = availableModels.filter((model) => {
       const nameLower = model.name.toLowerCase();
-      return !this.excludeModelPatterns.some(pattern =>
+      return !this.excludeModelPatterns.some((pattern) =>
         nameLower.includes(pattern.toLowerCase())
       );
     });
@@ -580,18 +603,19 @@ export class AIHordeProvider extends LLMProvider {
     // Select models matching default patterns
     for (const model of filtered) {
       const nameLower = model.name.toLowerCase();
-      const matches = this.defaultModelPatterns.some(pattern =>
+      const matches = this.defaultModelPatterns.some((pattern) =>
         nameLower.includes(pattern.toLowerCase())
       );
 
-      if (matches && model.count > 0) {  // Must have at least one worker
+      if (matches && model.count > 0) {
+        // Must have at least one worker
         selected.push(model.name);
       }
     }
 
     // If no matches, just use the top 3 available models by worker count
     if (selected.length === 0 && filtered.length > 0) {
-      selected.push(...filtered.slice(0, 3).map(m => m.name));
+      selected.push(...filtered.slice(0, 3).map((m) => m.name));
     }
 
     return selected;
@@ -612,15 +636,13 @@ export class AIHordeProvider extends LLMProvider {
         const workers = await this.getWorkerData();
 
         // Find workers that support at least one of our selected models
-        const relevantWorkers = workers.filter(worker =>
-          worker.models.some(model => modelNames.includes(model))
+        const relevantWorkers = workers.filter((worker) =>
+          worker.models.some((model) => modelNames.includes(model))
         );
 
         if (relevantWorkers.length > 0) {
           // Use minimum context length across all relevant workers
-          maxContextLength = Math.min(
-            ...relevantWorkers.map(w => w.max_context_length || 2048)
-          );
+          maxContextLength = Math.min(...relevantWorkers.map((w) => w.max_context_length || 2048));
         }
       } catch (error) {
         console.error('Failed to calculate dynamic context limit:', error);
@@ -629,11 +651,11 @@ export class AIHordeProvider extends LLMProvider {
 
     // Calculate max characters using Kobold Lite's formula
     // Leave room for generation and overhead
-    const maxChars = Math.floor((maxContextLength * 3.0) - (maxTokens * 3.5) - 100);
+    const maxChars = Math.floor(maxContextLength * 3.0 - maxTokens * 3.5 - 100);
 
     return {
       maxContextLength,
-      maxChars: Math.max(1000, maxChars)  // Minimum 1000 chars
+      maxChars: Math.max(1000, maxChars) // Minimum 1000 chars
     };
   }
 }

@@ -17,7 +17,7 @@
 export async function* parseSSEStream(body, transformDelta, providerName = 'Provider') {
   const reader = body.getReader();
   const decoder = new TextDecoder();
-  let buffer = "";
+  let buffer = '';
 
   try {
     while (true) {
@@ -26,19 +26,19 @@ export async function* parseSSEStream(body, transformDelta, providerName = 'Prov
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
+      const lines = buffer.split('\n');
 
       // Keep the last incomplete line in buffer
-      buffer = lines.pop() || "";
+      buffer = lines.pop() || '';
 
       for (const line of lines) {
         const trimmed = line.trim();
 
-        if (trimmed === "" || trimmed === "data: [DONE]") {
+        if (trimmed === '' || trimmed === 'data: [DONE]') {
           continue;
         }
 
-        if (trimmed.startsWith("data: ")) {
+        if (trimmed.startsWith('data: ')) {
           try {
             const jsonStr = trimmed.slice(6); // Remove 'data: ' prefix
             const data = JSON.parse(jsonStr);
@@ -52,7 +52,7 @@ export async function* parseSSEStream(body, transformDelta, providerName = 'Prov
 
               yield {
                 ...result,
-                finished: finishReason !== null,
+                finished: finishReason !== null
               };
             }
           } catch (e) {
@@ -80,7 +80,7 @@ export const transformers = {
    */
   deepseek: (delta) => ({
     reasoning: delta.reasoning_content || null,
-    content: delta.content || null,
+    content: delta.content || null
   }),
 
   /**
@@ -88,7 +88,7 @@ export const transformers = {
    */
   openai: (delta) => ({
     reasoning: null,
-    content: delta.content || null,
+    content: delta.content || null
   }),
 
   /**
@@ -104,7 +104,7 @@ export const transformers = {
     return {
       reasoning: reasoning,
       content: delta.content || null,
-      usage: data.usage || null,
+      usage: data.usage || null
     };
-  },
+  }
 };

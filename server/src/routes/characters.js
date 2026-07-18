@@ -11,6 +11,9 @@ import { CharacterParser } from '../services/character-parser.js';
 import { LorebookParser } from '../services/lorebook-parser.js';
 import { ChubImporter } from '../services/chub-importer.js';
 import { IMAGE_EXTENSIONS } from '../../../shared/regex-patterns.js';
+import { cacheCharacterImages, cacheAndRewriteLorebookImages, rewriteCharacterImageUrls } from '../services/image-cacher.js';
+import { AssetManager } from '../services/asset-manager.js';
+import { sseChannel } from '../utils/sse.js';
 
 const router = express.Router();
 
@@ -44,11 +47,29 @@ router.use((req, res, next) => {
 });
 
 /**
+ * Helper to cache external images and rewrite URLs in character card data.
+ * Does NOT throw on failure — just logs warnings so imports still succeed.
+ */
+async function cacheCardImages(characterId, cardData, dataRoot, onProgress) {
+  try {
+    const imageMap = await cacheCharacterImages(characterId, cardData, dataRoot, { onProgress });
+    if (imageMap.size > 0) {
+      rewriteCharacterImageUrls(cardData, imageMap);
+      console.log(`[cacheCardImages] Rewrote ${imageMap.size} image URL(s) for character ${characterId}`);
+    }
+  } catch (error) {
+    console.error(`[cacheCardImages] Failed to cache images for ${characterId}:`, error);
+    // Non-fatal: continue with original URLs
+  }
+}
+
+/**
  * Extract embedded lorebook from character data and save it to storage.
+ * Also caches any external images found in the lorebook entry content.
  * Modifies cardData.data.extensions.ursceal_lorebook_id in place.
  * @returns {{ embeddedLorebook: object|null, lorebookId: string|null }}
  */
-async function extractAndSaveEmbeddedLorebook(storageInstance, cardData) {
+async function extractAndSaveEmbeddedLorebook(storageInstance, cardData, dataRoot, onProgress) {
   let embeddedLorebook = null;
   let lorebookId = null;
 
@@ -61,8 +82,13 @@ async function extractAndSaveEmbeddedLorebook(storageInstance, cardData) {
       lorebookData.name = `${cardData.data.name}'s Lorebook`;
       lorebookData.description = lorebookData.description || `Lorebook for ${cardData.data.name}`;
 
-      // Save to global lorebook library
       lorebookId = uuidv4();
+
+      // Cache external images and rewrite URLs before saving, so the
+      // rewritten local paths are what gets persisted.
+      await cacheAndRewriteLorebookImages(lorebookId, lorebookData, dataRoot, onProgress);
+
+      // Save to global lorebook library
       await storageInstance.saveLorebook(lorebookId, lorebookData);
 
       embeddedLorebook = {
@@ -156,6 +182,8 @@ router.get('/', asyncHandler(async (req, res) => {
 
 // Upload new character to global library (import PNG)
 router.post('/import', upload.single('character'), asyncHandler(async (req, res) => {
+  const channel = sseChannel(req, res);
+
   if (!req.file) {
     throw new AppError('No file uploaded', 400);
   }
@@ -166,21 +194,33 @@ router.post('/import', upload.single('character'), asyncHandler(async (req, res)
   try {
     const cardData = await CharacterParser.parseCard(req.file.buffer);
 
-      // Extract embedded lorebook if present
-      const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
+    // Cache external images and rewrite URLs
+    await cacheCardImages(characterId, cardData, req.app.locals.dataRoot, channel.send);
 
-      // Save character data as JSON and image separately
+    // Extract embedded lorebook if present
+    const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot, channel.send);
+
+    // Save character data as JSON and image separately
     await storage.saveCharacter(characterId, cardData, req.file.buffer);
 
-    res.status(201).json({
-      id: characterId,
-      name: cardData.data?.name || 'Unknown',
-      description: cardData.data?.description || '',
-      imageUrl: `/api/characters/${characterId}/image`,
-      firstMessage: cardData.data?.first_mes || '',
-      embeddedLorebook: embeddedLorebook // Will be null if no lorebook
+    channel.finish({
+      statusCode: 201,
+      body: {
+        id: characterId,
+        name: cardData.data?.name || 'Unknown',
+        description: cardData.data?.description || '',
+        imageUrl: `/api/characters/${characterId}/image`,
+        firstMessage: cardData.data?.first_mes || '',
+        embeddedLorebook: embeddedLorebook // Will be null if no lorebook
+      }
     });
   } catch (error) {
+    // Once the stream is open the status code is already sent, so the error
+    // has to be delivered as an event instead of thrown.
+    if (channel.streaming) {
+      channel.fail(`Invalid character card: ${error.message}`);
+      return;
+    }
     throw new AppError(`Invalid character card: ${error.message}`, 400);
   }
 }));
@@ -217,6 +257,10 @@ router.post('/', asyncHandler(async (req, res) => {
       extensions: {}
     }
   };
+
+  // Cache any external images in the card data, then save so the rewritten
+  // local URLs are what gets persisted.
+  await cacheCardImages(characterId, characterData, req.app.locals.dataRoot);
 
   // Save character (no image)
   await storage.saveCharacter(characterId, characterData, null);
@@ -276,6 +320,10 @@ router.post('/create', upload.single('image'), asyncHandler(async (req, res) => 
     }
   };
 
+  // Cache any external images in the card data, then save so the rewritten
+  // local URLs are what gets persisted.
+  await cacheCardImages(characterId, characterData, req.app.locals.dataRoot);
+
   // Save character with optional image
   const imageBuffer = req.file ? req.file.buffer : null;
   await storage.saveCharacter(characterId, characterData, imageBuffer);
@@ -316,26 +364,44 @@ router.post('/import-json', jsonUpload.single('character'), asyncHandler(async (
   }
 
   const characterId = uuidv4();
+  const channel = sseChannel(req, res);
 
-  // Extract embedded lorebook if present
-  const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
+  try {
+    // Cache external images and rewrite URLs
+    await cacheCardImages(characterId, cardData, req.app.locals.dataRoot, channel.send);
 
-  // Save character data (no image for JSON import)
-  await storage.saveCharacter(characterId, cardData, null);
+    // Extract embedded lorebook if present
+    const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot, channel.send);
 
-  res.status(201).json({
-    id: characterId,
-    name: cardData.data.name,
-    description: cardData.data.description || '',
-    imageUrl: null,
-    firstMessage: cardData.data.first_mes || '',
-    embeddedLorebook: embeddedLorebook
-  });
+    // Save character data (no image for JSON import)
+    await storage.saveCharacter(characterId, cardData, null);
+
+    channel.finish({
+      statusCode: 201,
+      body: {
+        id: characterId,
+        name: cardData.data.name,
+        description: cardData.data.description || '',
+        imageUrl: null,
+        firstMessage: cardData.data.first_mes || '',
+        embeddedLorebook: embeddedLorebook
+      }
+    });
+  } catch (error) {
+    // Once the stream is open the status line is already sent, so the failure
+    // has to reach the client as an event rather than a status code.
+    if (channel.streaming) {
+      channel.fail(`Failed to import character: ${error.message}`);
+      return;
+    }
+    throw error;
+  }
 }));
 
 // Import character from URL (CHUB, or direct image URL)
 router.post('/import-url', asyncHandler(async (req, res) => {
   const { url } = req.body;
+  const channel = sseChannel(req, res);
 
   if (!url || typeof url !== 'string') {
     throw new AppError('URL is required', 400);
@@ -359,22 +425,32 @@ router.post('/import-url', asyncHandler(async (req, res) => {
       const rawCardData = await CharacterParser.parseCard(imageBuffer);
       const cardData = CharacterParser.normalizeCardData(rawCardData);
 
+      // Cache external images and rewrite URLs
+      await cacheCardImages(characterId, cardData, req.app.locals.dataRoot, channel.send);
+
       // Extract embedded lorebook if present
-      const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData);
+      const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, cardData, req.app.locals.dataRoot, channel.send);
 
       // Save character data as JSON and image separately
       await storage.saveCharacter(characterId, cardData, imageBuffer);
 
-      res.status(201).json({
-        id: characterId,
-        name: cardData.data?.name || 'Unknown',
-        description: cardData.data?.description || '',
-        imageUrl: `/api/characters/${characterId}/image`,
-        firstMessage: cardData.data?.first_mes || '',
-        embeddedLorebook: embeddedLorebook
+      channel.finish({
+        statusCode: 201,
+        body: {
+          id: characterId,
+          name: cardData.data?.name || 'Unknown',
+          description: cardData.data?.description || '',
+          imageUrl: `/api/characters/${characterId}/image`,
+          firstMessage: cardData.data?.first_mes || '',
+          embeddedLorebook: embeddedLorebook
+        }
       });
       return;
     } catch (error) {
+      if (channel.streaming) {
+        channel.fail(`Failed to import image character: ${error.message}`);
+        return;
+      }
       throw new AppError(`Failed to import image character: ${error.message}`, 400);
     }
   }
@@ -390,23 +466,33 @@ router.post('/import-url', asyncHandler(async (req, res) => {
 
     const characterId = uuidv4();
 
+    // Cache external images and rewrite URLs
+    await cacheCardImages(characterId, characterData, req.app.locals.dataRoot, channel.send);
+
     // Extract embedded lorebook if present
-    const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, characterData);
+    const { embeddedLorebook } = await extractAndSaveEmbeddedLorebook(storage, characterData, req.app.locals.dataRoot, channel.send);
 
     // Save character with image
     await storage.saveCharacter(characterId, characterData, imageBuffer);
 
     const hasImage = await storage.hasCharacterImage(characterId);
 
-    res.status(201).json({
-      id: characterId,
-      name: characterData.data.name,
-      description: characterData.data.description,
-      imageUrl: hasImage ? `/api/characters/${characterId}/image` : null,
-      firstMessage: characterData.data.first_mes,
-      embeddedLorebook: embeddedLorebook,
+    channel.finish({
+      statusCode: 201,
+      body: {
+        id: characterId,
+        name: characterData.data.name,
+        description: characterData.data.description,
+        imageUrl: hasImage ? `/api/characters/${characterId}/image` : null,
+        firstMessage: characterData.data.first_mes,
+        embeddedLorebook: embeddedLorebook,
+      }
     });
   } catch (error) {
+    if (channel.streaming) {
+      channel.fail(`Failed to import character: ${error.message}`);
+      return;
+    }
     throw new AppError(`Failed to import character: ${error.message}`, 400);
   }
 }));
@@ -487,6 +573,10 @@ router.put('/:characterId', asyncHandler(async (req, res) => {
     existingData.data.extensions.ursceal_lorebook_id = ursceal_lorebook_id || null;
   }
 
+  // Cache any new external images in the updated fields, then save so the
+  // rewritten local URLs are what gets persisted.
+  await cacheCardImages(characterId, existingData, req.app.locals.dataRoot);
+
   // Save updated data (keep existing image)
   await storage.saveCharacter(characterId, existingData, null);
 
@@ -536,6 +626,10 @@ router.put('/:characterId/update-with-image', upload.single('image'), asyncHandl
     existingData.data.extensions.ursceal_lorebook_id = ursceal_lorebook_id || null;
   }
 
+  // Cache any new external images in the updated fields, then save so the
+  // rewritten local URLs are what gets persisted.
+  await cacheCardImages(characterId, existingData, req.app.locals.dataRoot);
+
   // Save updated data with new image
   const imageBuffer = req.file ? req.file.buffer : null;
   await storage.saveCharacter(characterId, existingData, imageBuffer);
@@ -584,6 +678,15 @@ router.delete('/:characterId', asyncHandler(async (req, res) => {
   }
 
   await storage.deleteCharacter(characterId);
+
+  // Clean up cached asset files
+  try {
+    const assetManager = new AssetManager(req.app.locals.dataRoot);
+    await assetManager.deleteDir(characterId);
+  } catch (error) {
+    console.error(`Failed to clean up assets for character ${characterId}:`, error);
+  }
+
   res.json({ success: true });
 }));
 

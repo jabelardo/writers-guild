@@ -1,48 +1,26 @@
 <template>
   <Modal title="Import Character" @close="$emit('close')">
     <div class="import-content">
-      <!-- Import from Photos -->
+      <!-- Import from a file: character card images and JSON are the same
+           pick-a-file action, so they share one section -->
       <section class="import-section">
-        <h3><i class="fas fa-images"></i> Import from Photos</h3>
-        <p class="help-text">Pick a character card image from your photo gallery</p>
+        <h3><i class="fas fa-folder-open"></i> Import from File</h3>
+        <p class="help-text">Choose a character card image or JSON file</p>
         <input
           ref="fileInput"
           type="file"
-          accept="image/png,image/jpeg"
+          accept="image/png,image/jpeg,image/webp,image/avif,.json,application/json"
           @change="handleFileSelect"
           class="file-input"
         />
+        <ImportProgress v-if="importing === 'file'" :progress="imageProgress" />
         <button
           class="btn btn-primary full-width"
-          :disabled="!selectedFile || importing"
-          @click="importFromPhoto"
+          :disabled="!selectedFile || !!importing"
+          @click="importFromFile"
         >
-          <i class="fas fa-upload"></i>
-          {{ importing ? 'Importing...' : 'Import from Photos' }}
-        </button>
-      </section>
-
-      <div class="divider">
-        <span>OR</span>
-      </div>
-
-      <!-- Import from Storage -->
-      <section class="import-section">
-        <h3><i class="fas fa-folder-open"></i> Import from Storage</h3>
-        <p class="help-text">Browse local files for character card JSON or images</p>
-        <input
-          ref="storageFileInput"
-          type="file"
-          @change="handleStorageFileSelect"
-          class="file-input"
-        />
-        <button
-          class="btn btn-primary full-width"
-          :disabled="!selectedStorageFile || importing"
-          @click="importFromStorage"
-        >
-          <i class="fas fa-upload"></i>
-          {{ importing ? 'Importing...' : 'Import from Storage' }}
+          <i :class="importing === 'file' ? 'fas fa-spinner fa-spin' : 'fas fa-upload'"></i>
+          {{ importing === 'file' ? importStatusLabel : 'Import from File' }}
         </button>
       </section>
 
@@ -61,13 +39,14 @@
           placeholder="https://chub.ai/characters/... or https://example.com/character.png"
           @keydown.enter="importFromURL"
         />
+        <ImportProgress v-if="importing === 'url'" :progress="imageProgress" />
         <button
           class="btn btn-primary full-width"
-          :disabled="!characterUrl.trim() || importing"
+          :disabled="!characterUrl.trim() || !!importing"
           @click="importFromURL"
         >
-          <i class="fas fa-download"></i>
-          {{ importing ? 'Importing...' : 'Import from URL' }}
+          <i :class="importing === 'url' ? 'fas fa-spinner fa-spin' : 'fas fa-download'"></i>
+          {{ importing === 'url' ? importStatusLabel : 'Import from URL' }}
         </button>
         <small class="hint">Supported: chub.ai, direct image URLs (PNG, JPEG, WebP)</small>
       </section>
@@ -76,8 +55,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import Modal from './Modal.vue'
+import ImportProgress from './ImportProgress.vue'
 import { charactersAPI } from '../services/api'
 import { useToast } from '../composables/useToast'
 
@@ -86,10 +66,59 @@ const toast = useToast()
 
 const selectedFile = ref(null)
 const fileInput = ref(null)
-const selectedStorageFile = ref(null)
-const storageFileInput = ref(null)
 const characterUrl = ref('')
-const importing = ref(false)
+const importing = ref(null) // null | 'file' | 'url'
+
+// Image caching progress for the active import.
+//
+// One import can cache more than one set of images: a CHUB character with an
+// embedded lorebook caches the card first, then the lorebook (often the larger
+// set). Each set arrives as its own start/image/done sequence, so totals are
+// accumulated rather than replaced — otherwise the bar would jump backwards
+// when the lorebook stage begins.
+const imageProgress = ref(null) // null | { completed, total, failed, stage }
+
+function handleImportProgress(event) {
+  if (event.phase === 'start') {
+    const prev = imageProgress.value
+    imageProgress.value = {
+      completed: prev?.completed ?? 0,
+      total: (prev?.total ?? 0) + event.total,
+      failed: prev?.failed ?? 0,
+      stage: event.entityType === 'lorebooks' ? 'lorebook' : 'character',
+    }
+  } else if (event.phase === 'image' && imageProgress.value) {
+    const p = imageProgress.value
+    imageProgress.value = {
+      ...p,
+      completed: p.completed + 1,
+      failed: p.failed + (event.ok ? 0 : 1),
+    }
+  }
+}
+
+function resetImportState() {
+  importing.value = null
+  imageProgress.value = null
+}
+
+/** "Caching lorebook images 12/30" — plain label before any image work. */
+const importStatusLabel = computed(() => {
+  const p = imageProgress.value
+  if (!p || !p.total) return 'Importing...'
+  const what = p.stage === 'lorebook' ? 'lorebook images' : 'images'
+  return `Caching ${what} ${p.completed}/${p.total}`
+})
+
+/** Tell the user when some images could not be fetched — import still works. */
+function reportImportResult(name) {
+  const p = imageProgress.value
+  if (p && p.failed > 0) {
+    toast.warning(`Imported "${name}" — ${p.failed} of ${p.total} image(s) could not be cached and still point at their original host`)
+    return
+  }
+  toast.success(`Successfully imported "${name}"!`)
+}
 
 function handleFileSelect(event) {
   const file = event.target.files[0]
@@ -98,75 +127,48 @@ function handleFileSelect(event) {
   }
 }
 
-function handleStorageFileSelect(event) {
-  const file = event.target.files[0]
-  if (file) {
-    selectedStorageFile.value = file
-  }
-}
-
-async function importFromPhoto() {
-  if (!selectedFile.value || importing.value) return
-
-  try {
-    importing.value = true
-    const result = await charactersAPI.importPNG(selectedFile.value)
-
-    toast.success(`Successfully imported "${result.name}"!`)
-    emit('imported', result)
-    emit('close')
-  } catch (error) {
-    console.error('Failed to import photo:', error)
-    toast.error('Failed to import character: ' + error.message)
-  } finally {
-    importing.value = false
-  }
-}
-
 async function importFromURL() {
   if (!characterUrl.value.trim() || importing.value) return
 
   try {
-    importing.value = true
-    const result = await charactersAPI.importFromURL(characterUrl.value.trim())
+    importing.value = 'url'
+    const result = await charactersAPI.importFromURL(characterUrl.value.trim(), handleImportProgress)
 
-    toast.success(`Successfully imported "${result.name}"!`)
+    reportImportResult(result.name)
     emit('imported', result)
     emit('close')
   } catch (error) {
     console.error('Failed to import from URL:', error)
     toast.error('Failed to import character: ' + error.message)
   } finally {
-    importing.value = false
+    resetImportState()
   }
 }
 
-async function importFromStorage() {
-  if (!selectedStorageFile.value || importing.value) return
+async function importFromFile() {
+  if (!selectedFile.value || importing.value) return
 
   try {
-    importing.value = true
+    importing.value = 'file'
 
-    // Detect if it's an image file (PNG/JPEG) and route accordingly
-    const file = selectedStorageFile.value
-    const isImage = file.type === 'image/png' || file.type === 'image/jpeg' ||
-      file.name.match(/\.(png|jpg|jpeg|webp)$/i)
+    // Card images and card JSON are the same action to the user; the file
+    // type decides which endpoint handles it.
+    const file = selectedFile.value
+    const isImage = file.type.startsWith('image/') ||
+      /\.(png|jpg|jpeg|webp|avif)$/i.test(file.name)
 
-    let result
-    if (isImage) {
-      result = await charactersAPI.importPNG(file)
-    } else {
-      result = await charactersAPI.importJSON(file)
-    }
+    const result = isImage
+      ? await charactersAPI.importPNG(file, handleImportProgress)
+      : await charactersAPI.importJSON(file, handleImportProgress)
 
-    toast.success(`Successfully imported "${result.name}"!`)
+    reportImportResult(result.name)
     emit('imported', result)
     emit('close')
   } catch (error) {
-    console.error('Failed to import character from storage:', error)
+    console.error('Failed to import character from file:', error)
     toast.error('Failed to import character: ' + error.message)
   } finally {
-    importing.value = false
+    resetImportState()
   }
 }
 </script>
@@ -177,6 +179,7 @@ async function importFromStorage() {
   flex-direction: column;
   gap: 1.5rem;
 }
+
 
 .import-section {
   display: flex;

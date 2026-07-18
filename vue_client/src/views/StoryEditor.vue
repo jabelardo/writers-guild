@@ -931,6 +931,17 @@ async function handleStoryStarter() {
         }
       }
 
+      // Server restores [WG_IMAGE_n] markers back to image markup on the final
+      // chunk. Without this the placeholder stays visible in the story.
+      if (chunk.imagesRestored && chunk.finalContent !== undefined) {
+        generatedContent = chunk.finalContent
+        content.value = generatedContent
+        await nextTick()
+        if (editorRef.value) {
+          editorRef.value.scrollTop = editorRef.value.scrollHeight
+        }
+      }
+
       if (chunk.finished) {
         break
       }
@@ -1045,6 +1056,17 @@ async function generate(isCustom, instruction, characterId) {
         content.value = textBefore + generatedContent + textAfter
 
         // Auto-scroll editor
+        await nextTick()
+        if (editorRef.value) {
+          editorRef.value.scrollTop = editorRef.value.scrollHeight
+        }
+      }
+
+      // Server restores [WG_IMAGE_n] markers back to image markup on the final
+      // chunk. Without this the placeholder stays visible in the story.
+      if (chunk.imagesRestored && chunk.finalContent !== undefined) {
+        generatedContent = chunk.finalContent
+        content.value = textBefore + generatedContent + textAfter
         await nextTick()
         if (editorRef.value) {
           editorRef.value.scrollTop = editorRef.value.scrollHeight
@@ -1227,7 +1249,7 @@ async function rewriteToThirdPerson(skipConfirm = false) {
       }
 
       // Handle server-side image restoration event
-      if (chunk.imagesRestored && chunk.finalContent) {
+      if (chunk.imagesRestored && chunk.finalContent !== undefined) {
         // Server already restored images; use its final content directly
         rewrittenContent = chunk.finalContent
         content.value = rewrittenContent
@@ -1389,6 +1411,13 @@ async function handleIdeate() {
         }
 
         responseText += chunk.content
+        ideateResponse.value = responseText
+      }
+
+      // Server restores [WG_IMAGE_n] markers back to image markup on the final
+      // chunk. Without this the placeholder stays visible in the response.
+      if (chunk.imagesRestored && chunk.finalContent !== undefined) {
+        responseText = chunk.finalContent
         ideateResponse.value = responseText
       }
 

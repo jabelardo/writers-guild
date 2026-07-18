@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import fs from 'fs';
@@ -8,6 +8,7 @@ import { createTestPng, createTestCharacterPng, PNG_SIGNATURE } from './test-hel
 
 // Import the routers
 import charactersRouter from '../characters.js';
+import assetsRouter from '../assets.js';
 import storiesRouter from '../stories.js';
 import { SqliteStorageService } from '../../services/sqliteStorage.js';
 
@@ -37,6 +38,7 @@ describe('Characters API Routes', () => {
     app.use(express.json());
     app.locals.dataRoot = tempDir;
     app.use('/api/characters', charactersRouter);
+    app.use('/api/assets', assetsRouter);
     app.use('/api/stories', storiesRouter);
 
     // Add error handler
@@ -1131,6 +1133,345 @@ describe('Characters API Routes', () => {
         .expect(200);
 
       expect(dataResponse.body.character.data.mes_example).toBe('Example dialogue');
+    });
+  });
+
+  describe('import progress streaming', () => {
+    let origFetch;
+
+    beforeEach(() => {
+      const pngBuffer = createTestPng();
+      origFetch = globalThis.fetch;
+      globalThis.fetch = async () => new Response(pngBuffer, {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      });
+    });
+
+    afterEach(() => {
+      globalThis.fetch = origFetch;
+    });
+
+    /** Parse an SSE body into the sequence of JSON events it carried. */
+    function parseEvents(text) {
+      return text
+        .split('\n\n')
+        .filter(block => block.startsWith('data: '))
+        .map(block => JSON.parse(block.slice('data: '.length)));
+    }
+
+    function cardWithImages(name) {
+      return Buffer.from(JSON.stringify({
+        name,
+        description: 'One ![a](https://example.com/one.png)',
+        first_mes: 'Two ![b](https://example.com/two.png)',
+      }));
+    }
+
+    it('streams per-image progress and a terminal done event', async () => {
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .set('Accept', 'text/event-stream')
+        .attach('character', cardWithImages('Streamed'), 'card.json')
+        .expect(200);
+
+      expect(response.headers['content-type']).toContain('text/event-stream');
+
+      const events = parseEvents(response.text);
+      const start = events.find(e => e.phase === 'start');
+      const images = events.filter(e => e.phase === 'image');
+      const done = events.find(e => e.type === 'done');
+
+      expect(start.total).toBe(2);
+      expect(images).toHaveLength(2);
+      // Progress is monotonic and terminates at the total.
+      expect(images.map(e => e.completed)).toEqual([1, 2]);
+      expect(images.every(e => e.ok)).toBe(true);
+
+      // The done event carries the same payload the JSON response would.
+      expect(done.id).toBeTruthy();
+      expect(done.name).toBe('Streamed');
+    });
+
+    it('reports failed downloads without failing the import', async () => {
+      globalThis.fetch = async () => new Response('nope', { status: 404 });
+
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .set('Accept', 'text/event-stream')
+        .attach('character', cardWithImages('Partial'), 'card.json')
+        .expect(200);
+
+      const events = parseEvents(response.text);
+      const images = events.filter(e => e.phase === 'image');
+      const done = events.find(e => e.type === 'done');
+
+      expect(images.every(e => e.ok === false)).toBe(true);
+      // Import still succeeds — caching is non-fatal by design.
+      expect(done.id).toBeTruthy();
+      expect(done.name).toBe('Partial');
+    });
+
+    it('streams the embedded lorebook images as a second stage', async () => {
+      // A CHUB character with an embedded lorebook caches two sets: the card,
+      // then the lorebook — often the larger of the two. Both must report.
+      const card = Buffer.from(JSON.stringify({
+        name: 'With Lore',
+        description: 'Card image ![a](https://example.com/card.png)',
+        character_book: {
+          name: 'Embedded',
+          entries: [
+            { keys: ['k'], content: 'Lore one ![b](https://example.com/lore1.png)' },
+            { keys: ['j'], content: 'Lore two ![c](https://example.com/lore2.png)' },
+          ],
+        },
+      }));
+
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .set('Accept', 'text/event-stream')
+        .attach('character', card, 'card.json')
+        .expect(200);
+
+      const events = parseEvents(response.text);
+      const starts = events.filter(e => e.phase === 'start');
+
+      // Two distinct stages, tagged by entity type.
+      expect(starts).toHaveLength(2);
+      expect(starts[0].entityType).toBe('characters');
+      expect(starts[0].total).toBe(1);
+      expect(starts[1].entityType).toBe('lorebooks');
+      expect(starts[1].total).toBe(2);
+
+      const lorebookImages = events.filter(e => e.phase === 'image' && e.entityType === 'lorebooks');
+      expect(lorebookImages).toHaveLength(2);
+
+      const done = events.find(e => e.type === 'done');
+      expect(done.embeddedLorebook).toBeTruthy();
+      expect(done.embeddedLorebook.entryCount).toBe(2);
+    });
+
+    it('delivers a late failure as an error event rather than hanging the stream', async () => {
+      // Once progress events have flushed headers the status line is already
+      // sent. A throw after that point must still reach the client as a
+      // terminal event, or the reader waits forever for a done that never comes.
+      const spy = vi.spyOn(SqliteStorageService.prototype, 'saveCharacter')
+        .mockRejectedValueOnce(new Error('disk on fire'));
+
+      try {
+        const response = await request(app)
+          .post('/api/characters/import-json')
+          .set('Accept', 'text/event-stream')
+          .attach('character', cardWithImages('Doomed'), 'card.json')
+          .expect(200);
+
+        const events = parseEvents(response.text);
+        const error = events.find(e => e.type === 'error');
+
+        expect(error).toBeTruthy();
+        expect(error.error).toContain('disk on fire');
+        // And no bogus success terminator.
+        expect(events.find(e => e.type === 'done')).toBeUndefined();
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('still returns plain JSON when the client does not ask to stream', async () => {
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', cardWithImages('Plain'), 'card.json')
+        .expect(201);
+
+      expect(response.headers['content-type']).toContain('application/json');
+      expect(response.body.name).toBe('Plain');
+      expect(response.text).not.toContain('data:');
+    });
+  });
+
+  describe('image caching persistence', () => {
+    // Regression guard: the cacher rewrites cardData in place, so it must run
+    // BEFORE saveCharacter. If the order flips, the download still happens and
+    // the asset lands on disk, but the persisted card keeps the external URL.
+    let origFetch;
+
+    beforeEach(() => {
+      const pngBuffer = createTestPng();
+      origFetch = globalThis.fetch;
+      globalThis.fetch = async () => new Response(pngBuffer, {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      });
+    });
+
+    afterEach(() => {
+      globalThis.fetch = origFetch;
+    });
+
+    it('persists rewritten image URLs on create', async () => {
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({
+          name: 'Persist Create',
+          description: 'External image ![img](https://example.com/photo.png)',
+        })
+        .expect(201);
+
+      const dataResponse = await request(app)
+        .get(`/api/characters/${createResponse.body.id}/data`)
+        .expect(200);
+
+      const { description } = dataResponse.body.character.data;
+      expect(description).toContain('/api/assets/characters/');
+      expect(description).not.toContain('https://example.com/photo.png');
+    });
+
+    it('persists rewritten image URLs on update', async () => {
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({ name: 'Persist Update', description: 'No images yet' })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+
+      await request(app)
+        .put(`/api/characters/${charId}`)
+        .send({
+          description: 'Now with an image ![img](https://example.com/added.png)',
+        })
+        .expect(200);
+
+      const dataResponse = await request(app)
+        .get(`/api/characters/${charId}/data`)
+        .expect(200);
+
+      const { description } = dataResponse.body.character.data;
+      expect(description).toContain('/api/assets/characters/');
+      expect(description).not.toContain('https://example.com/added.png');
+    });
+
+    it('serves the cached asset that a create produced', async () => {
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({
+          name: 'Persist Serve',
+          description: 'External image ![img](https://example.com/served.png)',
+        })
+        .expect(201);
+
+      const dataResponse = await request(app)
+        .get(`/api/characters/${createResponse.body.id}/data`)
+        .expect(200);
+
+      // Pull the rewritten local path back out and fetch it end-to-end.
+      const match = dataResponse.body.character.data.description.match(
+        /\/api\/assets\/characters\/[^)\s]+/
+      );
+      expect(match).not.toBeNull();
+
+      await request(app).get(match[0]).expect(200);
+    });
+  });
+
+  describe('extractAndSaveEmbeddedLorebook error handling', () => {
+    it('should handle lorebook with no entries (empty array)', async () => {
+      const characterWithEmptyLorebook = {
+        name: 'Empty Lore',
+        description: 'Has empty lorebook',
+        character_book: {
+          name: 'Empty',
+          entries: []
+        }
+      };
+
+      const response = await request(app)
+        .post('/api/characters/import-json')
+        .attach('character', Buffer.from(JSON.stringify(characterWithEmptyLorebook)), {
+          filename: 'char.json'
+        })
+        .expect(201);
+
+      // No embedded lorebook should be created when entries are empty
+      expect(response.body.embeddedLorebook).toBeNull();
+
+      // Verify character was still created
+      expect(response.body.name).toBe('Empty Lore');
+    });
+
+    it('should handle character data with no extensions field on update-with-image', async () => {
+      // Create a character
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({ name: 'No Ext Char' })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+
+      // Update with only ursceal_lorebook_id (covers extensions init path)
+      const response = await request(app)
+        .put(`/api/characters/${charId}`)
+        .send({ ursceal_lorebook_id: 'some-lorebook-id' })
+        .expect(200);
+
+      // Verify via data endpoint
+      const dataResponse = await request(app)
+        .get(`/api/characters/${charId}/data`)
+        .expect(200);
+
+      expect(dataResponse.body.character.data.extensions.ursceal_lorebook_id).toBe('some-lorebook-id');
+    });
+  });
+
+  describe('POST /:characterId/update-with-image edge cases', () => {
+    it('should update lorebook association via update-with-image', async () => {
+      // Create a character
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({ name: 'Lorebook Update Char' })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+
+      // Update with lorebook_id (covers extensions init in update-with-image)
+      const response = await request(app)
+        .put(`/api/characters/${charId}/update-with-image`)
+        .field('characterData', JSON.stringify({
+          name: 'Lorebook Updated',
+          ursceal_lorebook_id: 'test-lorebook-id'
+        }))
+        .expect(200);
+
+      // Verify via data endpoint
+      const dataResponse = await request(app)
+        .get(`/api/characters/${charId}/data`)
+        .expect(200);
+
+      expect(dataResponse.body.character.data.extensions.ursceal_lorebook_id).toBe('test-lorebook-id');
+    });
+
+    it('should accept image with character update', async () => {
+      // Create a character
+      const createResponse = await request(app)
+        .post('/api/characters')
+        .send({ name: 'Update Img Char' })
+        .expect(201);
+
+      const charId = createResponse.body.id;
+
+      // Update with image
+      const testPng = createTestPng();
+      const response = await request(app)
+        .put(`/api/characters/${charId}/update-with-image`)
+        .field('characterData', JSON.stringify({ name: 'Updated Img', description: 'With image' }))
+        .attach('image', testPng, {
+          filename: 'avatar.png',
+          contentType: 'image/png'
+        })
+        .expect(200);
+
+      expect(response.body.name).toBe('Updated Img');
+      expect(response.body.description).toBe('With image');
+      expect(response.body.imageUrl).toContain(`/api/characters/${charId}/image`);
     });
   });
 });

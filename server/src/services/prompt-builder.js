@@ -7,6 +7,13 @@ import { MacroProcessor } from './macro-processor.js';
 import { TemplateEngine } from './template-engine.js';
 import { DEFAULT_SYSTEM_PROMPT_TEMPLATE, DEFAULT_PROMPT_TEMPLATES } from './default-presets.js';
 
+/**
+ * Generation types where the model is handed existing text and expected to
+ * return all of it. Only these should be told to keep image markers, and only
+ * these should have dropped images re-appended on restore.
+ */
+export const REWRITE_GENERATION_TYPES = new Set(['rewriteThirdPerson']);
+
 export class PromptBuilder {
   constructor(config = {}) {
     this.config = {
@@ -71,7 +78,32 @@ export class PromptBuilder {
     processed = macroProcessor.process(processed);
     processed = this.filterAsterisks(processed, this.config.filterAsterisks);
 
-    return processed;
+    return this.preserveImages(processed);
+  }
+
+  /**
+   * Swap image markup for short placeholders so the model never sees a cached
+   * asset URL. Locally cached URLs are ~130 chars of uuid and sha256 that a
+   * model cannot reliably reproduce; [WG_IMAGE_n] it can.
+   *
+   * Must be applied to every piece of text that reaches the model. Anything
+   * that builds prompt text without going through processContent() has to call
+   * this itself — lorebook entries are built inline and need it explicitly.
+   */
+  preserveImages(text) {
+    if (!this.imagePreserver || !text) return text;
+    return this.imagePreserver.preserve(text);
+  }
+
+  /**
+   * Macro + asterisk processing for lorebook entry content, which does not go
+   * through processContent() (it has no character/persona placeholders to
+   * replace), but still reaches the model and still carries images.
+   */
+  processLorebookContent(content, macroProcessor) {
+    if (!content) return content;
+    const processed = this.filterAsterisks(macroProcessor.process(content), this.config.filterAsterisks);
+    return this.preserveImages(processed);
   }
 
   /**
@@ -164,11 +196,7 @@ export class PromptBuilder {
       }
 
       // Process macros in lorebook content
-      let content = entry.content;
-      content = macroProcessor.process(content);
-      content = this.filterAsterisks(content, this.config.filterAsterisks);
-
-      prompt += content;
+      prompt += this.processLorebookContent(entry.content, macroProcessor);
     });
 
     prompt += '\n';
@@ -273,7 +301,7 @@ export class PromptBuilder {
       // Lorebook data
       has_lorebook: !!(activatedLorebooks && activatedLorebooks.length > 0),
       lorebook_entries: activatedLorebooks ? activatedLorebooks.map(entry => ({
-        content: this.filterAsterisks(macroProcessor.process(entry.content), this.config.filterAsterisks),
+        content: this.processLorebookContent(entry.content, macroProcessor),
         comment: entry.comment || ''
       })) : [],
 
@@ -320,6 +348,39 @@ export class PromptBuilder {
   /**
    * Build generation prompt based on type
    */
+  /**
+   * Place the story into the prompt, preserving its images exactly once.
+   *
+   * A template either interpolates {{storyContent}} or gets the story appended
+   * as separate context — never both. Preserving in both paths would register
+   * every image twice and hand the model duplicate placeholders.
+   *
+   * @returns {{ instruction: string, storyContext: string }}
+   */
+  applyStoryContent(instruction, template, storyContent, maxChars, imagePreserver) {
+    const usesPlaceholder = template.includes('{{storyContent}}');
+
+    if (usesPlaceholder) {
+      const preserved = imagePreserver ? imagePreserver.preserve(storyContent, 'story') : storyContent;
+      return {
+        instruction: instruction.replace(/\{\{storyContent\}\}/g, preserved),
+        storyContext: '',
+      };
+    }
+
+    if (!storyContent.trim()) {
+      return { instruction, storyContext: '' };
+    }
+
+    // Only the content that survives truncation is preserved, so we never
+    // register a placeholder for an image the model will not see.
+    const truncated = this.truncateStoryContent(storyContent, maxChars);
+    return {
+      instruction,
+      storyContext: imagePreserver ? imagePreserver.preserve(truncated, 'story') : truncated,
+    };
+  }
+
   buildGenerationPrompt(type, params) {
     const { storyContent, characterName, customInstruction, templateText, maxChars, userName, imagePreserver } = params;
 
@@ -343,18 +404,11 @@ export class PromptBuilder {
         instruction = instruction.replace(/\{\{instruction\}\}/g, customInstruction);
       }
       if (storyContent) {
-        // Preserve images before replacing into template
-        const preservedStoryContent = imagePreserver ? imagePreserver.preserve(storyContent) : storyContent;
-        instruction = instruction.replace(/\{\{storyContent\}\}/g, preservedStoryContent);
+        const applied = this.applyStoryContent(instruction, templateText, storyContent, maxChars, imagePreserver);
+        instruction = applied.instruction;
+        storyContext = applied.storyContext;
       }
       instruction = instruction.replace(/\{\{user\}\}/gi, userName || 'the user');
-
-      // If template doesn't use {{storyContent}}, add story context separately
-      if (storyContent && storyContent.trim() && !templateText.includes('{{storyContent}}')) {
-        const truncated = this.truncateStoryContent(storyContent, maxChars);
-        // Preserve images in the truncated content (only content that survives truncation)
-        storyContext = imagePreserver ? imagePreserver.preserve(truncated) : truncated;
-      }
     } else {
       // Use default templates
       const templates = this.config.instructionTemplates;
@@ -398,22 +452,17 @@ export class PromptBuilder {
         instruction = instruction.replace(/\{\{instruction\}\}/g, customInstruction);
       }
       if (storyContent) {
-        // Preserve images before replacing into template
-        const preservedStoryContent = imagePreserver ? imagePreserver.preserve(storyContent) : storyContent;
-        instruction = instruction.replace(/\{\{storyContent\}\}/g, preservedStoryContent);
+        const applied = this.applyStoryContent(instruction, defaultTemplate, storyContent, maxChars, imagePreserver);
+        instruction = applied.instruction;
+        storyContext = applied.storyContext;
       }
       instruction = instruction.replace(/\{\{user\}\}/gi, userName || 'the user');
-
-      // Only add story context separately if template doesn't use {{storyContent}}
-      if (storyContent && storyContent.trim() && !defaultTemplate.includes('{{storyContent}}')) {
-        const truncated = this.truncateStoryContent(storyContent, maxChars);
-        // Preserve images in the truncated content (only content that survives truncation)
-        storyContext = imagePreserver ? imagePreserver.preserve(truncated) : truncated;
-      }
     }
 
-      // For rewriteThirdPerson: append image preservation note so the prompt-aware placeholders survive
-    if (imagePreserver && imagePreserver.saved.length > 0) {
+    // Only whole-text rewrites are expected to reproduce the input, so only
+    // they need the "keep the markers" instruction. Telling a `continue` to
+    // preserve markers would invite it to echo images it was never asked for.
+    if (imagePreserver && imagePreserver.saved.length > 0 && REWRITE_GENERATION_TYPES.has(type)) {
       instruction += '\n\nIMPORTANT: Preserve any markers like [WG_IMAGE_0], [WG_IMAGE_1] etc. (image references) exactly as they appear in the text above. Do not remove or modify them.';
       console.log(`[ImagePreserver] Appended image-preservation note for ${type}`);
     }
@@ -460,6 +509,11 @@ export class PromptBuilder {
       userName,
       imagePreserver = null
     } = options;
+
+    // Exposed on the instance so processContent() can reach it — character,
+    // persona and lorebook text all funnel through there, and all of it can
+    // carry cached image URLs.
+    this.imagePreserver = imagePreserver;
 
     // Build system prompt first (with custom template if provided and not null)
     const systemPrompt = this.buildSystemPrompt(

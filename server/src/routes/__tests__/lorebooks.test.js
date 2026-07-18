@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import fs from 'fs';
@@ -472,6 +472,40 @@ describe('Lorebooks API Routes', () => {
       expect(response.body).toHaveProperty('id');
       expect(response.body.name).toBe('Imported Lorebook');
       expect(response.body.entryCount).toBe(1);
+    });
+
+    it('should still import when entry images cannot be cached', async () => {
+      const lorebookJson = {
+        entries: {
+          0: {
+            uid: 0,
+            keys: ['dragon'],
+            content: 'A dragon ![img](https://example.com/dragon.png)',
+            comment: 'See reference ![map](https://example.com/map.jpg)',
+            enabled: true,
+            order: 100
+          }
+        },
+        name: 'Cached Lorebook',
+        description: 'Lorebook with ![cover](https://example.com/cover.png)'
+      };
+
+      const response = await request(app)
+        .post('/api/lorebooks/import')
+        .attach('lorebook', Buffer.from(JSON.stringify(lorebookJson)), 'lorebook.json')
+        .expect(200);
+
+      expect(response.body.name).toBe('Cached Lorebook');
+      expect(response.body.entryCount).toBe(1);
+
+      // Downloads fail (fetch is refused in tests), which exercises the
+      // non-fatal path: the lorebook imports regardless and its entries keep
+      // their original external URLs.
+      const stored = await request(app)
+        .get(`/api/lorebooks/${response.body.id}`)
+        .expect(200);
+
+      expect(stored.body.lorebook.entries[0].content).toContain('https://example.com/dragon.png');
     });
   });
 

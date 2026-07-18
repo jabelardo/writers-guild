@@ -22,6 +22,93 @@ async function request(endpoint, options = {}) {
   return response.json()
 }
 
+/**
+ * POST an import request, streaming progress when a callback is given.
+ *
+ * The server only streams if asked via Accept, so without onProgress this
+ * behaves exactly like a normal JSON request.
+ *
+ * @param {string} endpoint
+ * @param {{ body?: BodyInit, headers?: object }} options
+ * @param {(event: object) => void} [onProgress]
+ * @returns {Promise<object>} the terminal payload
+ */
+async function requestWithProgress(endpoint, options = {}, onProgress) {
+  const url = `${baseURL}${endpoint}`
+
+  if (!onProgress) {
+    const response = await fetch(url, { method: 'POST', ...options })
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }))
+      throw new Error(error.error || `Request failed: ${response.statusText}`)
+    }
+    return response.json()
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    ...options,
+    headers: { ...(options.headers || {}), Accept: 'text/event-stream' },
+  })
+
+  // A failure before the stream opened still arrives as a normal error status.
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: response.statusText }))
+    throw new Error(error.error || `Request failed: ${response.statusText}`)
+  }
+
+  // The server only streams if it supports it on this route. If it answered
+  // with JSON anyway, the import still succeeded — read it normally rather
+  // than reporting a completed import as a failure.
+  if (!(response.headers.get('content-type') || '').includes('text/event-stream')) {
+    return response.json()
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let result = null
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+
+    // Events are newline-delimited; keep any trailing partial event buffered.
+    const blocks = buffer.split('\n\n')
+    buffer = blocks.pop() ?? ''
+
+    for (const block of blocks) {
+      if (!block.startsWith('data: ')) continue
+
+      let event
+      try {
+        event = JSON.parse(block.slice('data: '.length))
+      } catch {
+        continue // ignore a malformed frame rather than fail the import
+      }
+
+      if (event.type === 'error') {
+        throw new Error(event.error || 'Import failed')
+      }
+      if (event.type === 'done') {
+        // Strip the envelope so callers get the same payload shape whether or
+        // not progress streaming was used.
+        const { type, ...payload } = event
+        result = payload
+      } else {
+        onProgress(event)
+      }
+    }
+  }
+
+  if (!result) {
+    throw new Error('Import ended without completing')
+  }
+  return result
+}
+
 // Stories API
 export const storiesAPI = {
   list() {
@@ -458,47 +545,29 @@ export const charactersAPI = {
     return response.json()
   },
 
-  async importPNG(file) {
+  async importPNG(file, onProgress) {
     const formData = new FormData()
     formData.append('character', file)
 
-    const url = `${baseURL}/characters/import`
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: response.statusText }))
-      throw new Error(error.error || `Request failed: ${response.statusText}`)
-    }
-
-    return response.json()
+    return requestWithProgress('/characters/import', { body: formData }, onProgress)
   },
 
-  async importJSON(file) {
+  async importJSON(file, onProgress) {
     const formData = new FormData()
     formData.append('character', file)
 
-    const url = `${baseURL}/characters/import-json`
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: response.statusText }))
-      throw new Error(error.error || `Request failed: ${response.statusText}`)
-    }
-
-    return response.json()
+    return requestWithProgress('/characters/import-json', { body: formData }, onProgress)
   },
 
-  async importFromURL(url) {
-    return request('/characters/import-url', {
-      method: 'POST',
-      body: JSON.stringify({ url }),
-    })
+  async importFromURL(url, onProgress) {
+    return requestWithProgress(
+      '/characters/import-url',
+      {
+        body: JSON.stringify({ url }),
+        headers: { 'Content-Type': 'application/json' },
+      },
+      onProgress
+    )
   },
 
   create(data) {
@@ -507,6 +576,7 @@ export const charactersAPI = {
       body: JSON.stringify(data),
     })
   },
+
 }
 
 // Lorebooks API
@@ -559,27 +629,22 @@ export const lorebooksAPI = {
     })
   },
 
-  importJSON(file) {
+  importJSON(file, onProgress) {
     const formData = new FormData()
     formData.append('lorebook', file)
 
-    return fetch('/api/lorebooks/import', {
-      method: 'POST',
-      body: formData,
-    }).then(async response => {
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Import failed')
-      }
-      return response.json()
-    })
+    return requestWithProgress('/lorebooks/import', { body: formData }, onProgress)
   },
 
-  importFromURL(url) {
-    return request('/lorebooks/import-url', {
-      method: 'POST',
-      body: JSON.stringify({ url }),
-    })
+  importFromURL(url, onProgress) {
+    return requestWithProgress(
+      '/lorebooks/import-url',
+      {
+        body: JSON.stringify({ url }),
+        headers: { 'Content-Type': 'application/json' },
+      },
+      onProgress
+    )
   },
 }
 

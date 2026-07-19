@@ -4,11 +4,7 @@ import request from 'supertest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import {
-  createTestPng,
-  createTestCharacterPng,
-  createTestCharacterJson,
-} from './test-helpers.js';
+import { createTestPng, createTestCharacterPng, createTestCharacterJson } from './test-helpers.js';
 
 // Import the routers
 import charactersRouter from '../characters.js';
@@ -1438,7 +1434,6 @@ describe('Characters API Routes', () => {
   });
 
   describe('Checksum: Import Duplicate Detection', () => {
-
     it('should reject duplicate JSON import (same origin + current)', async () => {
       // Import a character
       const charData = createTestCharacterJson({ name: 'UniqueChar' });

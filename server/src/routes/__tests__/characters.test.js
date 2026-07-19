@@ -8,7 +8,6 @@ import {
   createTestPng,
   createTestCharacterPng,
   createTestCharacterJson,
-  PNG_SIGNATURE,
 } from './test-helpers.js';
 
 // Import the routers
@@ -1439,12 +1438,11 @@ describe('Characters API Routes', () => {
   });
 
   describe('Checksum: Import Duplicate Detection', () => {
-    let originalChar;
 
     it('should reject duplicate JSON import (same origin + current)', async () => {
       // Import a character
       const charData = createTestCharacterJson({ name: 'UniqueChar' });
-      originalChar = await request(app)
+      await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from(JSON.stringify(charData)), 'char.json')
         .expect(201);
@@ -1466,21 +1464,6 @@ describe('Characters API Routes', () => {
         .post('/api/characters/import-json')
         .attach('character', Buffer.from(JSON.stringify(charData)), 'char.json')
         .expect(201);
-
-      // Import a different character with identical content — triggers collision
-      const differentNameSameContent = createTestCharacterJson({ name: 'CollisionChar2' });
-      // But the same content will produce the same checksum
-      // However, our name disambiguation will rename it and change checksum.
-      // To test pure collision, we need identical content with a name that already exists
-      // but content is identical.
-
-      // Actually, the collision check happens first with the ORIGINAL name's checksum.
-      // Since duplicate also fires for same source, we test collision by:
-      // 1. Importing char A
-      // 2. Creating a char B from scratch (different origin, so no duplicate)
-      // 3. Editing char B to have IDENTICAL content to char A
-      // 4. Now B's current_checksum == A's import_internal_checksum
-      // 5. Try importing char A again → collision check triggers
 
       const createB = await request(app)
         .post('/api/characters')
@@ -1737,7 +1720,7 @@ describe('Characters API Routes', () => {
       await request(app).delete(`/api/characters/${charId}?deleteLorebook=false`).expect(200);
 
       // Lorebook should still exist
-      const lbResp = await request(app).get(`/api/lorebooks/${firstLorebookId}`).expect(200);
+      await request(app).get(`/api/lorebooks/${firstLorebookId}`).expect(200);
 
       // Step 3: Re-import the same character
       const reimportResp = await createCharWithEmbeddedLorebook('ReimportChar');

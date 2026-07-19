@@ -69,7 +69,7 @@ vi.mock('../../router', () => ({
 }));
 
 import CharacterDetail from '../CharacterDetail.vue';
-import { charactersAPI, lorebooksAPI } from '../../services/api.js';
+import { charactersAPI } from '../../services/api.js';
 
 describe('CharacterDetail deleteCharacter', () => {
   beforeEach(() => {

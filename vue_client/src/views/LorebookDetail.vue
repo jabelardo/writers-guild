@@ -167,6 +167,7 @@ import { useToast } from '../composables/useToast';
 import { useNavigation } from '../composables/useNavigation';
 import { useConfirm } from '../composables/useConfirm';
 import { setPageTitle } from '../router';
+import { useDataCache } from '../composables/useDataCache';
 import EntryEditorModal from '../components/EntryEditorModal.vue';
 
 const props = defineProps({
@@ -180,6 +181,7 @@ const router = useRouter();
 const toast = useToast();
 const { goBack } = useNavigation();
 const { confirm } = useConfirm();
+const { removeLorebookLocally, updateLorebookLocally } = useDataCache();
 
 // State
 const loading = ref(true);
@@ -250,14 +252,17 @@ function cancelEdit(section) {
 
 async function saveName() {
   try {
+    const newName = editedName.value.trim();
     await lorebooksAPI.update(props.lorebookId, {
-      name: editedName.value.trim(),
+      name: newName,
     });
-    lorebook.value.name = editedName.value.trim();
+    lorebook.value.name = newName;
     editingName.value = false;
     editedName.value = '';
     // Update page title with new name
     setPageTitle(lorebook.value.name);
+    // Update Landing page
+    updateLorebookLocally(props.lorebookId, { name: newName });
   } catch (error) {
     console.error('Failed to update name:', error);
     toast.error('Failed to update name: ' + error.message);
@@ -289,6 +294,7 @@ async function deleteLorebook() {
 
   try {
     await lorebooksAPI.delete(props.lorebookId);
+    removeLorebookLocally(props.lorebookId);
     toast.success('Lorebook deleted successfully');
     router.push('/');
   } catch (error) {
@@ -395,6 +401,7 @@ async function handleEntrySaved() {
   flex: 1;
   overflow-y: auto;
   padding: 2rem;
+  padding-bottom: 4rem;
 }
 
 .sections-container {

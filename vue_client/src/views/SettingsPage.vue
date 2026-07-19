@@ -324,6 +324,7 @@ async function saveSettings() {
   flex: 1;
   overflow-y: auto;
   padding: 2rem;
+  padding-bottom: 4rem;
 }
 
 .sections-container {

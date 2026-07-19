@@ -8,6 +8,7 @@ import { readFile, readdir } from 'fs/promises';
 import { join, dirname, extname } from 'path';
 import { fileURLToPath } from 'url';
 import { SqliteStorageService } from './sqliteStorage.js';
+import { backfillChecksums } from './database.js';
 import { runSqliteMigration } from './dataMigration.js';
 import { getDefaultPresets, createPresetFromSettings } from './default-presets.js';
 import { CharacterParser } from './character-parser.js';
@@ -420,6 +421,9 @@ export async function runMigration(dataRoot) {
   } catch (error) {
     console.error('Thumbnail backfill error:', error);
   }
+
+  // Backfill checksums for any entities migrated from v8 that have no current_checksum
+  backfillChecksums(storage.db);
 
   return migrationResult;
 }

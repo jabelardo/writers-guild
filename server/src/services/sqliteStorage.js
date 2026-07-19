@@ -73,7 +73,7 @@ export class SqliteStorageService {
         'SELECT id, name, created, modified FROM characters ORDER BY name',
       ),
       getCharacter: this.db.prepare(
-        'SELECT id, name, data, created, modified FROM characters WHERE id = ?',
+        'SELECT id, name, data, created, modified, import_origin_checksum FROM characters WHERE id = ?',
       ),
       getCharacterImage: this.db.prepare('SELECT image FROM characters WHERE id = ?'),
       getCharacterThumbnail: this.db.prepare('SELECT thumbnail FROM characters WHERE id = ?'),
@@ -84,8 +84,8 @@ export class SqliteStorageService {
         UPDATE characters SET thumbnail = @thumbnail, thumbnail_medium = @thumbnailMedium WHERE id = @id
       `),
       insertCharacter: this.db.prepare(`
-        INSERT INTO characters (id, name, data, image, thumbnail, thumbnail_medium, created, modified)
-        VALUES (@id, @name, @data, @image, @thumbnail, @thumbnailMedium, @created, @modified)
+        INSERT INTO characters (id, name, data, image, thumbnail, thumbnail_medium, created, modified, import_origin_checksum, import_internal_checksum, current_checksum)
+        VALUES (@id, @name, @data, @image, @thumbnail, @thumbnailMedium, @created, @modified, @importOriginChecksum, @importInternalChecksum, @currentChecksum)
       `),
       updateCharacter: this.db.prepare(`
         UPDATE characters SET name = @name, data = @data, modified = @modified WHERE id = @id
@@ -93,8 +93,14 @@ export class SqliteStorageService {
       updateCharacterWithImage: this.db.prepare(`
         UPDATE characters SET name = @name, data = @data, image = @image, thumbnail = @thumbnail, thumbnail_medium = @thumbnailMedium, modified = @modified WHERE id = @id
       `),
+      updateCharacterChecksums: this.db.prepare(`
+        UPDATE characters SET import_origin_checksum = @importOriginChecksum, import_internal_checksum = @importInternalChecksum, current_checksum = @currentChecksum WHERE id = @id
+      `),
       deleteCharacter: this.db.prepare('DELETE FROM characters WHERE id = ?'),
       characterExists: this.db.prepare('SELECT 1 FROM characters WHERE id = ?'),
+      characterChecksums: this.db.prepare(
+        'SELECT current_checksum, import_origin_checksum, import_internal_checksum FROM characters WHERE id = ?',
+      ),
 
       // Story-Character relationships
       getStoryCharacterIds: this.db.prepare(
@@ -132,8 +138,8 @@ export class SqliteStorageService {
         'SELECT * FROM lorebook_entries WHERE lorebook_id = ? ORDER BY display_index',
       ),
       insertLorebook: this.db.prepare(`
-        INSERT INTO lorebooks (id, name, description, scan_depth, token_budget, recursive_scanning, extensions, created, modified)
-        VALUES (@id, @name, @description, @scanDepth, @tokenBudget, @recursiveScanning, @extensions, @created, @modified)
+        INSERT INTO lorebooks (id, name, description, scan_depth, token_budget, recursive_scanning, extensions, created, modified, import_origin_checksum, import_internal_checksum, current_checksum)
+        VALUES (@id, @name, @description, @scanDepth, @tokenBudget, @recursiveScanning, @extensions, @created, @modified, @importOriginChecksum, @importInternalChecksum, @currentChecksum)
       `),
       updateLorebook: this.db.prepare(`
         UPDATE lorebooks SET name = @name, description = @description, scan_depth = @scanDepth,
@@ -141,8 +147,39 @@ export class SqliteStorageService {
                             extensions = @extensions, modified = @modified
         WHERE id = @id
       `),
+      updateLorebookChecksums: this.db.prepare(`
+        UPDATE lorebooks SET import_origin_checksum = @importOriginChecksum, import_internal_checksum = @importInternalChecksum, current_checksum = @currentChecksum WHERE id = @id
+      `),
+      updateLorebookCurrentChecksum: this.db.prepare(`
+        UPDATE lorebooks SET current_checksum = ? WHERE id = ?
+      `),
+      findCharacterByOriginChecksum: this.db.prepare(
+        'SELECT id, name, current_checksum, import_origin_checksum, import_internal_checksum FROM characters WHERE import_origin_checksum = ?',
+      ),
+      findCharacterByCurrentChecksum: this.db.prepare(
+        'SELECT id, name, current_checksum, import_origin_checksum, import_internal_checksum FROM characters WHERE current_checksum = ?',
+      ),
+      findLorebookByOriginChecksum: this.db.prepare(
+        'SELECT id, name, current_checksum, import_origin_checksum, import_internal_checksum FROM lorebooks WHERE import_origin_checksum = ?',
+      ),
+      findLorebookByCurrentChecksum: this.db.prepare(
+        'SELECT id, name, current_checksum, import_origin_checksum, import_internal_checksum FROM lorebooks WHERE current_checksum = ?',
+      ),
+      findCharacterByName: this.db.prepare(
+        'SELECT id, name FROM characters WHERE name = ? ORDER BY name',
+      ),
+      findLorebookByName: this.db.prepare(
+        'SELECT id, name FROM lorebooks WHERE name = ? ORDER BY name',
+      ),
+      getLorebookCharacterReferences: this.db.prepare(
+        `SELECT id, name, json_extract(data, '$.data.extensions.ursceal_lorebook_id') as lorebook_id FROM characters 
+         WHERE json_extract(data, '$.data.extensions.ursceal_lorebook_id') = ? AND id != ?`,
+      ),
       deleteLorebook: this.db.prepare('DELETE FROM lorebooks WHERE id = ?'),
       lorebookExists: this.db.prepare('SELECT 1 FROM lorebooks WHERE id = ?'),
+      lorebookChecksums: this.db.prepare(
+        'SELECT current_checksum, import_origin_checksum, import_internal_checksum FROM lorebooks WHERE id = ?',
+      ),
 
       // Lorebook entries
       insertLorebookEntry: this.db.prepare(`
@@ -613,11 +650,12 @@ export class SqliteStorageService {
     }
     data.metadata.created = row.created;
     data.metadata.modified = row.modified;
+    data.metadata.importOriginChecksum = row.import_origin_checksum;
 
     return data;
   }
 
-  async saveCharacter(characterId, characterData, imageBuffer = null) {
+  async saveCharacter(characterId, characterData, imageBuffer = null, options = {}) {
     const existing = this.stmts.characterExists.get(characterId);
     const now = new Date().toISOString();
 
@@ -628,6 +666,26 @@ export class SqliteStorageService {
 
     const name = characterData.data?.name || 'Untitled';
     const dataJson = JSON.stringify(characterData);
+
+    // Checksum handling: preserve existing checksums when not explicitly provided
+    let importOriginChecksum, importInternalChecksum, currentChecksum;
+    if (existing) {
+      const existingChecksums = this.stmts.characterChecksums.get(characterId);
+      importOriginChecksum =
+        'importOriginChecksum' in options
+          ? options.importOriginChecksum
+          : existingChecksums.import_origin_checksum;
+      importInternalChecksum =
+        'importInternalChecksum' in options
+          ? options.importInternalChecksum
+          : existingChecksums.import_internal_checksum;
+      currentChecksum =
+        'currentChecksum' in options ? options.currentChecksum : existingChecksums.current_checksum;
+    } else {
+      importOriginChecksum = options.importOriginChecksum ?? null;
+      importInternalChecksum = options.importInternalChecksum ?? null;
+      currentChecksum = options.currentChecksum ?? '';
+    }
 
     if (existing) {
       // Update existing character
@@ -653,6 +711,13 @@ export class SqliteStorageService {
           modified: now,
         });
       }
+      // Update checksums separately (may be partial updates)
+      this.stmts.updateCharacterChecksums.run({
+        id: characterId,
+        importOriginChecksum,
+        importInternalChecksum,
+        currentChecksum,
+      });
     } else {
       // Insert new character
       let thumbnail = null;
@@ -673,6 +738,9 @@ export class SqliteStorageService {
         thumbnailMedium,
         created: now,
         modified: now,
+        importOriginChecksum,
+        importInternalChecksum,
+        currentChecksum,
       });
     }
 
@@ -720,6 +788,14 @@ export class SqliteStorageService {
   async deleteCharacter(characterId) {
     this.stmts.deleteCharacter.run(characterId);
     return { success: true };
+  }
+
+  /**
+   * Check if a lorebook is referenced by more than one character.
+   * Returns array of characters referencing the lorebook (excluding a given character id if provided).
+   */
+  getCharactersReferencingLorebook(lorebookId, excludeCharacterId) {
+    return this.stmts.getLorebookCharacterReferences.all(lorebookId, excludeCharacterId);
   }
 
   async addCharacterToStory(storyId, characterId) {
@@ -861,9 +937,29 @@ export class SqliteStorageService {
     };
   }
 
-  async saveLorebook(lorebookId, lorebookData) {
+  async saveLorebook(lorebookId, lorebookData, options = {}) {
     const existing = this.stmts.lorebookExists.get(lorebookId);
     const now = new Date().toISOString();
+
+    // Checksum handling: preserve existing checksums when not explicitly provided
+    let importOriginChecksum, importInternalChecksum, currentChecksum;
+    if (existing) {
+      const existingChecksums = this.stmts.lorebookChecksums.get(lorebookId);
+      importOriginChecksum =
+        'importOriginChecksum' in options
+          ? options.importOriginChecksum
+          : existingChecksums.import_origin_checksum;
+      importInternalChecksum =
+        'importInternalChecksum' in options
+          ? options.importInternalChecksum
+          : existingChecksums.import_internal_checksum;
+      currentChecksum =
+        'currentChecksum' in options ? options.currentChecksum : existingChecksums.current_checksum;
+    } else {
+      importOriginChecksum = options.importOriginChecksum ?? null;
+      importInternalChecksum = options.importInternalChecksum ?? null;
+      currentChecksum = options.currentChecksum ?? '';
+    }
 
     const transaction = this.db.transaction(() => {
       if (existing) {
@@ -877,6 +973,14 @@ export class SqliteStorageService {
           recursiveScanning: lorebookData.recursiveScanning ? 1 : 0,
           extensions: JSON.stringify(lorebookData.extensions || {}),
           modified: now,
+        });
+
+        // Update checksums
+        this.stmts.updateLorebookChecksums.run({
+          id: lorebookId,
+          importOriginChecksum,
+          importInternalChecksum,
+          currentChecksum,
         });
 
         // Delete existing entries and re-insert
@@ -893,6 +997,9 @@ export class SqliteStorageService {
           extensions: JSON.stringify(lorebookData.extensions || {}),
           created: now,
           modified: now,
+          importOriginChecksum,
+          importInternalChecksum,
+          currentChecksum,
         });
       }
 
@@ -930,6 +1037,79 @@ export class SqliteStorageService {
 
     transaction();
     return { id: lorebookId };
+  }
+
+  /**
+   * Set lorebook's current_checksum (used during edit flow).
+   */
+  async updateLorebookCurrentChecksum(lorebookId, currentChecksum) {
+    this.stmts.updateLorebookCurrentChecksum.run(currentChecksum, lorebookId);
+  }
+
+  // ==================== Checksum & Duplicate Detection ====================
+
+  /**
+   * Find characters with the given import_origin_checksum.
+   */
+  findCharacterByOriginChecksum(checksum) {
+    return this.stmts.findCharacterByOriginChecksum.all(checksum);
+  }
+
+  /**
+   * Find characters with the given current_checksum.
+   */
+  findCharacterByCurrentChecksum(checksum) {
+    return this.stmts.findCharacterByCurrentChecksum.all(checksum);
+  }
+
+  /**
+   * Find lorebooks with the given import_origin_checksum.
+   */
+  findLorebookByOriginChecksum(checksum) {
+    return this.stmts.findLorebookByOriginChecksum.all(checksum);
+  }
+
+  /**
+   * Find lorebooks with the given current_checksum.
+   */
+  findLorebookByCurrentChecksum(checksum) {
+    return this.stmts.findLorebookByCurrentChecksum.all(checksum);
+  }
+
+  /**
+   * Resolve a unique character name by appending (2), (3), etc.
+   * @param {string} baseName - Desired name.
+   * @returns {string} Unique name.
+   */
+  resolveUniqueCharacterName(baseName) {
+    const existing = this.stmts.findCharacterByName.all(baseName);
+    if (existing.length === 0) return baseName;
+
+    let suffix = 2;
+    while (true) {
+      const candidate = `${baseName} (${suffix})`;
+      const match = this.stmts.findCharacterByName.all(candidate);
+      if (match.length === 0) return candidate;
+      suffix++;
+    }
+  }
+
+  /**
+   * Resolve a unique lorebook name by appending (2), (3), etc.
+   * @param {string} baseName - Desired name.
+   * @returns {string} Unique name.
+   */
+  resolveUniqueLorebookName(baseName) {
+    const existing = this.stmts.findLorebookByName.all(baseName);
+    if (existing.length === 0) return baseName;
+
+    let suffix = 2;
+    while (true) {
+      const candidate = `${baseName} (${suffix})`;
+      const match = this.stmts.findLorebookByName.all(candidate);
+      if (match.length === 0) return candidate;
+      suffix++;
+    }
   }
 
   async deleteLorebook(lorebookId) {

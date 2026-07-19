@@ -297,6 +297,7 @@ import { storiesAPI, charactersAPI, settingsAPI } from '../services/api';
 import { useToast } from '../composables/useToast';
 import { useNavigation } from '../composables/useNavigation';
 import { useConfirm } from '../composables/useConfirm';
+import { useDataCache } from '../composables/useDataCache';
 import { setPageTitle } from '../router';
 import {
   MARKDOWN_IMAGE_RE,
@@ -330,6 +331,7 @@ const route = useRoute();
 const toast = useToast();
 const { goBack } = useNavigation();
 const { confirm } = useConfirm();
+const { updateStoryLocally, removeStoryLocally } = useDataCache();
 
 // State
 const story = ref(null);
@@ -1333,7 +1335,10 @@ async function handleStoryUpdated() {
   // Reload story data after changes from modals
   await loadStory();
   await loadCharacters();
-  // Title will be updated by loadStory()
+  // update LandingPage story title
+  if (story?.value?.title) {
+    updateStoryLocally(story.value.id, { title: story.value.title });
+  }
 }
 
 async function deleteStory() {

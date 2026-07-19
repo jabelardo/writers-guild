@@ -7,6 +7,7 @@ import os from 'os';
 
 // Import the router
 import lorebooksRouter from '../lorebooks.js';
+import { SqliteStorageService } from '../../services/sqliteStorage.js';
 
 describe('Lorebooks API Routes', () => {
   let app;
@@ -495,6 +496,194 @@ describe('Lorebooks API Routes', () => {
         .expect(400);
 
       expect(response.body.error).toContain('URL is required');
+    });
+  });
+
+  describe('Checksum: Import Duplicate & Collision Detection', () => {
+    it('should reject duplicate lorebook import (same content)', async () => {
+      const lorebookJson = {
+        entries: {
+          0: { uid: 0, keys: ['dragon'], content: 'A dragon', enabled: true, order: 100 },
+        },
+        name: 'UniqueLB',
+      };
+
+      await request(app)
+        .post('/api/lorebooks/import')
+        .attach('lorebook', Buffer.from(JSON.stringify(lorebookJson)), 'lb.json')
+        .expect(200);
+
+      const dup = await request(app)
+        .post('/api/lorebooks/import')
+        .attach('lorebook', Buffer.from(JSON.stringify(lorebookJson)), 'lb.json')
+        .expect(409);
+
+      expect(dup.body.error).toMatch(/already|identical content/i);
+    });
+
+    it('should allow re-import of edited lorebook (origin match, current differs)', async () => {
+      const lorebookJson = {
+        entries: {
+          0: { uid: 0, keys: ['elf'], content: 'An elf', enabled: true, order: 100 },
+        },
+        name: 'EditCheckLB',
+      };
+
+      // Import
+      const importResp = await request(app)
+        .post('/api/lorebooks/import')
+        .attach('lorebook', Buffer.from(JSON.stringify(lorebookJson)), 'lb.json')
+        .expect(200);
+
+      // Edit the lorebook
+      await request(app)
+        .put(`/api/lorebooks/${importResp.body.id}`)
+        .send({ name: 'EditCheckLB Modified' })
+        .expect(200);
+
+      // Re-import original — name will be disambiguated
+      const reImport = await request(app)
+        .post('/api/lorebooks/import')
+        .attach('lorebook', Buffer.from(JSON.stringify(lorebookJson)), 'lb.json')
+        .expect(200);
+
+      expect(reImport.body.name).toMatch(/EditCheckLB/);
+    });
+  });
+
+  describe('Checksum: Create & Update recompute current_checksum', () => {
+    it('should set current_checksum on lorebook creation', async () => {
+      // Use a fresh storage instance to access DB directly
+      const storage = new SqliteStorageService(tempDir);
+
+      const resp = await request(app)
+        .post('/api/lorebooks/create')
+        .send({ name: 'CSLBCreate' })
+        .expect(200);
+
+      const row = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
+      expect(row.current_checksum).toBeTruthy();
+      expect(row.current_checksum.length).toBe(64);
+
+      storage.close();
+    });
+
+    it('should update current_checksum on lorebook update', async () => {
+      const storage = new SqliteStorageService(tempDir);
+
+      const resp = await request(app)
+        .post('/api/lorebooks/create')
+        .send({ name: 'CSLBUpdate' })
+        .expect(200);
+
+      const before = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
+
+      await request(app)
+        .put(`/api/lorebooks/${resp.body.id}`)
+        .send({ name: 'CSLBUpdate Modified', description: 'Changed' })
+        .expect(200);
+
+      const after = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
+
+      expect(after.current_checksum).not.toBe(before.current_checksum);
+
+      storage.close();
+    });
+  });
+
+  describe('Checksum: Name disambiguation on lorebook import', () => {
+    it('should append (2), (3) when duplicate names exist', async () => {
+      const makeLB = (name) => ({
+        entries: { 0: { uid: 1, keys: ['k'], content: Math.random(), enabled: true, order: 100 } },
+        name,
+      });
+
+      await request(app)
+        .post('/api/lorebooks/import')
+        .attach('lorebook', Buffer.from(JSON.stringify(makeLB('DupLBName'))), 'lb.json')
+        .expect(200);
+
+      await request(app)
+        .post('/api/lorebooks/import')
+        .attach('lorebook', Buffer.from(JSON.stringify(makeLB('DupLBName'))), 'lb.json')
+        .expect(200);
+
+      await request(app)
+        .post('/api/lorebooks/import')
+        .attach('lorebook', Buffer.from(JSON.stringify(makeLB('DupLBName'))), 'lb.json')
+        .expect(200);
+
+      const listResp = await request(app).get('/api/lorebooks').expect(200);
+      const names = listResp.body.lorebooks.map((l) => l.name).toSorted();
+      expect(names).toContain('DupLBName');
+      expect(names).toContain('DupLBName (2)');
+      expect(names).toContain('DupLBName (3)');
+    });
+  });
+
+  describe('Checksum: Entry operations update current_checksum', () => {
+    it('should update checksum when adding an entry', async () => {
+      const storage = new SqliteStorageService(tempDir);
+
+      const resp = await request(app)
+        .post('/api/lorebooks/create')
+        .send({ name: 'EntryCS' })
+        .expect(200);
+
+      const before = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
+
+      await request(app)
+        .post(`/api/lorebooks/${resp.body.id}/entries`)
+        .send({ keys: ['newkey'], content: 'New content' })
+        .expect(200);
+
+      const after = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
+
+      expect(after.current_checksum).not.toBe(before.current_checksum);
+
+      storage.close();
+    });
+
+    it('should update checksum when deleting an entry', async () => {
+      const storage = new SqliteStorageService(tempDir);
+
+      const resp = await request(app)
+        .post('/api/lorebooks/create')
+        .send({ name: 'DeleteEntryCS' })
+        .expect(200);
+
+      await request(app)
+        .post(`/api/lorebooks/${resp.body.id}/entries`)
+        .send({ keys: ['delkey'], content: 'Delete me' })
+        .expect(200);
+
+      const before = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
+
+      // Get the entry
+      const getResp = await request(app).get(`/api/lorebooks/${resp.body.id}`).expect(200);
+      const entryId = getResp.body.lorebook.entries[0].id;
+
+      await request(app).delete(`/api/lorebooks/${resp.body.id}/entries/${entryId}`).expect(200);
+
+      const after = storage.db
+        .prepare('SELECT current_checksum FROM lorebooks WHERE id = ?')
+        .get(resp.body.id);
+
+      expect(after.current_checksum).not.toBe(before.current_checksum);
+
+      storage.close();
     });
   });
 });

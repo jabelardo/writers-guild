@@ -424,6 +424,7 @@ import { useToast } from '../composables/useToast';
 import { useNavigation } from '../composables/useNavigation';
 import { useConfirm } from '../composables/useConfirm';
 import { setPageTitle } from '../router';
+import { useDataCache } from '../composables/useDataCache';
 import CharacterCard from '../components/CharacterCard.vue';
 import GreetingSelectorModal from '../components/GreetingSelectorModal.vue';
 
@@ -438,6 +439,8 @@ const router = useRouter();
 const toast = useToast();
 const { goBack } = useNavigation();
 const { confirm } = useConfirm();
+const { removeCharacterLocally, removeLorebookLocally, updateCharacterLocally, invalidateCache } =
+  useDataCache();
 
 // State
 const loading = ref(true);
@@ -591,14 +594,17 @@ function cancelEdit(section) {
 
 async function saveName() {
   try {
+    const newName = editedName.value.trim();
     await charactersAPI.update(props.characterId, {
-      name: editedName.value.trim(),
+      name: newName,
     });
-    character.value.name = editedName.value.trim();
+    character.value.name = newName;
     editingName.value = false;
     editedName.value = '';
     // Update page title with new name
     setPageTitle(character.value.name);
+    // Update Landing page
+    updateCharacterLocally(props.characterId, { name: newName });
   } catch (error) {
     console.error('Failed to update name:', error);
     toast.error('Failed to update name: ' + error.message);
@@ -627,6 +633,9 @@ async function saveLorebook() {
     character.value.ursceal_lorebook_id = editedLorebookId.value;
     editingLorebook.value = false;
     editedLorebookId.value = null;
+    // Invalidate lorebooks cache so the landing page re-fetches
+    // the enriched list with updated character associations.
+    invalidateCache('lorebooks');
   } catch (error) {
     console.error('Failed to update lorebook association:', error);
     toast.error('Failed to update lorebook association: ' + error.message);
@@ -753,7 +762,7 @@ function cancelImageEdit() {
 
 async function deleteCharacter() {
   const confirmed = await confirm({
-    message: `Are you sure you want to delete "${character.value.name}"? This cannot be undone.`,
+    message: `Are you sure you want to delete "${character.value.name}"?`,
     confirmText: 'Delete Character',
     variant: 'danger',
   });
@@ -761,11 +770,32 @@ async function deleteCharacter() {
   if (!confirmed) return;
 
   try {
-    await charactersAPI.delete(props.characterId);
+    const result = await charactersAPI.delete(props.characterId);
+    removeCharacterLocally(props.characterId);
     toast.success('Character deleted successfully');
+
+    if (result.orphanedLorebookId) {
+      const lbName = result.orphanedLorebookName || 'this lorebook';
+      const deleteLorebook = await confirm({
+        message: `The "${lbName}" lorebook is now unused. Delete it too?`,
+        confirmText: 'Delete Lorebook',
+        cancelText: 'Keep It',
+        variant: 'warning',
+      });
+      if (deleteLorebook) {
+        try {
+          await lorebooksAPI.delete(result.orphanedLorebookId);
+          removeLorebookLocally(result.orphanedLorebookId);
+          toast.success('Lorebook deleted');
+        } catch (e) {
+          toast.error('Failed to delete lorebook: ' + e.message);
+        }
+      }
+    }
+
     router.push('/');
   } catch (error) {
-    console.error('Failed to delete character:', error);
+    console.error('Error deleting character:', error);
     toast.error('Failed to delete character: ' + error.message);
   }
 }
@@ -996,6 +1026,7 @@ async function setAsDefaultPersona() {
   flex: 1;
   overflow-y: auto;
   padding: 2rem;
+  padding-bottom: 4rem;
 }
 
 .detail-layout {

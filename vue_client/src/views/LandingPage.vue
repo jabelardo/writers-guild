@@ -432,9 +432,29 @@ async function deleteCharacter(character) {
   if (!confirmed) return;
 
   try {
-    await charactersAPI.delete(character.id);
+    const result = await charactersAPI.delete(character.id);
     removeCharacterLocally(character.id);
     toast.success('Character deleted successfully');
+
+    // If a lorebook was orphaned, ask about deleting it
+    if (result.orphanedLorebookId) {
+      const lbName = result.orphanedLorebookName || 'this lorebook';
+      const deleteLorebook = await confirm({
+        message: `The "${lbName}" lorebook is now unused. Delete it too?`,
+        confirmText: 'Delete Lorebook',
+        cancelText: 'Keep It',
+        variant: 'warning',
+      });
+      if (deleteLorebook) {
+        try {
+          await lorebooksAPI.delete(result.orphanedLorebookId);
+          removeLorebookLocally(result.orphanedLorebookId);
+          toast.success('Lorebook deleted');
+        } catch (e) {
+          toast.error('Failed to delete lorebook: ' + e.message);
+        }
+      }
+    }
   } catch (error) {
     console.error('Error deleting character:', error);
     toast.error('Failed to delete character: ' + error.message);
@@ -509,7 +529,8 @@ function editPreset(presetId) {
 
 async function duplicatePreset(presetId) {
   try {
-    const originalPreset = presets.value.find((p) => p.id === presetId);
+    // Fetch full preset data from the server (list cache only has partial fields)
+    const { preset: originalPreset } = await presetsAPI.get(presetId);
     if (!originalPreset) {
       throw new Error('Preset not found');
     }

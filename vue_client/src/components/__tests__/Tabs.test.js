@@ -6,7 +6,7 @@ describe('Tabs', () => {
   const mockTabs = [
     { key: 'tab1', label: 'Tab 1', icon: 'fas fa-home' },
     { key: 'tab2', label: 'Tab 2', icon: 'fas fa-user' },
-    { key: 'tab3', label: 'Tab 3' }
+    { key: 'tab3', label: 'Tab 3' },
   ];
 
   describe('Rendering', () => {
@@ -14,8 +14,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       const buttons = wrapper.findAll('.tab-button');
@@ -26,8 +26,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       const buttons = wrapper.findAll('.tab-button');
@@ -40,8 +40,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       expect(wrapper.find('.fa-home').exists()).toBe(true);
@@ -52,8 +52,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       const tab3Button = wrapper.findAll('.tab-button')[2];
@@ -64,8 +64,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       expect(wrapper.find('.tabs-container').exists()).toBe(true);
@@ -75,8 +75,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       expect(wrapper.find('.tabs-header').exists()).toBe(true);
@@ -86,8 +86,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       expect(wrapper.find('.tabs-content').exists()).toBe(true);
@@ -99,8 +99,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       const buttons = wrapper.findAll('.tab-button');
@@ -113,8 +113,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab2'
-        }
+          modelValue: 'tab2',
+        },
       });
 
       const buttons = wrapper.findAll('.tab-button');
@@ -127,8 +127,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab3'
-        }
+          modelValue: 'tab3',
+        },
       });
 
       const buttons = wrapper.findAll('.tab-button');
@@ -141,12 +141,12 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'nonexistent'
-        }
+          modelValue: 'nonexistent',
+        },
       });
 
       const buttons = wrapper.findAll('.tab-button');
-      buttons.forEach(button => {
+      buttons.forEach((button) => {
         expect(button.classes()).not.toContain('active');
       });
     });
@@ -157,8 +157,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       const secondTab = wrapper.findAll('.tab-button')[1];
@@ -172,8 +172,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       const buttons = wrapper.findAll('.tab-button');
@@ -192,8 +192,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       const firstTab = wrapper.findAll('.tab-button')[0];
@@ -209,8 +209,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: singleTab,
-          modelValue: 'only'
-        }
+          modelValue: 'only',
+        },
       });
 
       expect(wrapper.findAll('.tab-button')).toHaveLength(1);
@@ -220,59 +220,53 @@ describe('Tabs', () => {
     it('should handle many tabs', () => {
       const manyTabs = Array.from({ length: 10 }, (_, i) => ({
         key: `tab${i}`,
-        label: `Tab ${i}`
+        label: `Tab ${i}`,
       }));
 
       const wrapper = mount(Tabs, {
         props: {
           tabs: manyTabs,
-          modelValue: 'tab0'
-        }
+          modelValue: 'tab0',
+        },
       });
 
       expect(wrapper.findAll('.tab-button')).toHaveLength(10);
     });
 
     it('should handle empty label', () => {
-      const emptyLabelTabs = [
-        { key: 'empty', label: '' }
-      ];
+      const emptyLabelTabs = [{ key: 'empty', label: '' }];
 
       const wrapper = mount(Tabs, {
         props: {
           tabs: emptyLabelTabs,
-          modelValue: 'empty'
-        }
+          modelValue: 'empty',
+        },
       });
 
       expect(wrapper.find('.tab-button').text()).toBe('');
     });
 
     it('should handle very long labels', () => {
-      const longLabelTabs = [
-        { key: 'long', label: 'a'.repeat(100) }
-      ];
+      const longLabelTabs = [{ key: 'long', label: 'a'.repeat(100) }];
 
       const wrapper = mount(Tabs, {
         props: {
           tabs: longLabelTabs,
-          modelValue: 'long'
-        }
+          modelValue: 'long',
+        },
       });
 
       expect(wrapper.find('.tab-button').text()).toBe('a'.repeat(100));
     });
 
     it('should handle special characters in labels', () => {
-      const specialTabs = [
-        { key: 'special', label: 'Tab with "quotes" & symbols!' }
-      ];
+      const specialTabs = [{ key: 'special', label: 'Tab with "quotes" & symbols!' }];
 
       const wrapper = mount(Tabs, {
         props: {
           tabs: specialTabs,
-          modelValue: 'special'
-        }
+          modelValue: 'special',
+        },
       });
 
       expect(wrapper.find('.tab-button').text()).toBe('Tab with "quotes" & symbols!');
@@ -284,11 +278,11 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
+          modelValue: 'tab1',
         },
         slots: {
-          'tab-tab1': '<div class="test-content">Tab 1 Content</div>'
-        }
+          'tab-tab1': '<div class="test-content">Tab 1 Content</div>',
+        },
       });
 
       expect(wrapper.find('.test-content').exists()).toBe(true);
@@ -299,12 +293,12 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
+          modelValue: 'tab1',
         },
         slots: {
           'tab-tab1': '<div class="content-1">Content 1</div>',
-          'tab-tab2': '<div class="content-2">Content 2</div>'
-        }
+          'tab-tab2': '<div class="content-2">Content 2</div>',
+        },
       });
 
       expect(wrapper.find('.content-1').exists()).toBe(true);
@@ -321,14 +315,14 @@ describe('Tabs', () => {
     it('should handle numeric keys', () => {
       const numericTabs = [
         { key: '1', label: 'First' },
-        { key: '2', label: 'Second' }
+        { key: '2', label: 'Second' },
       ];
 
       const wrapper = mount(Tabs, {
         props: {
           tabs: numericTabs,
-          modelValue: '1'
-        }
+          modelValue: '1',
+        },
       });
 
       const buttons = wrapper.findAll('.tab-button');
@@ -341,8 +335,8 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       let buttons = wrapper.findAll('.tab-button');
@@ -359,15 +353,15 @@ describe('Tabs', () => {
       const wrapper = mount(Tabs, {
         props: {
           tabs: mockTabs,
-          modelValue: 'tab1'
-        }
+          modelValue: 'tab1',
+        },
       });
 
       expect(wrapper.findAll('.tab-button')).toHaveLength(3);
 
       const newTabs = [
         { key: 'new1', label: 'New 1' },
-        { key: 'new2', label: 'New 2' }
+        { key: 'new2', label: 'New 2' },
       ];
 
       await wrapper.setProps({ tabs: newTabs, modelValue: 'new1' });

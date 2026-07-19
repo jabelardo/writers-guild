@@ -22,57 +22,57 @@
 </template>
 
 <script setup>
-import { computed, useSlots } from 'vue'
+import { computed, useSlots } from 'vue';
 
 const props = defineProps({
   title: {
     type: String,
-    default: ''
+    default: '',
   },
   maxWidth: {
     type: String,
-    default: '600px'
+    default: '600px',
   },
   maxHeight: {
     type: String,
-    default: '80vh'
+    default: '80vh',
   },
   hideHeader: {
     type: Boolean,
-    default: false
+    default: false,
   },
   hideCloseButton: {
     type: Boolean,
-    default: false
+    default: false,
   },
   closeOnOverlayClick: {
     type: Boolean,
-    default: true
-  }
-})
+    default: true,
+  },
+});
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close']);
 
-const slots = useSlots()
+const slots = useSlots();
 
 const hasFooter = computed(() => {
-  return !!slots.footer
-})
+  return !!slots.footer;
+});
 
 const contentStyle = computed(() => {
   return {
     maxWidth: props.maxWidth,
-    maxHeight: props.maxHeight
-  }
-})
+    maxHeight: props.maxHeight,
+  };
+});
 
 function handleClose() {
-  emit('close')
+  emit('close');
 }
 
 function handleOverlayClick() {
   if (props.closeOnOverlayClick) {
-    handleClose()
+    handleClose();
   }
 }
 </script>

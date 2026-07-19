@@ -19,17 +19,11 @@
       </div>
 
       <div class="carousel-controls">
-        <button
-          class="btn btn-secondary"
-          :disabled="currentIndex === 0"
-          @click="prevGreeting"
-        >
+        <button class="btn btn-secondary" :disabled="currentIndex === 0" @click="prevGreeting">
           <i class="fas fa-chevron-left"></i> Previous
         </button>
 
-        <div class="greeting-counter">
-          {{ currentIndex + 1 }} / {{ greetings.length }}
-        </div>
+        <div class="greeting-counter">{{ currentIndex + 1 }} / {{ greetings.length }}</div>
 
         <button
           class="btn btn-secondary"
@@ -48,97 +42,99 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import Modal from './Modal.vue'
-import { charactersAPI } from '../services/api'
+import { ref, computed, onMounted } from 'vue';
+import Modal from './Modal.vue';
+import { charactersAPI } from '../services/api';
 
 const props = defineProps({
   story: {
     type: Object,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const emit = defineEmits(['close', 'select'])
+const emit = defineEmits(['close', 'select']);
 
-const loading = ref(true)
-const characters = ref([])
-const greetings = ref([])
-const currentIndex = ref(0)
+const loading = ref(true);
+const characters = ref([]);
+const greetings = ref([]);
+const currentIndex = ref(0);
 
 const currentGreeting = computed(() => {
-  return greetings.value[currentIndex.value]?.greeting || ''
-})
+  return greetings.value[currentIndex.value]?.greeting || '';
+});
 
 const currentCharacter = computed(() => {
-  return greetings.value[currentIndex.value]?.character || null
-})
+  return greetings.value[currentIndex.value]?.character || null;
+});
 
 const currentLabel = computed(() => {
-  return greetings.value[currentIndex.value]?.label || ''
-})
+  return greetings.value[currentIndex.value]?.label || '';
+});
 
 onMounted(async () => {
-  await loadGreetings()
-})
+  await loadGreetings();
+});
 
 async function loadGreetings() {
   try {
     // Load all characters from the story
-    const characterIds = props.story.characterIds || []
+    const characterIds = props.story.characterIds || [];
 
     if (characterIds.length === 0) {
-      loading.value = false
-      return
+      loading.value = false;
+      return;
     }
 
     // Flatten all greetings with character info
-    const allGreetings = []
+    const allGreetings = [];
     for (const characterId of characterIds) {
       try {
         // Get processed greetings from server (with placeholders replaced)
-        const response = await fetch(`/api/stories/${props.story.id}/characters/${characterId}/greetings`)
-        const { greetings: processedGreetings } = await response.json()
+        const response = await fetch(
+          `/api/stories/${props.story.id}/characters/${characterId}/greetings`,
+        );
+        const { greetings: processedGreetings } = await response.json();
 
         // Add all processed greetings to the list
-        processedGreetings.forEach(greeting => {
+        processedGreetings.forEach((greeting) => {
           allGreetings.push({
             character: {
               id: characterId,
-              name: greeting.characterName
+              name: greeting.characterName,
             },
             greeting: greeting.content, // Already processed server-side
             label: greeting.label,
-            isAlternate: greeting.index > 0
-          })
-        })
+            isAlternate: greeting.index > 0,
+          });
+        });
       } catch (error) {
-        console.error(`Failed to load character ${characterId}:`, error)
+        console.error(`Failed to load character ${characterId}:`, error);
       }
     }
 
-    greetings.value = allGreetings
+    greetings.value = allGreetings;
   } catch (error) {
-    console.error('Failed to load greetings:', error)
+    console.error('Failed to load greetings:', error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 function prevGreeting() {
   if (currentIndex.value > 0) {
-    currentIndex.value--
+    currentIndex.value--;
   }
 }
 
 function nextGreeting() {
   if (currentIndex.value < greetings.value.length - 1) {
-    currentIndex.value++
+    currentIndex.value++;
   }
 }
 
 function selectCurrent() {
-  emit('select', currentGreeting.value)
+  emit('select', currentGreeting.value);
 }
 </script>
 

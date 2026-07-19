@@ -10,7 +10,15 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // DNS is stubbed globally in src/__tests__/setup.js so the SSRF guard never
 // reaches the network. The SSRF tests below drive it per case.
 import dns from 'dns/promises';
-import { cacheCharacterImages, cacheLorebookImages, cacheAndRewriteLorebookImages, rewriteCharacterImageUrls, rewriteLorebookImageUrls, extractCardImageUrls, extractLorebookImageUrls } from '../image-cacher.js';
+import {
+  cacheCharacterImages,
+  cacheLorebookImages,
+  cacheAndRewriteLorebookImages,
+  rewriteCharacterImageUrls,
+  rewriteLorebookImageUrls,
+  extractCardImageUrls,
+  extractLorebookImageUrls,
+} from '../image-cacher.js';
 import { AssetManager } from '../asset-manager.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -201,17 +209,13 @@ describe('extractLorebookImageUrls', () => {
   });
 
   it('extracts markdown image URLs from entry content', () => {
-    const lorebook = makeLorebook([
-      { content: '![dragon](https://ex.com/dragon.png)' },
-    ]);
+    const lorebook = makeLorebook([{ content: '![dragon](https://ex.com/dragon.png)' }]);
     const urls = extractLorebookImageUrls(lorebook);
     expect([...urls]).toEqual(['https://ex.com/dragon.png']);
   });
 
   it('extracts HTML img src URLs from entry content', () => {
-    const lorebook = makeLorebook([
-      { content: '<img src="https://host.com/creature.jpg">' },
-    ]);
+    const lorebook = makeLorebook([{ content: '<img src="https://host.com/creature.jpg">' }]);
     const urls = extractLorebookImageUrls(lorebook);
     expect([...urls]).toEqual(['https://host.com/creature.jpg']);
   });
@@ -270,9 +274,7 @@ describe('rewriteLorebookImageUrls', () => {
   });
 
   it('rewrites URLs in entry content', () => {
-    const lorebook = makeLorebook([
-      { content: '![dragon](https://ex.com/dragon.png)' },
-    ]);
+    const lorebook = makeLorebook([{ content: '![dragon](https://ex.com/dragon.png)' }]);
     const map = new Map([['https://ex.com/dragon.png', '/api/assets/lorebooks/abc/def.webp']]);
     rewriteLorebookImageUrls(lorebook, map);
     expect(lorebook.entries[0].content).toBe('![dragon](/api/assets/lorebooks/abc/def.webp)');
@@ -348,9 +350,7 @@ describe('cacheLorebookImages (mocked fetch + fs)', () => {
 
     const lorebook = {
       name: 'Test Lorebook',
-      entries: [
-        { content: '![dragon](https://remote.com/dragon.png)' },
-      ],
+      entries: [{ content: '![dragon](https://remote.com/dragon.png)' }],
     };
     const result = await cacheLorebookImages('lb-1', lorebook, '/fake/data');
 
@@ -440,13 +440,16 @@ describe('SSRF protection', () => {
 
   it('re-validates redirect targets, blocking a public host that redirects inward', async () => {
     dns.lookup
-      .mockResolvedValueOnce([{ address: '93.184.216.34', family: 4 }])  // public.example
+      .mockResolvedValueOnce([{ address: '93.184.216.34', family: 4 }]) // public.example
       .mockResolvedValueOnce([{ address: '169.254.169.254', family: 4 }]); // redirect target
 
     fetch.mockResolvedValueOnce({
       status: 302,
       ok: false,
-      headers: { get: (h) => (h.toLowerCase() === 'location' ? 'http://169.254.169.254/latest/meta-data/' : null) },
+      headers: {
+        get: (h) =>
+          h.toLowerCase() === 'location' ? 'http://169.254.169.254/latest/meta-data/' : null,
+      },
     });
 
     const card = makeCard({ description: '![x](https://public.example/pic.png)' });

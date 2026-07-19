@@ -39,10 +39,7 @@
             <i class="fas" :class="isPersona(char.id) ? 'fa-user-minus' : 'fa-user-plus'"></i>
             {{ isPersona(char.id) ? 'Remove Persona' : 'Set Persona' }}
           </button>
-          <button
-            class="btn btn-small btn-secondary"
-            @click="goToDetails(char.id)"
-          >
+          <button class="btn btn-small btn-secondary" @click="goToDetails(char.id)">
             <i class="fas fa-info-circle"></i>
             Details
           </button>
@@ -59,145 +56,145 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import Modal from './Modal.vue'
-import CharacterCard from './CharacterCard.vue'
-import { storiesAPI, charactersAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
-import { useDataCache } from '../composables/useDataCache'
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import Modal from './Modal.vue';
+import CharacterCard from './CharacterCard.vue';
+import { storiesAPI, charactersAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
+import { useDataCache } from '../composables/useDataCache';
 
 const props = defineProps({
   story: {
     type: Object,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const emit = defineEmits(['close', 'updated'])
+const emit = defineEmits(['close', 'updated']);
 
-const router = useRouter()
-const toast = useToast()
-const { characters: cachedCharacters, loadCharacters, loadingCharacters } = useDataCache()
-const filterText = ref('')
-const actionInProgress = ref(null)
+const router = useRouter();
+const toast = useToast();
+const { characters: cachedCharacters, loadCharacters, loadingCharacters } = useDataCache();
+const filterText = ref('');
+const actionInProgress = ref(null);
 
 // Use loading state from cache
-const loading = loadingCharacters
+const loading = loadingCharacters;
 
-const allCharacters = computed(() => cachedCharacters.value)
+const allCharacters = computed(() => cachedCharacters.value);
 
 onMounted(async () => {
   // Load characters from cache (will skip if already loaded)
-  await loadCharacters()
-})
+  await loadCharacters();
+});
 
 const filteredCharacters = computed(() => {
-  let characters = allCharacters.value
+  let characters = allCharacters.value;
 
   // Apply filter if there's search text
   if (filterText.value.trim()) {
-    const searchTerm = filterText.value.toLowerCase()
-    characters = characters.filter(char => {
+    const searchTerm = filterText.value.toLowerCase();
+    characters = characters.filter((char) => {
       // Search by name
       if (char.name?.toLowerCase().includes(searchTerm)) {
-        return true
+        return true;
       }
       // Search by tags
       if (char.tags && Array.isArray(char.tags)) {
-        return char.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+        return char.tags.some((tag) => tag.toLowerCase().includes(searchTerm));
       }
-      return false
-    })
+      return false;
+    });
   }
 
   // Sort: selected characters and persona first, then alphabetically
-  return [...characters].sort((a, b) => {
-    const aSelected = isCharacterInStory(a.id) || isPersona(a.id)
-    const bSelected = isCharacterInStory(b.id) || isPersona(b.id)
+  return [...characters].toSorted((a, b) => {
+    const aSelected = isCharacterInStory(a.id) || isPersona(a.id);
+    const bSelected = isCharacterInStory(b.id) || isPersona(b.id);
 
     // If one is selected/persona and the other isn't, selected comes first
-    if (aSelected && !bSelected) return -1
-    if (!aSelected && bSelected) return 1
+    if (aSelected && !bSelected) return -1;
+    if (!aSelected && bSelected) return 1;
 
     // Both selected or both not selected, sort alphabetically
-    const nameA = (a.name || 'Unknown').toLowerCase()
-    const nameB = (b.name || 'Unknown').toLowerCase()
-    return nameA.localeCompare(nameB)
-  })
-})
+    const nameA = (a.name || 'Unknown').toLowerCase();
+    const nameB = (b.name || 'Unknown').toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+});
 
 function isCharacterInStory(characterId) {
-  return props.story.characterIds?.includes(characterId) || false
+  return props.story.characterIds?.includes(characterId) || false;
 }
 
 function isPersona(characterId) {
-  return props.story.personaCharacterId === characterId
+  return props.story.personaCharacterId === characterId;
 }
 
 async function toggleCharacter(characterId) {
-  if (actionInProgress.value) return
+  if (actionInProgress.value) return;
 
   try {
-    actionInProgress.value = characterId
+    actionInProgress.value = characterId;
 
     if (isCharacterInStory(characterId)) {
       // Remove character
-      await storiesAPI.removeCharacterFromStory(props.story.id, characterId)
-      toast.success('Character removed from story')
+      await storiesAPI.removeCharacterFromStory(props.story.id, characterId);
+      toast.success('Character removed from story');
 
       // If this was the persona, that will be automatically unset
       if (isPersona(characterId)) {
-        toast.info('Persona was also removed')
+        toast.info('Persona was also removed');
       }
     } else {
       // Add character
-      const response = await charactersAPI.addToStory(props.story.id, characterId)
-      toast.success('Character added to story')
+      const response = await charactersAPI.addToStory(props.story.id, characterId);
+      toast.success('Character added to story');
 
       // Show info if lorebook was auto-added
       if (response.addedLorebookId) {
-        toast.info('Character\'s lorebook was automatically added')
+        toast.info("Character's lorebook was automatically added");
       }
     }
 
-    emit('updated')
+    emit('updated');
   } catch (error) {
-    console.error('Failed to toggle character:', error)
-    toast.error('Failed to update character: ' + error.message)
+    console.error('Failed to toggle character:', error);
+    toast.error('Failed to update character: ' + error.message);
   } finally {
-    actionInProgress.value = null
+    actionInProgress.value = null;
   }
 }
 
 async function togglePersona(characterId) {
-  if (actionInProgress.value) return
+  if (actionInProgress.value) return;
 
   try {
-    actionInProgress.value = characterId
+    actionInProgress.value = characterId;
 
     if (isPersona(characterId)) {
       // Remove persona
-      await storiesAPI.setPersona(props.story.id, null)
-      toast.success('Persona removed')
+      await storiesAPI.setPersona(props.story.id, null);
+      toast.success('Persona removed');
     } else {
       // Set persona
-      await storiesAPI.setPersona(props.story.id, characterId)
-      toast.success('Persona set')
+      await storiesAPI.setPersona(props.story.id, characterId);
+      toast.success('Persona set');
     }
 
-    emit('updated')
+    emit('updated');
   } catch (error) {
-    console.error('Failed to toggle persona:', error)
-    toast.error('Failed to update persona: ' + error.message)
+    console.error('Failed to toggle persona:', error);
+    toast.error('Failed to update persona: ' + error.message);
   } finally {
-    actionInProgress.value = null
+    actionInProgress.value = null;
   }
 }
 
 function goToDetails(characterId) {
-  router.push(`/characters/${characterId}`)
-  emit('close')
+  router.push(`/characters/${characterId}`);
+  emit('close');
 }
 </script>
 
@@ -242,7 +239,9 @@ function goToDetails(characterId) {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .character-grid {

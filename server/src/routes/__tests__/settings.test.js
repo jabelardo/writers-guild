@@ -32,18 +32,16 @@ describe('Settings API Routes', () => {
     app.use('/api/settings', settingsRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
 
   describe('GET / - Get Settings', () => {
     it('should return settings object', async () => {
-      const response = await request(app)
-        .get('/api/settings')
-        .expect(200);
+      const response = await request(app).get('/api/settings').expect(200);
 
       expect(response.body).toHaveProperty('settings');
       // Settings should be an object (may be empty or have defaults)
@@ -140,7 +138,7 @@ describe('Settings API Routes', () => {
           lorebookScanDepth: 3000,
           lorebookTokenBudget: 2500,
           lorebookRecursionDepth: 5,
-          lorebookEnableRecursion: false
+          lorebookEnableRecursion: false,
         })
         .expect(200);
 
@@ -161,10 +159,7 @@ describe('Settings API Routes', () => {
 
     it('should clear defaultPersonaId with null', async () => {
       // First set a persona
-      await request(app)
-        .put('/api/settings')
-        .send({ defaultPersonaId: 'persona-123' })
-        .expect(200);
+      await request(app).put('/api/settings').send({ defaultPersonaId: 'persona-123' }).expect(200);
 
       // Then clear it
       const response = await request(app)
@@ -192,7 +187,7 @@ describe('Settings API Routes', () => {
           maxTokens: 5000,
           temperature: 1.0,
           showReasoning: true,
-          autoSave: true
+          autoSave: true,
         })
         .expect(200);
 
@@ -205,9 +200,7 @@ describe('Settings API Routes', () => {
 
     it('should preserve existing settings when updating', async () => {
       // Get current settings first
-      const currentResponse = await request(app)
-        .get('/api/settings')
-        .expect(200);
+      const currentResponse = await request(app).get('/api/settings').expect(200);
 
       const currentApiKey = currentResponse.body.settings.apiKey;
 
@@ -243,10 +236,7 @@ describe('Settings API Routes', () => {
     });
 
     it('should handle empty update', async () => {
-      const response = await request(app)
-        .put('/api/settings')
-        .send({})
-        .expect(200);
+      const response = await request(app).put('/api/settings').send({}).expect(200);
 
       expect(response.body).toHaveProperty('settings');
     });

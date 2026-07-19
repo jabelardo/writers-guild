@@ -82,10 +82,7 @@ describe('Basic Auth Middleware', () => {
       expect(next).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(401);
       expect(res.send).toHaveBeenCalledWith('Unauthorized');
-      expect(res.set).toHaveBeenCalledWith(
-        'WWW-Authenticate',
-        'Basic realm="Writers Guild"'
-      );
+      expect(res.set).toHaveBeenCalledWith('WWW-Authenticate', 'Basic realm="Writers Guild"');
     });
 
     it('should return 401 when Authorization header is not Basic', () => {

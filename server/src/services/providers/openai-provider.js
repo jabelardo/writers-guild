@@ -12,8 +12,8 @@ export class OpenAIProvider extends LLMProvider {
     // OpenAI-specific defaults
     const openaiConfig = {
       ...config,
-      baseURL: config.baseURL || "https://api.openai.com/v1",
-      model: config.model || "gpt-4-turbo-preview"
+      baseURL: config.baseURL || 'https://api.openai.com/v1',
+      model: config.model || 'gpt-4-turbo-preview',
     };
 
     super(openaiConfig);
@@ -26,8 +26,8 @@ export class OpenAIProvider extends LLMProvider {
     return {
       streaming: true,
       reasoning: false, // OpenAI doesn't expose reasoning tokens like DeepSeek
-      visionAPI: true,  // GPT-4 Vision support
-      maxContextWindow: 128000 // GPT-4 Turbo context window
+      visionAPI: true, // GPT-4 Vision support
+      maxContextWindow: 128000, // GPT-4 Turbo context window
     };
   }
 
@@ -38,7 +38,7 @@ export class OpenAIProvider extends LLMProvider {
     if (!this.apiKey || this.apiKey.trim() === '') {
       return {
         valid: false,
-        error: 'API key is required'
+        error: 'API key is required',
       };
     }
 
@@ -51,10 +51,12 @@ export class OpenAIProvider extends LLMProvider {
    */
   usesMaxCompletionTokens() {
     const model = this.model.toLowerCase();
-    return model.includes('gpt-5') ||
-           model.includes('o1') ||
-           model.includes('o3') ||
-           model.startsWith('chatgpt-');
+    return (
+      model.includes('gpt-5') ||
+      model.includes('o1') ||
+      model.includes('o3') ||
+      model.startsWith('chatgpt-')
+    );
   }
 
   /**
@@ -96,21 +98,21 @@ export class OpenAIProvider extends LLMProvider {
    */
   async generate(systemPrompt, userPrompt, options = {}) {
     if (!this.apiKey) {
-      throw new Error("API key not set");
+      throw new Error('API key not set');
     }
 
     const messages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
     ];
 
     const body = this.buildRequestBody(messages, options);
     body.stream = false;
 
     const response = await fetch(`${this.baseURL}/chat/completions`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify(body),
@@ -119,17 +121,15 @@ export class OpenAIProvider extends LLMProvider {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error?.message || `API request failed: ${response.statusText}`
-      );
+      throw new Error(errorData.error?.message || `API request failed: ${response.statusText}`);
     }
 
     const data = await response.json();
     const choice = data.choices[0];
 
     return {
-      content: choice.message.content || "",
-      reasoning: "", // OpenAI doesn't provide reasoning tokens
+      content: choice.message.content || '',
+      reasoning: '', // OpenAI doesn't provide reasoning tokens
       usage: data.usage,
     };
   }
@@ -139,12 +139,12 @@ export class OpenAIProvider extends LLMProvider {
    */
   async generateStreaming(systemPrompt, userPrompt, options = {}) {
     if (!this.apiKey) {
-      throw new Error("API key not set");
+      throw new Error('API key not set');
     }
 
     const messages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
     ];
 
     const controller = new AbortController();
@@ -153,9 +153,9 @@ export class OpenAIProvider extends LLMProvider {
     body.stream = true;
 
     const response = await fetch(`${this.baseURL}/chat/completions`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify(body),
@@ -164,9 +164,7 @@ export class OpenAIProvider extends LLMProvider {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error?.message || `API request failed: ${response.statusText}`
-      );
+      throw new Error(errorData.error?.message || `API request failed: ${response.statusText}`);
     }
 
     return {
@@ -174,8 +172,8 @@ export class OpenAIProvider extends LLMProvider {
       abort: () => controller.abort(),
       metadata: {
         userPrompt,
-        systemPrompt
-      }
+        systemPrompt,
+      },
     };
   }
 
@@ -194,7 +192,7 @@ export class OpenAIProvider extends LLMProvider {
       return {
         code: 'AUTH_ERROR',
         message: 'Invalid API key',
-        original: error
+        original: error,
       };
     }
 
@@ -202,7 +200,7 @@ export class OpenAIProvider extends LLMProvider {
       return {
         code: 'RATE_LIMIT',
         message: 'Rate limit exceeded. Please try again later.',
-        original: error
+        original: error,
       };
     }
 
@@ -210,7 +208,7 @@ export class OpenAIProvider extends LLMProvider {
       return {
         code: 'INSUFFICIENT_QUOTA',
         message: 'Insufficient quota. Please check your OpenAI account.',
-        original: error
+        original: error,
       };
     }
 
@@ -259,10 +257,10 @@ export class OpenAIProvider extends LLMProvider {
   async getAvailableModels() {
     try {
       const response = await fetch(`${this.baseURL}/models`, {
-        method: "GET",
+        method: 'GET',
         headers: {
-          "Authorization": `Bearer ${this.apiKey}`,
-        }
+          Authorization: `Bearer ${this.apiKey}`,
+        },
       });
 
       if (!response.ok) {
@@ -273,20 +271,20 @@ export class OpenAIProvider extends LLMProvider {
 
       // Filter and transform OpenAI model data to include only chat completion models
       return data.data
-        .filter(model => this.isChatModel(model.id))
-        .map(model => ({
+        .filter((model) => this.isChatModel(model.id))
+        .map((model) => ({
           id: model.id,
           name: this.formatModelName(model.id),
           description: this.getModelDescription(model.id),
           contextLength: this.getContextLength(model.id),
           pricing: {
             prompt: 0, // Pricing not provided by API
-            completion: 0
+            completion: 0,
           },
           created: model.created,
-          ownedBy: model.owned_by
+          ownedBy: model.owned_by,
         }))
-        .sort((a, b) => b.created - a.created); // Most recent first
+        .toSorted((a, b) => b.created - a.created); // Most recent first
     } catch (error) {
       console.error('Failed to fetch OpenAI models:', error);
       return [];

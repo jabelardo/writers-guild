@@ -6,10 +6,12 @@
         <h3>Current Preset</h3>
         <p class="help-text">
           <template v-if="currentStoryPresetId">
-            This story is using a specific preset. To use the default preset instead, select "Use Default" below.
+            This story is using a specific preset. To use the default preset instead, select "Use
+            Default" below.
           </template>
           <template v-else>
-            This story is using the default preset. You can override it by selecting a specific preset below.
+            This story is using the default preset. You can override it by selecting a specific
+            preset below.
           </template>
         </p>
       </div>
@@ -24,11 +26,7 @@
           @change="handlePresetChange"
         >
           <option :value="null">Use Default Preset</option>
-          <option
-            v-for="preset in presets"
-            :key="preset.id"
-            :value="preset.id"
-          >
+          <option v-for="preset in presets" :key="preset.id" :value="preset.id">
             {{ preset.name }} ({{ getProviderDisplayName(preset.provider) }})
           </option>
         </select>
@@ -46,7 +44,10 @@
           <span class="info-label">Model:</span>
           <span>{{ selectedPreset.apiConfig.model }}</span>
         </div>
-        <div v-if="selectedPreset.apiConfig?.models && selectedPreset.apiConfig.models.length > 0" class="info-row">
+        <div
+          v-if="selectedPreset.apiConfig?.models && selectedPreset.apiConfig.models.length > 0"
+          class="info-row"
+        >
           <span class="info-label">Models:</span>
           <span>{{ selectedPreset.apiConfig.models.length }} selected</span>
         </div>
@@ -54,10 +55,7 @@
 
       <!-- Action Buttons -->
       <div class="action-buttons">
-        <button
-          class="btn btn-primary"
-          @click="editSelectedPreset"
-        >
+        <button class="btn btn-primary" @click="editSelectedPreset">
           <i class="fas fa-edit"></i>
           Edit This Preset
         </button>
@@ -75,57 +73,57 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import Modal from './Modal.vue'
-import PresetEditorModal from './PresetEditorModal.vue'
-import { presetsAPI, storiesAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
+import { ref, computed, onMounted } from 'vue';
+import Modal from './Modal.vue';
+import PresetEditorModal from './PresetEditorModal.vue';
+import { presetsAPI, storiesAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
 
 const props = defineProps({
   storyId: {
     type: String,
-    required: true
+    required: true,
   },
   currentPresetId: {
     type: String,
-    default: null
-  }
-})
+    default: null,
+  },
+});
 
-const emit = defineEmits(['close', 'updated'])
+const emit = defineEmits(['close', 'updated']);
 
-const toast = useToast()
-const presets = ref([])
-const defaultPresetId = ref(null)
-const selectedPresetId = ref(null)
-const currentStoryPresetId = ref(null)
-const showPresetEditor = ref(false)
-const editingPreset = ref(null)
+const toast = useToast();
+const presets = ref([]);
+const defaultPresetId = ref(null);
+const selectedPresetId = ref(null);
+const currentStoryPresetId = ref(null);
+const showPresetEditor = ref(false);
+const editingPreset = ref(null);
 
 const selectedPreset = computed(() => {
   if (!selectedPresetId.value) {
-    return presets.value.find(p => p.id === defaultPresetId.value)
+    return presets.value.find((p) => p.id === defaultPresetId.value);
   }
-  return presets.value.find(p => p.id === selectedPresetId.value)
-})
+  return presets.value.find((p) => p.id === selectedPresetId.value);
+});
 
 onMounted(async () => {
-  await loadPresets()
-  currentStoryPresetId.value = props.currentPresetId
-  selectedPresetId.value = props.currentPresetId
-})
+  await loadPresets();
+  currentStoryPresetId.value = props.currentPresetId;
+  selectedPresetId.value = props.currentPresetId;
+});
 
 async function loadPresets() {
   try {
     const [presetsData, defaultData] = await Promise.all([
       presetsAPI.list(),
-      presetsAPI.getDefaultId()
-    ])
-    presets.value = presetsData.presets || []
-    defaultPresetId.value = defaultData.defaultPresetId
+      presetsAPI.getDefaultId(),
+    ]);
+    presets.value = presetsData.presets || [];
+    defaultPresetId.value = defaultData.defaultPresetId;
   } catch (error) {
-    console.error('Failed to load presets:', error)
-    toast.error('Failed to load presets: ' + error.message)
+    console.error('Failed to load presets:', error);
+    toast.error('Failed to load presets: ' + error.message);
   }
 }
 
@@ -133,53 +131,53 @@ async function handlePresetChange() {
   try {
     // Update story's preset
     await storiesAPI.updateMetadata(props.storyId, {
-      configPresetId: selectedPresetId.value
-    })
+      configPresetId: selectedPresetId.value,
+    });
 
-    currentStoryPresetId.value = selectedPresetId.value
+    currentStoryPresetId.value = selectedPresetId.value;
 
     if (selectedPresetId.value) {
-      const preset = presets.value.find(p => p.id === selectedPresetId.value)
-      toast.success(`Switched to: ${preset.name}`)
+      const preset = presets.value.find((p) => p.id === selectedPresetId.value);
+      toast.success(`Switched to: ${preset.name}`);
     } else {
-      toast.success('Now using default preset')
+      toast.success('Now using default preset');
     }
 
-    emit('updated')
+    emit('updated');
   } catch (error) {
-    console.error('Failed to update story preset:', error)
-    toast.error('Failed to update preset: ' + error.message)
+    console.error('Failed to update story preset:', error);
+    toast.error('Failed to update preset: ' + error.message);
   }
 }
 
 async function editSelectedPreset() {
   // Use the selected preset ID, or fall back to the default preset ID
-  const presetIdToEdit = selectedPresetId.value || defaultPresetId.value
+  const presetIdToEdit = selectedPresetId.value || defaultPresetId.value;
 
   if (!presetIdToEdit) {
-    toast.error('No preset available to edit')
-    return
+    toast.error('No preset available to edit');
+    return;
   }
 
-  editingPreset.value = presets.value.find(p => p.id === presetIdToEdit)
+  editingPreset.value = presets.value.find((p) => p.id === presetIdToEdit);
 
   if (!editingPreset.value) {
-    toast.error('Preset not found')
-    return
+    toast.error('Preset not found');
+    return;
   }
 
-  showPresetEditor.value = true
+  showPresetEditor.value = true;
 }
 
 function closePresetEditor() {
-  showPresetEditor.value = false
-  editingPreset.value = null
+  showPresetEditor.value = false;
+  editingPreset.value = null;
 }
 
 async function handlePresetSaved() {
-  closePresetEditor()
-  await loadPresets()
-  toast.success('Preset saved successfully')
+  closePresetEditor();
+  await loadPresets();
+  toast.success('Preset saved successfully');
 }
 
 function getProviderDisplayName(provider) {
@@ -188,9 +186,9 @@ function getProviderDisplayName(provider) {
     aihorde: 'AI Horde',
     openai: 'OpenAI',
     anthropic: 'Claude',
-    openrouter: 'OpenRouter'
-  }
-  return names[provider] || provider
+    openrouter: 'OpenRouter',
+  };
+  return names[provider] || provider;
 }
 </script>
 

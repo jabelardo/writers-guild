@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { LorebookActivator } from '../lorebook-activator.js';
 
 describe('LorebookActivator', () => {
@@ -10,12 +10,12 @@ describe('LorebookActivator', () => {
       lorebookScanDepth: 2000,
       lorebookTokenBudget: 1800,
       lorebookRecursionDepth: 3,
-      lorebookEnableRecursion: true
+      lorebookEnableRecursion: true,
     });
 
     lorebook = {
       name: 'Test Lorebook',
-      entries: []
+      entries: [],
     };
   });
 
@@ -27,8 +27,8 @@ describe('LorebookActivator', () => {
           enabled: true,
           keys: ['dragon'],
           content: 'Dragons are magical creatures',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'The dragon flew overhead');
@@ -43,8 +43,8 @@ describe('LorebookActivator', () => {
           enabled: true,
           keys: ['dragon'],
           content: 'Dragons are magical',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'The cat slept peacefully');
@@ -58,8 +58,8 @@ describe('LorebookActivator', () => {
           enabled: true,
           keys: ['dragon', 'wyvern', 'serpent'],
           content: 'Flying creatures',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'A wyvern appeared');
@@ -73,8 +73,8 @@ describe('LorebookActivator', () => {
           enabled: false,
           keys: ['dragon'],
           content: 'Dragons exist',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'The dragon appeared');
@@ -101,8 +101,8 @@ describe('LorebookActivator', () => {
           keys: ['Dragon'],
           content: 'Dragon info',
           caseSensitive: false,
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'A dragon and a DRAGON');
@@ -117,8 +117,8 @@ describe('LorebookActivator', () => {
           keys: ['Dragon'],
           content: 'Dragon info',
           caseSensitive: true,
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result1 = activator.activate([lorebook], 'A Dragon appeared');
@@ -139,8 +139,8 @@ describe('LorebookActivator', () => {
           content: 'Cat info',
           matchWholeWords: true,
           caseSensitive: false,
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result1 = activator.activate([lorebook], 'The cat sat');
@@ -158,8 +158,8 @@ describe('LorebookActivator', () => {
           keys: ['cat'],
           content: 'Cat info',
           matchWholeWords: false,
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'The category is empty');
@@ -176,8 +176,8 @@ describe('LorebookActivator', () => {
           keys: ['/dr[ao]gon/i'],
           content: 'Dragon variants',
           useRegex: true,
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result1 = activator.activate([lorebook], 'A dragon appeared');
@@ -196,8 +196,8 @@ describe('LorebookActivator', () => {
           content: 'Pattern match',
           useRegex: true,
           caseSensitive: false,
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'A dragon in a dungeon');
@@ -212,8 +212,8 @@ describe('LorebookActivator', () => {
           keys: ['/(invalid/'], // Invalid regex
           content: 'Content',
           useRegex: true,
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'Any content');
@@ -229,8 +229,8 @@ describe('LorebookActivator', () => {
           enabled: true,
           constant: true,
           content: 'Always active info',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'Any content without keywords');
@@ -246,8 +246,8 @@ describe('LorebookActivator', () => {
           useProbability: true,
           probability: 0, // 0% chance
           content: 'Never active',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'Any content');
@@ -266,8 +266,8 @@ describe('LorebookActivator', () => {
           selectiveLogic: 0, // AND_ANY
           secondaryKeys: ['fire', 'ice'],
           content: 'Dragon with element',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result1 = activator.activate([lorebook], 'A dragon with fire breath');
@@ -287,8 +287,8 @@ describe('LorebookActivator', () => {
           selectiveLogic: 1, // NOT_ANY
           secondaryKeys: ['fire', 'ice'],
           content: 'Plain dragon',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result1 = activator.activate([lorebook], 'A dragon appeared');
@@ -308,8 +308,8 @@ describe('LorebookActivator', () => {
           selectiveLogic: 3, // AND_ALL
           secondaryKeys: ['fire', 'wings'],
           content: 'Complete dragon',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result1 = activator.activate([lorebook], 'A dragon with fire and wings');
@@ -329,8 +329,8 @@ describe('LorebookActivator', () => {
           selectiveLogic: 2, // NOT_ALL
           secondaryKeys: ['fire', 'wings'],
           content: 'Incomplete dragon',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result1 = activator.activate([lorebook], 'A dragon with fire');
@@ -349,22 +349,22 @@ describe('LorebookActivator', () => {
           enabled: true,
           keys: ['dragon'],
           content: 'High priority',
-          insertionOrder: 500
+          insertionOrder: 500,
         },
         {
           id: '2',
           enabled: true,
           keys: ['dragon'],
           content: 'Low priority',
-          insertionOrder: 100
+          insertionOrder: 100,
         },
         {
           id: '3',
           enabled: true,
           keys: ['dragon'],
           content: 'Medium priority',
-          insertionOrder: 300
-        }
+          insertionOrder: 300,
+        },
       ];
 
       const result = activator.activate([lorebook], 'A dragon');
@@ -377,7 +377,7 @@ describe('LorebookActivator', () => {
   describe('Token Budget', () => {
     it('should limit entries by token budget', () => {
       const smallBudgetActivator = new LorebookActivator({
-        lorebookTokenBudget: 10 // Very small budget
+        lorebookTokenBudget: 10, // Very small budget
       });
 
       lorebook.entries = [
@@ -386,15 +386,15 @@ describe('LorebookActivator', () => {
           enabled: true,
           constant: true,
           content: 'x'.repeat(40), // ~10 tokens
-          insertionOrder: 100
+          insertionOrder: 100,
         },
         {
           id: '2',
           enabled: true,
           constant: true,
           content: 'y'.repeat(40), // ~10 tokens (would exceed budget)
-          insertionOrder: 200
-        }
+          insertionOrder: 200,
+        },
       ];
 
       const result = smallBudgetActivator.activate([lorebook], 'content');
@@ -404,7 +404,7 @@ describe('LorebookActivator', () => {
 
     it('should include entries until budget is exceeded', () => {
       const limitedActivator = new LorebookActivator({
-        lorebookTokenBudget: 50
+        lorebookTokenBudget: 50,
       });
 
       lorebook.entries = [
@@ -413,22 +413,22 @@ describe('LorebookActivator', () => {
           enabled: true,
           constant: true,
           content: 'a'.repeat(40), // ~10 tokens
-          insertionOrder: 100
+          insertionOrder: 100,
         },
         {
           id: '2',
           enabled: true,
           constant: true,
           content: 'b'.repeat(80), // ~20 tokens
-          insertionOrder: 200
+          insertionOrder: 200,
         },
         {
           id: '3',
           enabled: true,
           constant: true,
           content: 'c'.repeat(120), // ~30 tokens (would exceed)
-          insertionOrder: 300
-        }
+          insertionOrder: 300,
+        },
       ];
 
       const result = limitedActivator.activate([lorebook], 'content');
@@ -444,26 +444,26 @@ describe('LorebookActivator', () => {
           enabled: true,
           keys: ['dragon'],
           content: 'Dragons breathe fire',
-          insertionOrder: 100
+          insertionOrder: 100,
         },
         {
           id: '2',
           enabled: true,
           keys: ['fire'],
           content: 'Fire is hot',
-          insertionOrder: 200
-        }
+          insertionOrder: 200,
+        },
       ];
 
       const result = activator.activate([lorebook], 'A dragon appeared');
       expect(result).toHaveLength(2);
-      expect(result.some(e => e.id === '1')).toBe(true);
-      expect(result.some(e => e.id === '2')).toBe(true);
+      expect(result.some((e) => e.id === '1')).toBe(true);
+      expect(result.some((e) => e.id === '2')).toBe(true);
     });
 
     it('should respect recursion depth limit', () => {
       const limitedActivator = new LorebookActivator({
-        lorebookRecursionDepth: 1
+        lorebookRecursionDepth: 1,
       });
 
       lorebook.entries = [
@@ -472,22 +472,22 @@ describe('LorebookActivator', () => {
           enabled: true,
           keys: ['one'],
           content: 'Content with two',
-          insertionOrder: 100
+          insertionOrder: 100,
         },
         {
           id: '2',
           enabled: true,
           keys: ['two'],
           content: 'Content with three',
-          insertionOrder: 200
+          insertionOrder: 200,
         },
         {
           id: '3',
           enabled: true,
           keys: ['three'],
           content: 'Final content',
-          insertionOrder: 300
-        }
+          insertionOrder: 300,
+        },
       ];
 
       const result = limitedActivator.activate([lorebook], 'one');
@@ -497,7 +497,7 @@ describe('LorebookActivator', () => {
 
     it('should not recurse when recursion disabled', () => {
       const noRecursionActivator = new LorebookActivator({
-        lorebookEnableRecursion: false
+        lorebookEnableRecursion: false,
       });
 
       lorebook.entries = [
@@ -506,15 +506,15 @@ describe('LorebookActivator', () => {
           enabled: true,
           keys: ['dragon'],
           content: 'Dragons breathe fire',
-          insertionOrder: 100
+          insertionOrder: 100,
         },
         {
           id: '2',
           enabled: true,
           keys: ['fire'],
           content: 'Fire info',
-          insertionOrder: 200
-        }
+          insertionOrder: 200,
+        },
       ];
 
       const result = noRecursionActivator.activate([lorebook], 'A dragon');
@@ -530,15 +530,15 @@ describe('LorebookActivator', () => {
           keys: ['dragon'],
           content: 'Dragons breathe fire',
           preventRecursion: true,
-          insertionOrder: 100
+          insertionOrder: 100,
         },
         {
           id: '2',
           enabled: true,
           keys: ['fire'],
           content: 'Fire info',
-          insertionOrder: 200
-        }
+          insertionOrder: 200,
+        },
       ];
 
       const result = activator.activate([lorebook], 'A dragon');
@@ -553,7 +553,7 @@ describe('LorebookActivator', () => {
           enabled: true,
           keys: ['dragon'],
           content: 'Dragons breathe fire',
-          insertionOrder: 100
+          insertionOrder: 100,
         },
         {
           id: '2',
@@ -561,8 +561,8 @@ describe('LorebookActivator', () => {
           keys: ['fire'],
           delayUntilRecursion: true,
           content: 'Fire (delayed)',
-          insertionOrder: 200
-        }
+          insertionOrder: 200,
+        },
       ];
 
       const result = activator.activate([lorebook], 'A dragon with fire');
@@ -575,7 +575,7 @@ describe('LorebookActivator', () => {
   describe('Scan Depth', () => {
     it('should limit scan to configured depth', () => {
       const shallowActivator = new LorebookActivator({
-        lorebookScanDepth: 10 // Very small, ~40 chars
+        lorebookScanDepth: 10, // Very small, ~40 chars
       });
 
       lorebook.entries = [
@@ -584,8 +584,8 @@ describe('LorebookActivator', () => {
           enabled: true,
           keys: ['keyword'],
           content: 'Found',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       // Create content longer than scan depth with keyword at the end
@@ -607,9 +607,9 @@ describe('LorebookActivator', () => {
             enabled: true,
             keys: ['dragon'],
             content: 'From lorebook 1',
-            insertionOrder: 100
-          }
-        ]
+            insertionOrder: 100,
+          },
+        ],
       };
 
       const lorebook2 = {
@@ -620,9 +620,9 @@ describe('LorebookActivator', () => {
             enabled: true,
             keys: ['dragon'],
             content: 'From lorebook 2',
-            insertionOrder: 200
-          }
-        ]
+            insertionOrder: 200,
+          },
+        ],
       };
 
       const result = activator.activate([lorebook1, lorebook2], 'A dragon');
@@ -640,11 +640,11 @@ describe('LorebookActivator', () => {
       const entries = [
         {
           comment: 'Entry 1',
-          content: 'Content 1'
+          content: 'Content 1',
         },
         {
-          content: 'Content 2'
-        }
+          content: 'Content 2',
+        },
       ];
 
       const result = activator.formatForPrompt(entries);
@@ -667,8 +667,8 @@ describe('LorebookActivator', () => {
           enabled: true,
           keys: [],
           content: 'No keys',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'Any content');
@@ -682,8 +682,8 @@ describe('LorebookActivator', () => {
           enabled: true,
           keys: [''],
           content: 'Empty key',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'Any content');
@@ -697,8 +697,8 @@ describe('LorebookActivator', () => {
           enabled: true,
           keys: ['dragon'],
           content: 'Dragon info mentioning dragon again',
-          insertionOrder: 100
-        }
+          insertionOrder: 100,
+        },
       ];
 
       const result = activator.activate([lorebook], 'A dragon');

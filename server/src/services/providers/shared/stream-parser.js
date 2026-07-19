@@ -17,7 +17,7 @@
 export async function* parseSSEStream(body, transformDelta, providerName = 'Provider') {
   const reader = body.getReader();
   const decoder = new TextDecoder();
-  let buffer = "";
+  let buffer = '';
 
   try {
     while (true) {
@@ -26,19 +26,19 @@ export async function* parseSSEStream(body, transformDelta, providerName = 'Prov
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
+      const lines = buffer.split('\n');
 
       // Keep the last incomplete line in buffer
-      buffer = lines.pop() || "";
+      buffer = lines.pop() || '';
 
       for (const line of lines) {
         const trimmed = line.trim();
 
-        if (trimmed === "" || trimmed === "data: [DONE]") {
+        if (trimmed === '' || trimmed === 'data: [DONE]') {
           continue;
         }
 
-        if (trimmed.startsWith("data: ")) {
+        if (trimmed.startsWith('data: ')) {
           try {
             const jsonStr = trimmed.slice(6); // Remove 'data: ' prefix
             const data = JSON.parse(jsonStr);

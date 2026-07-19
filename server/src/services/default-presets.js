@@ -88,28 +88,34 @@ Do not use asterisks (*) for actions. Write everything as prose.`;
  * - {{user}} - User/persona name
  */
 export const DEFAULT_PROMPT_TEMPLATES = {
-  continue: "Continue the story naturally from where it left off. Write the next 7 paragraphs, maintaining the established tone and style, write less if it makes sense stylistically or sets up a good response opportunity for other characters.",
+  continue:
+    'Continue the story naturally from where it left off. Write the next 7 paragraphs, maintaining the established tone and style, write less if it makes sense stylistically or sets up a good response opportunity for other characters.',
 
-  character: "Write the next part of the story from {{char}}'s perspective. Focus on their thoughts, actions, and dialogue. Write 2-3 paragraphs maximum, less if it makes sense stylistically or sets up a good response opportunity for other characters. (There is a chance that \"{{char}}'s\" is multiple characters, at which point you may respond as any of them as is relevant to the story.)",
+  character:
+    'Write the next part of the story from {{char}}\'s perspective. Focus on their thoughts, actions, and dialogue. Write 2-3 paragraphs maximum, less if it makes sense stylistically or sets up a good response opportunity for other characters. (There is a chance that "{{char}}\'s" is multiple characters, at which point you may respond as any of them as is relevant to the story.)',
 
-  instruction: "Continue the story naturally from where it left off. Write the next 7 paragraphs, maintaining the established tone and style, write less if it makes sense stylistically or sets up a good response opportunity for other characters. The user additionally sends along these instructions for what events they would like to see occur: {{instruction}}",
+  instruction:
+    'Continue the story naturally from where it left off. Write the next 7 paragraphs, maintaining the established tone and style, write less if it makes sense stylistically or sets up a good response opportunity for other characters. The user additionally sends along these instructions for what events they would like to see occur: {{instruction}}',
 
-  rewriteThirdPerson: "Rewrite the following text to be in third person narrative perspective, using past tense. Assume reference to \"you\" in the original text are meant to reference the user's Persona, if one is provided. Change all verbs to past tense. Maintain the same events, dialogue, and meaning, but from a third-person narrator's viewpoint. Feel free to correct errors in grammar, punctuation, and paragraph formatting. Only return the rewritten text by itself in your response.\n\nText to rewrite:\n\n{{storyContent}}",
+  rewriteThirdPerson:
+    'Rewrite the following text to be in third person narrative perspective, using past tense. Assume reference to "you" in the original text are meant to reference the user\'s Persona, if one is provided. Change all verbs to past tense. Maintain the same events, dialogue, and meaning, but from a third-person narrator\'s viewpoint. Feel free to correct errors in grammar, punctuation, and paragraph formatting. Only return the rewritten text by itself in your response.\n\nText to rewrite:\n\n{{storyContent}}',
 
-  ideate: "Instead of continuing the story, please provide 3-5 creative suggestions for what {{user}} could do next to move this story forward. Consider the characters, setting, and current situation. Format your response as a numbered list of actionable ideas.",
+  ideate:
+    'Instead of continuing the story, please provide 3-5 creative suggestions for what {{user}} could do next to move this story forward. Consider the characters, setting, and current situation. Format your response as a numbered list of actionable ideas.',
 
-  storyStarter: "Write the opening 3-5 paragraphs for a new story. Establish the setting, introduce the characters naturally, and create an engaging hook that draws readers in. Focus on vivid scene-setting and character introduction without rushing into action. End at a natural point that invites continuation."
+  storyStarter:
+    'Write the opening 3-5 paragraphs for a new story. Establish the setting, introduce the characters naturally, and create an engaging hook that draws readers in. Focus on vivid scene-setting and character introduction without rushing into action. End at a natural point that invites continuation.',
 };
 
 export function getDefaultPresets() {
   return {
     openaicompatible: {
-      name: "OpenAI Compatible",
-      provider: "openaicompatible",
+      name: 'OpenAI Compatible',
+      provider: 'openaicompatible',
       apiConfig: {
-        baseURL: "http://localhost:1234/v1",
-        apiKey: "",
-        model: ""
+        baseURL: 'http://localhost:1234/v1',
+        apiKey: '',
+        model: '',
       },
       generationSettings: {
         maxTokens: 4000,
@@ -119,13 +125,13 @@ export function getDefaultPresets() {
         top_p: null,
         frequency_penalty: null,
         presence_penalty: null,
-        stop_sequences: []
+        stop_sequences: [],
       },
       lorebookSettings: {
         scanDepth: 2000,
         tokenBudget: 1800,
         recursionDepth: 3,
-        enableRecursion: true
+        enableRecursion: true,
       },
       promptTemplates: {
         systemPrompt: null,
@@ -134,16 +140,16 @@ export function getDefaultPresets() {
         instruction: null,
         rewriteThirdPerson: null,
         ideate: null,
-        storyStarter: null
-      }
+        storyStarter: null,
+      },
     },
     ollama: {
-      name: "Ollama",
-      provider: "ollama",
+      name: 'Ollama',
+      provider: 'ollama',
       apiConfig: {
-        baseURL: "http://localhost:11434",
-        password: "",
-        model: ""
+        baseURL: 'http://localhost:11434',
+        password: '',
+        model: '',
       },
       generationSettings: {
         maxTokens: 200,
@@ -160,13 +166,13 @@ export function getDefaultPresets() {
         mirostat: null,
         mirostat_tau: null,
         mirostat_eta: null,
-        stop_sequences: []
+        stop_sequences: [],
       },
       lorebookSettings: {
         scanDepth: 2000,
         tokenBudget: 1800,
         recursionDepth: 3,
-        enableRecursion: true
+        enableRecursion: true,
       },
       promptTemplates: {
         systemPrompt: null,
@@ -175,16 +181,16 @@ export function getDefaultPresets() {
         instruction: null,
         rewriteThirdPerson: null,
         ideate: null,
-        storyStarter: null
-      }
+        storyStarter: null,
+      },
     },
     koboldcpp: {
-      name: "KoboldCpp",
-      provider: "koboldcpp",
+      name: 'KoboldCpp',
+      provider: 'koboldcpp',
       apiConfig: {
-        baseURL: "http://localhost:5001/api",
-        password: "",
-        model: ""
+        baseURL: 'http://localhost:5001/api',
+        password: '',
+        model: '',
       },
       generationSettings: {
         maxTokens: 200,
@@ -204,13 +210,13 @@ export function getDefaultPresets() {
         mirostat: null,
         mirostat_tau: null,
         mirostat_eta: null,
-        stop_sequences: []
+        stop_sequences: [],
       },
       lorebookSettings: {
         scanDepth: 2000,
         tokenBudget: 1800,
         recursionDepth: 3,
-        enableRecursion: true
+        enableRecursion: true,
       },
       promptTemplates: {
         systemPrompt: null,
@@ -219,26 +225,26 @@ export function getDefaultPresets() {
         instruction: null,
         rewriteThirdPerson: null,
         ideate: null,
-        storyStarter: null
-      }
+        storyStarter: null,
+      },
     },
     aihorde: {
-      name: "Default",
-      provider: "aihorde",
+      name: 'Default',
+      provider: 'aihorde',
       apiConfig: {
-        apiKey: "0000000000", // Default anonymous key
-        baseURL: "https://aihorde.net/api/v2",
+        apiKey: '0000000000', // Default anonymous key
+        baseURL: 'https://aihorde.net/api/v2',
         models: [], // Empty by default - users should select from available models
         workerBlacklist: [],
         trustedWorkers: false,
-        slowWorkers: true
+        slowWorkers: true,
       },
       generationSettings: {
-        maxTokens: 512,  // AI Horde typically allows less
-        maxContextTokens: 8192,  // Fallback; calculated dynamically based on workers
+        maxTokens: 512, // AI Horde typically allows less
+        maxContextTokens: 8192, // Fallback; calculated dynamically based on workers
         temperature: 0.7,
         includeDialogueExamples: false,
-        timeout: 300000,  // 5 minute timeout for queue
+        timeout: 300000, // 5 minute timeout for queue
         // Advanced sampling parameters (optional)
         top_p: null,
         top_k: null,
@@ -256,13 +262,13 @@ export function getDefaultPresets() {
         min_p: null,
         dynatemp_range: null,
         dynatemp_exponent: null,
-        smoothing_factor: null
+        smoothing_factor: null,
       },
       lorebookSettings: {
         scanDepth: 2000,
         tokenBudget: 1800,
         recursionDepth: 3,
-        enableRecursion: true
+        enableRecursion: true,
       },
       promptTemplates: {
         systemPrompt: null,
@@ -271,8 +277,8 @@ export function getDefaultPresets() {
         instruction: null,
         rewriteThirdPerson: null,
         ideate: null,
-        storyStarter: null
-      }
+        storyStarter: null,
+      },
     },
   };
 }
@@ -282,19 +288,19 @@ export function getDefaultPresets() {
  */
 export function createPresetFromSettings(settings) {
   return {
-    name: "DeepSeek",
-    provider: "deepseek",
+    name: 'DeepSeek',
+    provider: 'deepseek',
     apiConfig: {
-      apiKey: settings.apiKey || "",
-      baseURL: "https://api.deepseek.com/v1",
-      model: "deepseek-v4-flash"
+      apiKey: settings.apiKey || '',
+      baseURL: 'https://api.deepseek.com/v1',
+      model: 'deepseek-v4-flash',
     },
     generationSettings: {
       maxTokens: settings.maxTokens || 4000,
       maxContextTokens: settings.maxContextTokens || 128000,
       temperature: settings.temperature !== undefined ? settings.temperature : 1.0,
       thinking: false,
-      reasoningEffort: "high",
+      reasoningEffort: 'high',
       includeDialogueExamples: settings.includeDialogueExamples || false,
       // Advanced sampling parameters (optional, null = use API defaults)
       top_p: null,
@@ -313,13 +319,13 @@ export function createPresetFromSettings(settings) {
       min_p: null,
       dynatemp_range: null,
       dynatemp_exponent: null,
-      smoothing_factor: null
+      smoothing_factor: null,
     },
     lorebookSettings: {
       scanDepth: settings.lorebookScanDepth || 2000,
       tokenBudget: settings.lorebookTokenBudget || 1800,
       recursionDepth: settings.lorebookRecursionDepth || 3,
-      enableRecursion: settings.lorebookEnableRecursion !== false
+      enableRecursion: settings.lorebookEnableRecursion !== false,
     },
     promptTemplates: {
       systemPrompt: null,
@@ -328,7 +334,7 @@ export function createPresetFromSettings(settings) {
       instruction: null,
       rewriteThirdPerson: null,
       ideate: null,
-      storyStarter: null
-    }
+      storyStarter: null,
+    },
   };
 }

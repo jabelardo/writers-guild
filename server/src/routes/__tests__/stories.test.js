@@ -42,18 +42,16 @@ describe('Stories API Routes - CRUD Operations', () => {
     app.use('/api/stories', storiesRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
 
   describe('GET / - List Stories', () => {
     it('should return stories array', async () => {
-      const response = await request(app)
-        .get('/api/stories')
-        .expect(200);
+      const response = await request(app).get('/api/stories').expect(200);
 
       expect(response.body).toHaveProperty('stories');
       expect(Array.isArray(response.body.stories)).toBe(true);
@@ -103,10 +101,7 @@ describe('Stories API Routes - CRUD Operations', () => {
     });
 
     it('should return 400 if title is empty', async () => {
-      const response = await request(app)
-        .post('/api/stories')
-        .send({ title: '   ' })
-        .expect(400);
+      const response = await request(app).post('/api/stories').send({ title: '   ' }).expect(400);
 
       expect(response.body.error).toContain('Title is required');
     });
@@ -131,18 +126,14 @@ describe('Stories API Routes - CRUD Operations', () => {
 
       const storyId = createResponse.body.story.id;
 
-      const response = await request(app)
-        .get(`/api/stories/${storyId}`)
-        .expect(200);
+      const response = await request(app).get(`/api/stories/${storyId}`).expect(200);
 
       expect(response.body.story.id).toBe(storyId);
       expect(response.body.story.title).toBe('Test Story');
     });
 
     it('should return 500 for non-existent story', async () => {
-      await request(app)
-        .get('/api/stories/non-existent-id')
-        .expect(500);
+      await request(app).get('/api/stories/non-existent-id').expect(500);
     });
   });
 
@@ -205,10 +196,7 @@ describe('Stories API Routes - CRUD Operations', () => {
 
       const storyId = createResponse.body.story.id;
 
-      const response = await request(app)
-        .put(`/api/stories/${storyId}`)
-        .send({})
-        .expect(400);
+      const response = await request(app).put(`/api/stories/${storyId}`).send({}).expect(400);
 
       expect(response.body.error).toContain('No updates provided');
     });
@@ -331,16 +319,12 @@ describe('Stories API Routes - CRUD Operations', () => {
 
       const storyId = createResponse.body.story.id;
 
-      const response = await request(app)
-        .delete(`/api/stories/${storyId}`)
-        .expect(200);
+      const response = await request(app).delete(`/api/stories/${storyId}`).expect(200);
 
       expect(response.body.success).toBe(true);
 
       // Verify story is no longer accessible
-      await request(app)
-        .get(`/api/stories/${storyId}`)
-        .expect(500);
+      await request(app).get(`/api/stories/${storyId}`).expect(500);
     });
   });
 
@@ -373,9 +357,7 @@ describe('Stories API Routes - CRUD Operations', () => {
     });
 
     it('should return 500 for non-existent story', async () => {
-      await request(app)
-        .post('/api/stories/non-existent-id/duplicate')
-        .expect(500);
+      await request(app).post('/api/stories/non-existent-id/duplicate').expect(500);
     });
 
     it('should duplicate story and include it in list', async () => {
@@ -388,25 +370,19 @@ describe('Stories API Routes - CRUD Operations', () => {
       const storyId = createResponse.body.story.id;
 
       // Get count before
-      const beforeList = await request(app)
-        .get('/api/stories')
-        .expect(200);
+      const beforeList = await request(app).get('/api/stories').expect(200);
       const countBefore = beforeList.body.stories.length;
 
       // Duplicate
-      await request(app)
-        .post(`/api/stories/${storyId}/duplicate`)
-        .expect(201);
+      await request(app).post(`/api/stories/${storyId}/duplicate`).expect(201);
 
       // Get count after
-      const afterList = await request(app)
-        .get('/api/stories')
-        .expect(200);
+      const afterList = await request(app).get('/api/stories').expect(200);
 
       expect(afterList.body.stories.length).toBe(countBefore + 1);
 
       // Verify both original and copy exist
-      const titles = afterList.body.stories.map(s => s.title);
+      const titles = afterList.body.stories.map((s) => s.title);
       expect(titles).toContain('To Duplicate');
       expect(titles).toContain('To Duplicate (Copy)');
     });
@@ -456,7 +432,7 @@ describe('Stories API Routes - CRUD Operations', () => {
       const storyId = createResponse.body.story.id;
 
       const avatarWindows = [
-        { id: 'win1', characterId: 'char1', x: 100, y: 100, width: 200, height: 300 }
+        { id: 'win1', characterId: 'char1', x: 100, y: 100, width: 200, height: 300 },
       ];
 
       const response = await request(app)
@@ -492,7 +468,7 @@ describe('Stories API Routes - CRUD Operations', () => {
       const storyId = createResponse.body.story.id;
 
       const avatarWindows = [
-        { id: 'win1', x: 100, y: 100 } // missing characterId, width, height
+        { id: 'win1', x: 100, y: 100 }, // missing characterId, width, height
       ];
 
       const response = await request(app)
@@ -512,7 +488,7 @@ describe('Stories API Routes - CRUD Operations', () => {
       const storyId = createResponse.body.story.id;
 
       const avatarWindows = [
-        { id: 'win1', characterId: 'char1', x: 100, y: 100, width: -50, height: 300 }
+        { id: 'win1', characterId: 'char1', x: 100, y: 100, width: -50, height: 300 },
       ];
 
       const response = await request(app)
@@ -533,7 +509,7 @@ describe('Stories API Routes - CRUD Operations', () => {
 
       const avatarWindows = [
         { id: 'win1', characterId: 'char1', x: 100, y: 100, width: 200, height: 300 },
-        { id: 'win2', characterId: 'char2', x: 400, y: 100, width: 200, height: 300 }
+        { id: 'win2', characterId: 'char2', x: 400, y: 100, width: 200, height: 300 },
       ];
 
       const response = await request(app)
@@ -559,7 +535,7 @@ describe('Stories API Routes - CRUD Operations', () => {
         x: i * 100,
         y: 100,
         width: 200,
-        height: 300
+        height: 300,
       }));
 
       const response = await request(app)
@@ -586,9 +562,7 @@ describe('Stories API Routes - CRUD Operations', () => {
         .send({ content: 'Some content' })
         .expect(200);
 
-      const response = await request(app)
-        .get(`/api/stories/${storyId}/history/status`)
-        .expect(200);
+      const response = await request(app).get(`/api/stories/${storyId}/history/status`).expect(200);
 
       expect(response.body).toHaveProperty('canUndo');
       expect(response.body).toHaveProperty('canRedo');
@@ -617,9 +591,7 @@ describe('Stories API Routes - CRUD Operations', () => {
         .expect(200);
 
       // Undo
-      const response = await request(app)
-        .post(`/api/stories/${storyId}/undo`)
-        .expect(200);
+      const response = await request(app).post(`/api/stories/${storyId}/undo`).expect(200);
 
       // Check response has content property
       expect(response.body).toHaveProperty('content');
@@ -634,9 +606,7 @@ describe('Stories API Routes - CRUD Operations', () => {
 
       const storyId = createResponse.body.story.id;
 
-      const response = await request(app)
-        .post(`/api/stories/${storyId}/undo`)
-        .expect(400);
+      const response = await request(app).post(`/api/stories/${storyId}/undo`).expect(400);
 
       expect(response.body.error).toContain('Nothing to undo');
     });
@@ -664,14 +634,10 @@ describe('Stories API Routes - CRUD Operations', () => {
         .expect(200);
 
       // Undo
-      await request(app)
-        .post(`/api/stories/${storyId}/undo`)
-        .expect(200);
+      await request(app).post(`/api/stories/${storyId}/undo`).expect(200);
 
       // Redo
-      const response = await request(app)
-        .post(`/api/stories/${storyId}/redo`)
-        .expect(200);
+      const response = await request(app).post(`/api/stories/${storyId}/redo`).expect(200);
 
       // Check response has content property
       expect(response.body).toHaveProperty('content');
@@ -686,9 +652,7 @@ describe('Stories API Routes - CRUD Operations', () => {
 
       const storyId = createResponse.body.story.id;
 
-      const response = await request(app)
-        .post(`/api/stories/${storyId}/redo`)
-        .expect(400);
+      const response = await request(app).post(`/api/stories/${storyId}/redo`).expect(400);
 
       expect(response.body.error).toContain('Nothing to redo');
     });
@@ -711,9 +675,9 @@ describe('Stories API Routes - Story Characters', () => {
     app.use('/api/characters', charactersRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
@@ -765,10 +729,10 @@ describe('Stories API Routes - Story Characters', () => {
       // Create a character with first_mes
       const charResponse = await request(app)
         .post('/api/characters')
-        .send({ 
-          name: 'Greeter', 
+        .send({
+          name: 'Greeter',
           description: 'Test',
-          first_mes: 'Hello there!'
+          first_mes: 'Hello there!',
         })
         .expect(201);
 
@@ -785,7 +749,9 @@ describe('Stories API Routes - Story Characters', () => {
         .expect(200);
 
       const response = await request(app)
-        .get(`/api/stories/${storyResponse.body.story.id}/characters/${charResponse.body.id}/greetings`)
+        .get(
+          `/api/stories/${storyResponse.body.story.id}/characters/${charResponse.body.id}/greetings`,
+        )
         .expect(200);
 
       expect(response.body.greetings).toBeDefined();
@@ -797,10 +763,10 @@ describe('Stories API Routes - Story Characters', () => {
       // Create character with first_mes
       const charResponse = await request(app)
         .post('/api/characters')
-        .send({ 
-          name: 'Multi Greeter', 
+        .send({
+          name: 'Multi Greeter',
           description: 'Has alternates',
-          first_mes: 'Hello!'
+          first_mes: 'Hello!',
         })
         .expect(201);
 
@@ -809,18 +775,19 @@ describe('Stories API Routes - Story Characters', () => {
       // Update the character with alternate greetings
       await request(app)
         .put(`/api/characters/${charId}`)
-        .send({ 
-          alternate_greetings: ['Alternate 1', 'Alternate 2']
+        .send({
+          alternate_greetings: ['Alternate 1', 'Alternate 2'],
         })
         .expect(200);
 
       // Verify the character was updated correctly
-      const charDataResponse = await request(app)
-        .get(`/api/characters/${charId}/data`)
-        .expect(200);
+      const charDataResponse = await request(app).get(`/api/characters/${charId}/data`).expect(200);
 
       expect(charDataResponse.body.character.data.first_mes).toBe('Hello!');
-      expect(charDataResponse.body.character.data.alternate_greetings).toEqual(['Alternate 1', 'Alternate 2']);
+      expect(charDataResponse.body.character.data.alternate_greetings).toEqual([
+        'Alternate 1',
+        'Alternate 2',
+      ]);
 
       // Create a story
       const storyResponse = await request(app)
@@ -839,7 +806,7 @@ describe('Stories API Routes - Story Characters', () => {
         .expect(200);
 
       // Should have: first_mes + 2 alternate greetings = 3 total
-      expect(response.body.greetings.length).toBe(3); 
+      expect(response.body.greetings.length).toBe(3);
       expect(response.body.greetings[0].label).toBe('First Message');
       expect(response.body.greetings[1].label).toBe('Alternate Greeting 1');
       expect(response.body.greetings[2].label).toBe('Alternate Greeting 2');
@@ -915,9 +882,9 @@ describe('Stories API Routes - Story Lorebooks', () => {
     app.use('/api/characters', charactersRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
@@ -944,7 +911,7 @@ describe('Stories API Routes - Story Lorebooks', () => {
       const lorebookId = uuidv4();
       await storage.saveLorebook(lorebookId, {
         name: 'Test Lorebook',
-        description: 'Test description'
+        description: 'Test description',
       });
 
       // Create a story
@@ -983,7 +950,7 @@ describe('Stories API Routes - Story Lorebooks', () => {
       const lorebookId = uuidv4();
       await storage.saveLorebook(lorebookId, {
         name: 'Test Lorebook',
-        description: 'Test description'
+        description: 'Test description',
       });
 
       // Create a story
@@ -995,10 +962,7 @@ describe('Stories API Routes - Story Lorebooks', () => {
       const storyId = storyResponse.body.story.id;
 
       // Add lorebook first
-      await request(app)
-        .post(`/api/stories/${storyId}/lorebooks`)
-        .send({ lorebookId })
-        .expect(200);
+      await request(app).post(`/api/stories/${storyId}/lorebooks`).send({ lorebookId }).expect(200);
 
       // Remove lorebook
       const response = await request(app)
@@ -1029,12 +993,12 @@ describe('Stories API Routes - Generation Endpoints', () => {
       provider: options.provider || 'deepseek',
       apiConfig: options.apiConfig || {
         apiKey: 'test-api-key',
-        model: 'deepseek-v4-flash'
+        model: 'deepseek-v4-flash',
       },
       generationSettings: {
         maxTokens: 128,
         maxContextTokens: 4096,
-        temperature: 1.0
+        temperature: 1.0,
       },
       promptTemplates: {
         continue: '{{story}}',
@@ -1042,8 +1006,8 @@ describe('Stories API Routes - Generation Endpoints', () => {
         instruction: '{{story}}',
         rewriteThirdPerson: '{{story}}',
         ideate: '{{story}}',
-        storyStarter: '{{story}}'
-      }
+        storyStarter: '{{story}}',
+      },
     });
 
     await request(app)
@@ -1066,9 +1030,9 @@ describe('Stories API Routes - Generation Endpoints', () => {
     app.use('/api/stories', storiesRouter);
     app.use('/api/characters', charactersRouter);
 
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
@@ -1078,7 +1042,7 @@ describe('Stories API Routes - Generation Endpoints', () => {
     'continue-with-instruction',
     'rewrite-third-person',
     'ideate',
-    'story-starter'
+    'story-starter',
   ])('should return 400 for /%s when no preset is configured', async (endpoint) => {
     const storyResponse = await request(app)
       .post('/api/stories')
@@ -1098,25 +1062,23 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockResolvedValue({
       stream: (async function* () {
         yield { content: '*hello* ', finished: false };
         yield { content: '*world*', finished: true };
       })(),
-      metadata: {}
+      metadata: {},
     });
 
-    const response = await request(app)
-      .post(`/api/stories/${storyId}/continue`)
-      .expect(200);
+    const response = await request(app).post(`/api/stories/${storyId}/continue`).expect(200);
 
     expect(response.text).toContain('"prompts"');
     expect(response.text).toContain('"content":"hello "');
@@ -1139,19 +1101,19 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     const buildPromptsSpy = vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockResolvedValue({
       stream: (async function* () {
         yield { content: 'ok', finished: true };
       })(),
-      metadata: {}
+      metadata: {},
     });
 
     await request(app)
@@ -1171,30 +1133,34 @@ describe('Stories API Routes - Generation Endpoints', () => {
       .send({ content: 'Look ![img](https://example.com/pic.png)' })
       .expect(200);
 
-    vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockImplementation(async (context, generationType, params) => {
-      params.imagePreserver.preserve(context.story.content);
-      return { system: 'system prompt', user: 'user prompt [WG_IMAGE_0]' };
-    });
+    vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockImplementation(
+      async (context, generationType, params) => {
+        params.imagePreserver.preserve(context.story.content);
+        return { system: 'system prompt', user: 'user prompt [WG_IMAGE_0]' };
+      },
+    );
 
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
 
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockResolvedValue({
       stream: (async function* () {
         yield { content: '[WG_IMAGE_0] rewritten', finished: true };
       })(),
-      metadata: {}
+      metadata: {},
     });
 
     const response = await request(app)
       .post(`/api/stories/${storyId}/rewrite-third-person`)
       .expect(200);
 
-    expect(response.text).toContain('"finalContent":"![img](https://example.com/pic.png) rewritten"');
+    expect(response.text).toContain(
+      '"finalContent":"![img](https://example.com/pic.png) rewritten"',
+    );
     expect(response.text).toContain('"imagesRestored":true');
   });
 
@@ -1202,30 +1168,28 @@ describe('Stories API Routes - Generation Endpoints', () => {
     const { storyId } = await createStoryWithPreset({
       name: 'AI Horde Preset',
       provider: 'aihorde',
-      apiConfig: { apiKey: '0000000000', models: ['test-model'] }
+      apiConfig: { apiKey: '0000000000', models: ['test-model'] },
     });
 
     vi.spyOn(AIHordeProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(AIHordeProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: false,
       requiresPolling: true,
       reasoning: false,
       visionAPI: false,
-      maxContextWindow: 8192
+      maxContextWindow: 8192,
     });
-    vi.spyOn(AIHordeProvider.prototype, 'generateStreamingWithStatus').mockImplementation(() => (
+    vi.spyOn(AIHordeProvider.prototype, 'generateStreamingWithStatus').mockImplementation(() =>
       (async function* () {
         yield { type: 'status', queuePosition: 2, waitTime: 5, finished: false, faulted: false };
         yield { type: 'complete', content: '*done*' };
-      })()
-    ));
+      })(),
+    );
 
-    const response = await request(app)
-      .post(`/api/stories/${storyId}/ideate`)
-      .expect(200);
+    const response = await request(app).post(`/api/stories/${storyId}/ideate`).expect(200);
 
     expect(response.text).toContain('"queueStatus"');
     expect(response.text).toContain('"content":"done"');
@@ -1238,21 +1202,19 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockImplementation(() => {
       throw new Error('Generation cancelled');
     });
 
-    const response = await request(app)
-      .post(`/api/stories/${storyId}/story-starter`)
-      .expect(200);
+    const response = await request(app).post(`/api/stories/${storyId}/story-starter`).expect(200);
 
     expect(response.text).toContain('"cancelled":true');
   });
@@ -1262,21 +1224,19 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockImplementation(() => {
       throw new Error('provider crashed');
     });
 
-    const response = await request(app)
-      .post(`/api/stories/${storyId}/story-starter`)
-      .expect(200);
+    const response = await request(app).post(`/api/stories/${storyId}/story-starter`).expect(200);
 
     expect(response.text).toContain('"error":"provider crashed"');
   });
@@ -1286,18 +1246,18 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: false,
       requiresPolling: false,
       reasoning: false,
       visionAPI: false,
-      maxContextWindow: 8192
+      maxContextWindow: 8192,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generate').mockResolvedValue({
       content: 'final text',
-      reasoning: ''
+      reasoning: '',
     });
 
     const response = await request(app)
@@ -1317,21 +1277,19 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockImplementation(() => {
       throw new Error('Generation cancelled');
     });
 
-    const response = await request(app)
-      .post(`/api/stories/${storyId}/ideate`)
-      .expect(200);
+    const response = await request(app).post(`/api/stories/${storyId}/ideate`).expect(200);
 
     expect(response.text).toContain('"cancelled":true');
   });
@@ -1341,21 +1299,19 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockImplementation(() => {
       throw new Error('ideate failed');
     });
 
-    const response = await request(app)
-      .post(`/api/stories/${storyId}/ideate`)
-      .expect(200);
+    const response = await request(app).post(`/api/stories/${storyId}/ideate`).expect(200);
 
     expect(response.text).toContain('"error":"ideate failed"');
   });
@@ -1380,12 +1336,10 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
   it('POST /:id/continue should return 400 when provider initialization fails', async () => {
     const { storyId } = await createStoryWithPreset({
-      provider: 'nonexistent-provider'
+      provider: 'nonexistent-provider',
     });
 
-    const response = await request(app)
-      .post(`/api/stories/${storyId}/continue`)
-      .expect(400);
+    const response = await request(app).post(`/api/stories/${storyId}/continue`).expect(400);
 
     expect(response.body.error).toContain('Failed to initialize provider');
   });

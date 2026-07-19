@@ -32,63 +32,63 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import GenerationSettings from './GenerationSettings.vue'
-import AdvancedSamplingSettings from './AdvancedSamplingSettings.vue'
-import LorebookSettings from './LorebookSettings.vue'
-import PromptTemplates from './PromptTemplates.vue'
+import { computed } from 'vue';
+import GenerationSettings from './GenerationSettings.vue';
+import AdvancedSamplingSettings from './AdvancedSamplingSettings.vue';
+import LorebookSettings from './LorebookSettings.vue';
+import PromptTemplates from './PromptTemplates.vue';
 
 const props = defineProps({
   config: {
     type: Object,
-    required: true
+    required: true,
   },
   showMaxContext: {
     type: Boolean,
-    default: true
+    default: true,
   },
   contextRange: {
     type: Object,
-    default: () => ({ min: 32000, max: 128000 })
+    default: () => ({ min: 32000, max: 128000 }),
   },
   contextHelpText: {
     type: String,
-    default: 'Context window size (32k-128k tokens). Larger = more story content but higher costs.'
+    default: 'Context window size (32k-128k tokens). Larger = more story content but higher costs.',
   },
   provider: {
     type: String,
-    required: true
+    required: true,
   },
   model: {
     type: String,
-    default: ''
-  }
-})
+    default: '',
+  },
+});
 
-const emit = defineEmits(['update:config'])
+const emit = defineEmits(['update:config']);
 
 // Create local computed properties for each section that syncs with parent
 const localGenerationSettings = computed({
   get() {
-    return props.config.generationSettings || {}
+    return props.config.generationSettings || {};
   },
   set(value) {
-    emit('update:config', { ...props.config, generationSettings: value })
-  }
-})
+    emit('update:config', { ...props.config, generationSettings: value });
+  },
+});
 
 const localLorebookSettings = computed({
   get() {
-    return props.config.lorebookSettings || {}
+    return props.config.lorebookSettings || {};
   },
   set(value) {
-    emit('update:config', { ...props.config, lorebookSettings: value })
-  }
-})
+    emit('update:config', { ...props.config, lorebookSettings: value });
+  },
+});
 
 const localPromptTemplates = computed({
   get() {
-    const templates = props.config.promptTemplates || {}
+    const templates = props.config.promptTemplates || {};
     // Ensure all required fields exist (default to null for system defaults)
     return {
       systemPrompt: templates.systemPrompt ?? null,
@@ -97,13 +97,13 @@ const localPromptTemplates = computed({
       instruction: templates.instruction ?? null,
       rewriteThirdPerson: templates.rewriteThirdPerson ?? null,
       ideate: templates.ideate ?? null,
-      storyStarter: templates.storyStarter ?? null
-    }
+      storyStarter: templates.storyStarter ?? null,
+    };
   },
   set(value) {
-    emit('update:config', { ...props.config, promptTemplates: value })
-  }
-})
+    emit('update:config', { ...props.config, promptTemplates: value });
+  },
+});
 </script>
 
 <style scoped>

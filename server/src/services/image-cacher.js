@@ -13,11 +13,11 @@ import dns from 'dns/promises';
 import sharp from 'sharp';
 import { AssetManager } from './asset-manager.js';
 import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE } from '../../../shared/regex-patterns.js';
-import { IMAGE_MIME_TYPES_MAP, mimeTypeToExt } from '../../../shared/mime-types.js'
+import { IMAGE_MIME_TYPES_MAP, mimeTypeToExt } from '../../../shared/mime-types.js';
 
 // ── Configuration ─────────────────────────────────────────────────────
 
-const DOWNLOAD_TIMEOUT_MS = 15_000;       // 15 s per image
+const DOWNLOAD_TIMEOUT_MS = 15_000; // 15 s per image
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_CONCURRENT_DOWNLOADS = 3;
 const MAX_REDIRECTS = 3;
@@ -93,7 +93,7 @@ function collectAllImageUrls(cardData) {
   if (!data) return new Set();
 
   const fields = [
-    ...CACHEABLE_CARD_FIELDS.map(f => data[f]),
+    ...CACHEABLE_CARD_FIELDS.map((f) => data[f]),
     ...(Array.isArray(data.alternate_greetings) ? data.alternate_greetings : []),
   ];
 
@@ -171,8 +171,8 @@ function isBlockedAddress(ip, family) {
   if (family === 6) {
     const v6 = ip.toLowerCase();
     if (v6 === '::1' || v6 === '::') return true;
-    if (v6.startsWith('fe80:')) return true;              // link-local
-    if (/^f[cd][0-9a-f]{2}:/.test(v6)) return true;        // unique local
+    if (v6.startsWith('fe80:')) return true; // link-local
+    if (/^f[cd][0-9a-f]{2}:/.test(v6)) return true; // unique local
     // IPv4-mapped (::ffff:a.b.c.d) — re-check as v4
     const mapped = v6.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
     if (mapped) return isBlockedAddress(mapped[1], 4);
@@ -180,17 +180,17 @@ function isBlockedAddress(ip, family) {
   }
 
   const parts = ip.split('.').map(Number);
-  if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return true;
+  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return true;
   const [a, b] = parts;
 
-  if (a === 0) return true;                                // "this" network
-  if (a === 10) return true;                               // RFC1918
-  if (a === 127) return true;                              // loopback
-  if (a === 169 && b === 254) return true;                 // link-local + cloud metadata
-  if (a === 172 && b >= 16 && b <= 31) return true;         // RFC1918
-  if (a === 192 && b === 168) return true;                 // RFC1918
-  if (a === 100 && b >= 64 && b <= 127) return true;        // CGNAT
-  if (a >= 224) return true;                               // multicast + reserved
+  if (a === 0) return true; // "this" network
+  if (a === 10) return true; // RFC1918
+  if (a === 127) return true; // loopback
+  if (a === 169 && b === 254) return true; // link-local + cloud metadata
+  if (a === 172 && b >= 16 && b <= 31) return true; // RFC1918
+  if (a === 192 && b === 168) return true; // RFC1918
+  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+  if (a >= 224) return true; // multicast + reserved
   return false;
 }
 
@@ -260,7 +260,7 @@ async function downloadImage(url) {
         redirect: 'manual',
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; WritersGuild/2.0)',
-          'Accept': 'image/*',
+          Accept: 'image/*',
         },
       });
 
@@ -290,7 +290,7 @@ async function downloadImage(url) {
     // Validate Content-Type
     const contentType = response.headers.get('content-type') || '';
     const mimeType = contentType.split(';')[0].trim().toLowerCase();
-    
+
     if (!IMAGE_MIME_TYPES_MAP[mimeType]) {
       console.warn(`[ImageCacher] Skipping non-image Content-Type "${mimeType}": ${url}`);
       return null;
@@ -365,10 +365,12 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
     return new Map();
   }
 
-  console.log(`[ImageCacher] Found ${urls.size} external image(s) in ${entityType.slice(0, -1)} "${label || entityId}"`);
+  console.log(
+    `[ImageCacher] Found ${urls.size} external image(s) in ${entityType.slice(0, -1)} "${label || entityId}"`,
+  );
 
   const meta = await assetManager.readMetadata(entityId);
-  const cachedUrls = new Set(meta.images.map(i => i.originalUrl));
+  const cachedUrls = new Set(meta.images.map((i) => i.originalUrl));
   const newEntries = [];
   const urlArray = [...urls];
   const imageMap = new Map();
@@ -382,11 +384,18 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
     const results = await Promise.allSettled(
       batch.map(async (url) => {
         if (cachedUrls.has(url)) {
-          const existing = meta.images.find(img => img.originalUrl === url);
+          const existing = meta.images.find((img) => img.originalUrl === url);
           if (existing) {
             imageMap.set(url, `/api/assets/${entityType}/${entityId}/${existing.filename}`);
           }
-          report({ phase: 'image', completed: ++completed, total: urlArray.length, url, ok: true, alreadyCached: true });
+          report({
+            phase: 'image',
+            completed: ++completed,
+            total: urlArray.length,
+            url,
+            ok: true,
+            alreadyCached: true,
+          });
           return;
         }
 
@@ -394,7 +403,13 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
         if (!result) {
           console.warn(`[ImageCacher] Could not cache image: ${url}`);
           failed++;
-          report({ phase: 'image', completed: ++completed, total: urlArray.length, url, ok: false });
+          report({
+            phase: 'image',
+            completed: ++completed,
+            total: urlArray.length,
+            url,
+            ok: false,
+          });
           return;
         }
 
@@ -419,8 +434,15 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
         await assetManager.writeFileOnly(entityId, filename, finalBuffer);
         newEntries.push({ originalUrl: url, hash, filename, mimeType: finalMimeType });
         imageMap.set(url, localPath);
-        report({ phase: 'image', completed: ++completed, total: urlArray.length, url, ok: true, alreadyCached: false });
-      })
+        report({
+          phase: 'image',
+          completed: ++completed,
+          total: urlArray.length,
+          url,
+          ok: true,
+          alreadyCached: false,
+        });
+      }),
     );
 
     for (const result of results) {
@@ -438,7 +460,9 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
     await assetManager.writeMetadata(entityId, { images: allImages });
   }
 
-  console.log(`[ImageCacher] Cached ${imageMap.size}/${urls.size} image(s) for ${entityType.slice(0, -1)} "${label || entityId}"`);
+  console.log(
+    `[ImageCacher] Cached ${imageMap.size}/${urls.size} image(s) for ${entityType.slice(0, -1)} "${label || entityId}"`,
+  );
   // cachedCount, not `cached` — per-image events use alreadyCached as a
   // boolean, and reusing one key for both a flag and a count invites
   // `if (event.cached)` bugs where a count of 0 reads as false.
@@ -503,7 +527,12 @@ export async function cacheLorebookImages(lorebookId, lorebookData, dataRoot, op
  * @param {string} dataRoot
  * @returns {Promise<number>} number of image URLs rewritten
  */
-export async function cacheAndRewriteLorebookImages(lorebookId, lorebookData, dataRoot, onProgress) {
+export async function cacheAndRewriteLorebookImages(
+  lorebookId,
+  lorebookData,
+  dataRoot,
+  onProgress,
+) {
   try {
     const imageMap = await cacheLorebookImages(lorebookId, lorebookData, dataRoot, { onProgress });
     if (imageMap.size > 0) {
@@ -529,8 +558,8 @@ function patternFor(imageMap) {
   // Longest first: one URL can be a prefix of another (a.png vs a.png?v=2).
   // Regex alternation matches leftmost-first, so listing the longer URL first
   // makes it win instead of the shorter one truncating it.
-  const ordered = [...imageMap.keys()].sort((a, b) => b.length - a.length);
-  const escaped = ordered.map(url => url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const ordered = [...imageMap.keys()].toSorted((a, b) => b.length - a.length);
+  const escaped = ordered.map((url) => url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 
   cached = new RegExp(escaped.join('|'), 'g');
   replacementPatterns.set(imageMap, cached);
@@ -568,7 +597,7 @@ export function rewriteCharacterImageUrls(cardData, imageMap) {
 
   // Alternate greetings (array of strings)
   if (Array.isArray(data.alternate_greetings)) {
-    data.alternate_greetings = data.alternate_greetings.map(g => replaceUrls(g, imageMap));
+    data.alternate_greetings = data.alternate_greetings.map((g) => replaceUrls(g, imageMap));
   }
 
   return cardData;
@@ -605,7 +634,7 @@ export function rewriteLorebookImageUrls(lorebookData, imageMap) {
   if (!imageMap || imageMap.size === 0) return lorebookData;
   if (!lorebookData?.entries || !Array.isArray(lorebookData.entries)) return lorebookData;
 
- // Rewrite in each entry's content and comment
+  // Rewrite in each entry's content and comment
   for (const entry of lorebookData.entries) {
     if (entry.content) {
       entry.content = replaceUrls(entry.content, imageMap);

@@ -28,10 +28,12 @@ export class LorebookActivator {
     const allEntries = [];
     for (const lorebook of lorebooks) {
       if (lorebook.entries && Array.isArray(lorebook.entries)) {
-        allEntries.push(...lorebook.entries.map(e => ({
-          ...e,
-          lorebookName: lorebook.name
-        })));
+        allEntries.push(
+          ...lorebook.entries.map((e) => ({
+            ...e,
+            lorebookName: lorebook.name,
+          })),
+        );
       }
     }
 
@@ -41,9 +43,10 @@ export class LorebookActivator {
 
     // Prepare scan content (limit to scan depth in tokens, ~4 chars per token)
     const maxChars = this.settings.scanDepth * 4;
-    const contentToScan = scanContent.length > maxChars
-      ? scanContent.slice(-maxChars) // Take last N characters
-      : scanContent;
+    const contentToScan =
+      scanContent.length > maxChars
+        ? scanContent.slice(-maxChars) // Take last N characters
+        : scanContent;
 
     // Activate entries
     const activated = this._activateEntries(allEntries, contentToScan, 0);
@@ -116,11 +119,15 @@ export class LorebookActivator {
     }
 
     // Recursive activation if enabled
-    if (this.settings.enableRecursion && depth < this.settings.recursionDepth && newlyActivated.length > 0) {
+    if (
+      this.settings.enableRecursion &&
+      depth < this.settings.recursionDepth &&
+      newlyActivated.length > 0
+    ) {
       // Scan content of newly activated entries for more keywords
       const recursiveScanContent = newlyActivated
-        .filter(e => !e.preventRecursion)
-        .map(e => e.content)
+        .filter((e) => !e.preventRecursion)
+        .map((e) => e.content)
         .join('\n\n');
 
       if (recursiveScanContent) {
@@ -128,7 +135,7 @@ export class LorebookActivator {
           allEntries,
           recursiveScanContent,
           depth + 1,
-          processedIds
+          processedIds,
         );
 
         activated.push(...recursiveActivated);
@@ -158,12 +165,12 @@ export class LorebookActivator {
 
     // If selective, check secondary keys with logic
     if (entry.selective && entry.secondaryKeys && entry.secondaryKeys.length > 0) {
-      const secondaryMatches = entry.secondaryKeys.map(key =>
-        this._matchKey(key, content, entry)
+      const secondaryMatches = entry.secondaryKeys.map((key) =>
+        this._matchKey(key, content, entry),
       );
 
-      const anyMatch = secondaryMatches.some(m => m);
-      const allMatch = secondaryMatches.every(m => m);
+      const anyMatch = secondaryMatches.some((m) => m);
+      const allMatch = secondaryMatches.every((m) => m);
 
       switch (entry.selectiveLogic) {
         case 0: // AND_ANY: primary + at least one secondary
@@ -190,7 +197,7 @@ export class LorebookActivator {
    * @returns {boolean} - Whether any key matches
    */
   _checkKeys(keys, content, entry) {
-    return keys.some(key => this._matchKey(key, content, entry));
+    return keys.some((key) => this._matchKey(key, content, entry));
   }
 
   /**
@@ -319,7 +326,7 @@ export class LorebookActivator {
 
     // Select one entry from each group
     const selected = [];
-    for (const [groupKey, groupEntries] of groups) {
+    for (const groupEntries of groups.values()) {
       if (groupEntries.length === 1) {
         selected.push(groupEntries[0]);
       } else {
@@ -329,7 +336,7 @@ export class LorebookActivator {
         let random = Math.random() * totalWeight;
 
         for (const entry of groupEntries) {
-          random -= (entry.insertionOrder || 100);
+          random -= entry.insertionOrder || 100;
           if (random <= 0) {
             selected.push(entry);
             break;
@@ -353,7 +360,7 @@ export class LorebookActivator {
     }
 
     return entries
-      .map(entry => {
+      .map((entry) => {
         const comment = entry.comment ? `<!-- ${entry.comment} -->\n` : '';
         return `${comment}${entry.content}`;
       })

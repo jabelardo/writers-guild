@@ -43,7 +43,7 @@ describe('useConfirm', () => {
     it('should use custom confirmText when provided', () => {
       confirmInstance.confirm({
         message: 'Test',
-        confirmText: 'Delete'
+        confirmText: 'Delete',
       });
       expect(confirmInstance.config.value.confirmText).toBe('Delete');
     });
@@ -56,7 +56,7 @@ describe('useConfirm', () => {
     it('should use custom cancelText when provided', () => {
       confirmInstance.confirm({
         message: 'Test',
-        cancelText: 'Keep'
+        cancelText: 'Keep',
       });
       expect(confirmInstance.config.value.cancelText).toBe('Keep');
     });
@@ -69,7 +69,7 @@ describe('useConfirm', () => {
     it('should use custom variant when provided', () => {
       confirmInstance.confirm({
         message: 'Test',
-        variant: 'danger'
+        variant: 'danger',
       });
       expect(confirmInstance.config.value.variant).toBe('danger');
     });
@@ -157,7 +157,7 @@ describe('useConfirm', () => {
     it('should support danger variant', () => {
       confirmInstance.confirm({
         message: 'Delete?',
-        variant: 'danger'
+        variant: 'danger',
       });
       expect(confirmInstance.config.value.variant).toBe('danger');
     });
@@ -165,7 +165,7 @@ describe('useConfirm', () => {
     it('should support warning variant', () => {
       confirmInstance.confirm({
         message: 'Warning!',
-        variant: 'warning'
+        variant: 'warning',
       });
       expect(confirmInstance.config.value.variant).toBe('warning');
     });
@@ -173,7 +173,7 @@ describe('useConfirm', () => {
     it('should support default variant', () => {
       confirmInstance.confirm({
         message: 'Confirm?',
-        variant: 'default'
+        variant: 'default',
       });
       expect(confirmInstance.config.value.variant).toBe('default');
     });
@@ -198,7 +198,7 @@ describe('useConfirm', () => {
         message: 'Custom message',
         confirmText: 'Yes',
         cancelText: 'No',
-        variant: 'danger'
+        variant: 'danger',
       });
 
       expect(confirmInstance.config.value.message).toBe('Custom message');

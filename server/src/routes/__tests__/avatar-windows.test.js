@@ -24,9 +24,9 @@ describe('Avatar Windows API Routes', () => {
     app.use('/api/stories', storiesRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
 
@@ -53,7 +53,7 @@ describe('Avatar Windows API Routes', () => {
       x: 100,
       y: 200,
       width: 300,
-      height: 400
+      height: 400,
     };
 
     it('should save valid avatar windows', async () => {
@@ -75,10 +75,7 @@ describe('Avatar Windows API Routes', () => {
     });
 
     it('should save multiple windows', async () => {
-      const windows = [
-        validWindow,
-        { ...validWindow, id: 'avatar-789', x: 150, y: 250 }
-      ];
+      const windows = [validWindow, { ...validWindow, id: 'avatar-789', x: 150, y: 250 }];
 
       const response = await request(app)
         .put(`/api/stories/${storyId}/avatar-windows`)
@@ -96,9 +93,7 @@ describe('Avatar Windows API Routes', () => {
         .expect(200);
 
       // Get story and verify windows are saved
-      const response = await request(app)
-        .get(`/api/stories/${storyId}`)
-        .expect(200);
+      const response = await request(app).get(`/api/stories/${storyId}`).expect(200);
 
       expect(response.body.story.avatarWindows).toHaveLength(1);
       expect(response.body.story.avatarWindows[0].id).toBe('avatar-123');
@@ -262,10 +257,7 @@ describe('Avatar Windows API Routes', () => {
       });
 
       it('should report correct index for invalid window in array', async () => {
-        const windows = [
-          validWindow,
-          { ...validWindow, id: 'second', width: -100 }
-        ];
+        const windows = [validWindow, { ...validWindow, id: 'second', width: -100 }];
 
         const response = await request(app)
           .put(`/api/stories/${storyId}/avatar-windows`)
@@ -305,7 +297,7 @@ describe('Avatar Windows API Routes', () => {
       it('should reject too many avatar windows', async () => {
         const windows = Array.from({ length: 21 }, (_, i) => ({
           ...validWindow,
-          id: `avatar-${i}`
+          id: `avatar-${i}`,
         }));
 
         const response = await request(app)
@@ -319,7 +311,7 @@ describe('Avatar Windows API Routes', () => {
       it('should accept exactly 20 avatar windows', async () => {
         const windows = Array.from({ length: 20 }, (_, i) => ({
           ...validWindow,
-          id: `avatar-${i}`
+          id: `avatar-${i}`,
         }));
 
         const response = await request(app)

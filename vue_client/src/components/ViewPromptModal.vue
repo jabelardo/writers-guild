@@ -17,20 +17,20 @@
 </template>
 
 <script setup>
-import Modal from './Modal.vue'
+import Modal from './Modal.vue';
 
 defineProps({
   systemPrompt: {
     type: String,
-    default: ''
+    default: '',
   },
   userPrompt: {
     type: String,
-    default: ''
-  }
-})
+    default: '',
+  },
+});
 
-defineEmits(['close'])
+defineEmits(['close']);
 </script>
 
 <style scoped>

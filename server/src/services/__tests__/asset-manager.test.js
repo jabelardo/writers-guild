@@ -49,7 +49,7 @@ describe('AssetManager', () => {
     it('should return the correct file path', () => {
       const filePath = assetManager.assetPath('char-123', 'abc.png');
       expect(filePath).toBe(
-        path.join(tempDir, 'public-assets', 'gallery', 'characters', 'char-123', 'abc.png')
+        path.join(tempDir, 'public-assets', 'gallery', 'characters', 'char-123', 'abc.png'),
       );
     });
   });
@@ -58,7 +58,7 @@ describe('AssetManager', () => {
     it('should return the metadata.json path', () => {
       const mpath = assetManager.metadataPath('char-123');
       expect(mpath).toBe(
-        path.join(tempDir, 'public-assets', 'gallery', 'characters', 'char-123', 'metadata.json')
+        path.join(tempDir, 'public-assets', 'gallery', 'characters', 'char-123', 'metadata.json'),
       );
     });
   });
@@ -83,7 +83,7 @@ describe('AssetManager', () => {
       await assetManager.deleteDir('char-2');
 
       const dir = assetManager.characterDir('char-2');
-      await expect(fs.access(dir)).rejects.toThrow();
+      await expect(fs.access(dir)).rejects.toThrow(/ENOENT/);
     });
 
     it('should not throw when deleting a non-existent directory', async () => {
@@ -111,7 +111,16 @@ describe('AssetManager', () => {
     });
 
     it('should return previously written metadata', async () => {
-      const testMeta = { images: [{ originalUrl: 'http://example.com/img.png', hash: 'abc', filename: 'abc.png', mimeType: 'image/png' }] };
+      const testMeta = {
+        images: [
+          {
+            originalUrl: 'http://example.com/img.png',
+            hash: 'abc',
+            filename: 'abc.png',
+            mimeType: 'image/png',
+          },
+        ],
+      };
       await assetManager.writeMetadata('meta-char', testMeta);
 
       const meta = await assetManager.readMetadata('meta-char');
@@ -132,7 +141,12 @@ describe('AssetManager', () => {
 
   describe('addImageMetadata', () => {
     it('should add a new image entry to metadata', async () => {
-      const entry = { originalUrl: 'http://example.com/a.png', hash: 'aaa', filename: 'aaa.png', mimeType: 'image/png' };
+      const entry = {
+        originalUrl: 'http://example.com/a.png',
+        hash: 'aaa',
+        filename: 'aaa.png',
+        mimeType: 'image/png',
+      };
       await assetManager.addImageMetadata('add-char', entry);
 
       const meta = await assetManager.readMetadata('add-char');
@@ -141,10 +155,20 @@ describe('AssetManager', () => {
     });
 
     it('should update an existing image entry with the same originalUrl', async () => {
-      const entry = { originalUrl: 'http://example.com/a.png', hash: 'aaa', filename: 'aaa.png', mimeType: 'image/png' };
+      const entry = {
+        originalUrl: 'http://example.com/a.png',
+        hash: 'aaa',
+        filename: 'aaa.png',
+        mimeType: 'image/png',
+      };
       await assetManager.addImageMetadata('update-char', entry);
 
-      const updatedEntry = { originalUrl: 'http://example.com/a.png', hash: 'bbb', filename: 'bbb.png', mimeType: 'image/webp' };
+      const updatedEntry = {
+        originalUrl: 'http://example.com/a.png',
+        hash: 'bbb',
+        filename: 'bbb.png',
+        mimeType: 'image/webp',
+      };
       await assetManager.addImageMetadata('update-char', updatedEntry);
 
       const meta = await assetManager.readMetadata('update-char');
@@ -155,8 +179,18 @@ describe('AssetManager', () => {
     });
 
     it('should handle multiple distinct image entries', async () => {
-      await assetManager.addImageMetadata('multi-char', { originalUrl: 'http://example.com/1.png', hash: '1', filename: '1.png', mimeType: 'image/png' });
-      await assetManager.addImageMetadata('multi-char', { originalUrl: 'http://example.com/2.png', hash: '2', filename: '2.png', mimeType: 'image/png' });
+      await assetManager.addImageMetadata('multi-char', {
+        originalUrl: 'http://example.com/1.png',
+        hash: '1',
+        filename: '1.png',
+        mimeType: 'image/png',
+      });
+      await assetManager.addImageMetadata('multi-char', {
+        originalUrl: 'http://example.com/2.png',
+        hash: '2',
+        filename: '2.png',
+        mimeType: 'image/png',
+      });
 
       const meta = await assetManager.readMetadata('multi-char');
       expect(meta.images).toHaveLength(2);
@@ -187,7 +221,13 @@ describe('AssetManager', () => {
   describe('writeAsset', () => {
     it('should write the file and add metadata entry', async () => {
       const buffer = Buffer.from('image data');
-      await assetManager.writeAsset('wa-char', 'abc123.png', buffer, 'http://example.com/img.png', 'image/png');
+      await assetManager.writeAsset(
+        'wa-char',
+        'abc123.png',
+        buffer,
+        'http://example.com/img.png',
+        'image/png',
+      );
 
       // File exists
       const filePath = assetManager.assetPath('wa-char', 'abc123.png');

@@ -69,30 +69,36 @@ if (!fs.existsSync(DATA_ROOT)) {
 })();
 
 // Security middleware
-app.use(helmet({
-  contentSecurityPolicy: false, // Disable CSP for now (can enable later)
-  crossOriginEmbedderPolicy: false
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disable CSP for now (can enable later)
+    crossOriginEmbedderPolicy: false,
+  }),
+);
 
 // CORS configuration
-app.use(cors({
-  origin: config.security.cors.origins,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: config.security.cors.origins,
+    credentials: true,
+  }),
+);
 
 // Optional HTTP Basic Authentication
 app.use(basicAuth());
 
 // Body parsing middleware
 // Disable compression for SSE (text/event-stream)
-app.use(compression({
-  filter: (req, res) => {
-    if (res.getHeader('Content-Type') === 'text/event-stream') {
-      return false;
-    }
-    return compression.filter(req, res);
-  }
-}));
+app.use(
+  compression({
+    filter: (req, res) => {
+      if (res.getHeader('Content-Type') === 'text/event-stream') {
+        return false;
+      }
+      return compression.filter(req, res);
+    },
+  }),
+);
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -134,7 +140,7 @@ if (isProduction) {
 }
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error('Error:', err);
 
   const statusCode = err.statusCode || 500;
@@ -142,7 +148,7 @@ app.use((err, req, res, next) => {
 
   res.status(statusCode).json({
     error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });
 

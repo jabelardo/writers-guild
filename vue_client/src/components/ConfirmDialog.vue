@@ -12,17 +12,10 @@
       </div>
 
       <div class="confirm-actions">
-        <button
-          class="btn btn-secondary"
-          @click="handleCancel"
-          ref="cancelButton"
-        >
+        <button class="btn btn-secondary" @click="handleCancel" ref="cancelButton">
           {{ cancelText }}
         </button>
-        <button
-          :class="confirmButtonClass"
-          @click="handleConfirm"
-        >
+        <button :class="confirmButtonClass" @click="handleConfirm">
           {{ confirmText }}
         </button>
       </div>
@@ -31,56 +24,56 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue';
 
 const props = defineProps({
   message: {
     type: String,
-    required: true
+    required: true,
   },
   confirmText: {
     type: String,
-    default: 'Confirm'
+    default: 'Confirm',
   },
   cancelText: {
     type: String,
-    default: 'Cancel'
+    default: 'Cancel',
   },
   variant: {
     type: String,
     default: 'default',
-    validator: (value) => ['default', 'danger', 'warning'].includes(value)
-  }
-})
+    validator: (value) => ['default', 'danger', 'warning'].includes(value),
+  },
+});
 
-const emit = defineEmits(['confirm', 'cancel'])
+const emit = defineEmits(['confirm', 'cancel']);
 
-const cancelButton = ref(null)
+const cancelButton = ref(null);
 
 const confirmButtonClass = computed(() => {
-  const classes = ['btn']
+  const classes = ['btn'];
   if (props.variant === 'danger') {
-    classes.push('btn-danger')
+    classes.push('btn-danger');
   } else if (props.variant === 'warning') {
-    classes.push('btn-warning')
+    classes.push('btn-warning');
   } else {
-    classes.push('btn-primary')
+    classes.push('btn-primary');
   }
-  return classes.join(' ')
-})
+  return classes.join(' ');
+});
 
 function handleConfirm() {
-  emit('confirm')
+  emit('confirm');
 }
 
 function handleCancel() {
-  emit('cancel')
+  emit('cancel');
 }
 
 // Focus cancel button on mount (safer default for destructive actions)
 onMounted(() => {
-  cancelButton.value?.focus()
-})
+  cancelButton.value?.focus();
+});
 </script>
 
 <style scoped>

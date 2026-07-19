@@ -12,14 +12,14 @@ describe('DeepSeekProvider', () => {
 
     provider = new DeepSeekProvider({
       apiKey: 'test-api-key',
-      model: 'deepseek-v4-flash'
+      model: 'deepseek-v4-flash',
     });
   });
 
   describe('Configuration', () => {
     it('should initialize with correct defaults', () => {
       const defaultProvider = new DeepSeekProvider({
-        apiKey: 'test-key'
+        apiKey: 'test-key',
       });
 
       expect(defaultProvider.baseURL).toBe('https://api.deepseek.com/v1');
@@ -29,7 +29,7 @@ describe('DeepSeekProvider', () => {
     it('should allow custom base URL', () => {
       const customProvider = new DeepSeekProvider({
         apiKey: 'test-key',
-        baseURL: 'https://custom-api.com/v1'
+        baseURL: 'https://custom-api.com/v1',
       });
 
       expect(customProvider.baseURL).toBe('https://custom-api.com/v1');
@@ -38,7 +38,7 @@ describe('DeepSeekProvider', () => {
     it('should allow custom model', () => {
       const customProvider = new DeepSeekProvider({
         apiKey: 'test-key',
-        model: 'deepseek-v4-pro'
+        model: 'deepseek-v4-pro',
       });
 
       expect(customProvider.model).toBe('deepseek-v4-pro');
@@ -82,7 +82,7 @@ describe('DeepSeekProvider', () => {
     beforeEach(() => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ choices: [{ message: { content: 'r' } }] })
+        json: async () => ({ choices: [{ message: { content: 'r' } }] }),
       });
     });
 
@@ -120,7 +120,7 @@ describe('DeepSeekProvider', () => {
         temperature: 0.7,
         top_p: 0.9,
         frequency_penalty: 0.5,
-        presence_penalty: 0.3
+        presence_penalty: 0.3,
       });
 
       const body = JSON.parse(mockFetch.mock.calls[0][1].body);
@@ -135,7 +135,7 @@ describe('DeepSeekProvider', () => {
         temperature: 0.7,
         top_p: 0.9,
         frequency_penalty: 0.5,
-        presence_penalty: 0.3
+        presence_penalty: 0.3,
       });
 
       const body = JSON.parse(mockFetch.mock.calls[0][1].body);
@@ -155,21 +155,18 @@ describe('DeepSeekProvider', () => {
             {
               message: {
                 content: 'Generated response',
-                reasoning_content: 'Thinking process'
-              }
-            }
+                reasoning_content: 'Thinking process',
+              },
+            },
           ],
           usage: {
             prompt_tokens: 100,
-            completion_tokens: 50
-          }
-        })
+            completion_tokens: 50,
+          },
+        }),
       });
 
-      const result = await provider.generate(
-        'You are a helpful assistant',
-        'Hello, how are you?'
-      );
+      const result = await provider.generate('You are a helpful assistant', 'Hello, how are you?');
 
       expect(result.content).toBe('Generated response');
       expect(result.reasoning).toBe('Thinking process');
@@ -180,13 +177,13 @@ describe('DeepSeekProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: 'Response' } }]
-        })
+          choices: [{ message: { content: 'Response' } }],
+        }),
       });
 
       await provider.generate('System prompt', 'User prompt', {
         maxTokens: 2000,
-        temperature: 0.7
+        temperature: 0.7,
       });
 
       const callArgs = mockFetch.mock.calls[0];
@@ -206,9 +203,7 @@ describe('DeepSeekProvider', () => {
     it('should throw error when API key is missing', async () => {
       const noKeyProvider = new DeepSeekProvider({ apiKey: '' });
 
-      await expect(
-        noKeyProvider.generate('System', 'User')
-      ).rejects.toThrow('API key not set');
+      await expect(noKeyProvider.generate('System', 'User')).rejects.toThrow('API key not set');
     });
 
     it('should handle API errors with error message', async () => {
@@ -216,40 +211,38 @@ describe('DeepSeekProvider', () => {
         ok: false,
         statusText: 'Bad Request',
         json: async () => ({
-          error: { message: 'Invalid request' }
-        })
+          error: { message: 'Invalid request' },
+        }),
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('Invalid request');
+      await expect(provider.generate('System', 'User')).rejects.toThrow('Invalid request');
     });
 
     it('should handle API errors without error message', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         statusText: 'Internal Server Error',
-        json: async () => ({})
+        json: async () => ({}),
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('API request failed: Internal Server Error');
+      await expect(provider.generate('System', 'User')).rejects.toThrow(
+        'API request failed: Internal Server Error',
+      );
     });
 
     it('should include optional sampling params when thinking is off', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: 'Response' } }]
-        })
+          choices: [{ message: { content: 'Response' } }],
+        }),
       });
 
       await provider.generate('System', 'User', {
         top_p: 0.9,
         frequency_penalty: 0.5,
         presence_penalty: 0.3,
-        stop_sequences: ['STOP']
+        stop_sequences: ['STOP'],
       });
 
       const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body);
@@ -263,8 +256,8 @@ describe('DeepSeekProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: 'Response' } }]
-        })
+          choices: [{ message: { content: 'Response' } }],
+        }),
       });
 
       const controller = new AbortController();
@@ -278,9 +271,9 @@ describe('DeepSeekProvider', () => {
     it('should throw error when API key is missing', async () => {
       const noKeyProvider = new DeepSeekProvider({ apiKey: '' });
 
-      await expect(
-        noKeyProvider.generateStreaming('System', 'User')
-      ).rejects.toThrow('API key not set');
+      await expect(noKeyProvider.generateStreaming('System', 'User')).rejects.toThrow(
+        'API key not set',
+      );
     });
 
     it('should return stream object with abort function', async () => {
@@ -288,9 +281,9 @@ describe('DeepSeekProvider', () => {
         ok: true,
         body: {
           getReader: () => ({
-            read: async () => ({ done: true })
-          })
-        }
+            read: async () => ({ done: true }),
+          }),
+        },
       });
 
       const result = await provider.generateStreaming('System', 'User');
@@ -306,22 +299,23 @@ describe('DeepSeekProvider', () => {
         ok: false,
         statusText: 'Server Error',
         json: async () => ({
-          error: { message: 'Server error' }
-        })
+          error: { message: 'Server error' },
+        }),
       });
 
-      await expect(
-        provider.generateStreaming('System', 'User')
-      ).rejects.toThrow('Server error');
+      await expect(provider.generateStreaming('System', 'User')).rejects.toThrow('Server error');
     });
 
     it('forwards thinking flag through streaming path', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        body: { getReader: () => ({ read: async () => ({ done: true }) }) }
+        body: { getReader: () => ({ read: async () => ({ done: true }) }) },
       });
 
-      await provider.generateStreaming('System', 'User', { thinking: true, reasoningEffort: 'max' });
+      await provider.generateStreaming('System', 'User', {
+        thinking: true,
+        reasoningEffort: 'max',
+      });
 
       const body = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(body.stream).toBe(true);
@@ -361,9 +355,9 @@ describe('DeepSeekProvider', () => {
         json: async () => ({
           data: [
             { id: 'deepseek-v4-flash', created: 1234567890, owned_by: 'deepseek' },
-            { id: 'deepseek-v4-pro', created: 1234567891, owned_by: 'deepseek' }
-          ]
-        })
+            { id: 'deepseek-v4-pro', created: 1234567891, owned_by: 'deepseek' },
+          ],
+        }),
       });
 
       const models = await provider.getAvailableModels();
@@ -376,7 +370,7 @@ describe('DeepSeekProvider', () => {
     it('should return empty array on error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        statusText: 'Server Error'
+        statusText: 'Server Error',
       });
 
       const models = await provider.getAvailableModels();

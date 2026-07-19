@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   OllamaProvider,
   parseModelfileParameters,
-  extractContextLength
+  extractContextLength,
 } from '../ollama-provider.js';
 
 function streamFrom(chunks) {
@@ -13,7 +13,7 @@ function streamFrom(chunks) {
         controller.enqueue(encoder.encode(chunk));
       }
       controller.close();
-    }
+    },
   });
 }
 
@@ -99,7 +99,7 @@ describe('OllamaProvider', () => {
       const body = provider.buildRequestBody('SYS', 'USR', {});
       expect(body.messages).toEqual([
         { role: 'system', content: 'SYS' },
-        { role: 'user', content: 'USR' }
+        { role: 'user', content: 'USR' },
       ]);
     });
 
@@ -117,7 +117,7 @@ describe('OllamaProvider', () => {
       const body = provider.buildRequestBody('', 'u', {
         maxTokens: 500,
         maxContextTokens: 16384,
-        temperature: 1.2
+        temperature: 1.2,
       });
       expect(body.options.num_predict).toBe(500);
       expect(body.options.num_ctx).toBe(16384);
@@ -142,7 +142,7 @@ describe('OllamaProvider', () => {
         rep_pen_range: 256,
         mirostat: 2,
         mirostat_tau: 5,
-        mirostat_eta: 0.1
+        mirostat_eta: 0.1,
       });
       expect(body.options.top_p).toBe(0.9);
       expect(body.options.top_k).toBe(40);
@@ -160,7 +160,7 @@ describe('OllamaProvider', () => {
       const body = provider.buildRequestBody('', 'u', {
         top_p: null,
         rep_pen: undefined,
-        mirostat: null
+        mirostat: null,
       });
       expect(body.options.top_p).toBeUndefined();
       expect(body.options.repeat_penalty).toBeUndefined();
@@ -198,8 +198,8 @@ describe('OllamaProvider', () => {
           message: { role: 'assistant', content: 'Hello world' },
           done: true,
           prompt_eval_count: 12,
-          eval_count: 4
-        })
+          eval_count: 4,
+        }),
       });
 
       const result = await provider.generate('s', 'u', { maxTokens: 100 });
@@ -220,11 +220,11 @@ describe('OllamaProvider', () => {
       const p = new OllamaProvider({
         baseURL: 'http://localhost:11434',
         model: 'm',
-        password: 'tok'
+        password: 'tok',
       });
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ message: { content: 'ok' }, done: true })
+        json: async () => ({ message: { content: 'ok' }, done: true }),
       });
       await p.generate('', 'u');
       expect(mockFetch.mock.calls[0][1].headers['Authorization']).toBe('Bearer tok');
@@ -234,7 +234,7 @@ describe('OllamaProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         statusText: 'Not Found',
-        json: async () => ({ error: 'model "x" not found' })
+        json: async () => ({ error: 'model "x" not found' }),
       });
       await expect(provider.generate('s', 'u')).rejects.toThrow('model "x" not found');
     });
@@ -245,7 +245,12 @@ describe('OllamaProvider', () => {
       const body = streamFrom([
         JSON.stringify({ message: { content: 'Hello' }, done: false }) + '\n',
         JSON.stringify({ message: { content: ' world' }, done: false }) + '\n',
-        JSON.stringify({ message: { content: '' }, done: true, prompt_eval_count: 5, eval_count: 2 }) + '\n'
+        JSON.stringify({
+          message: { content: '' },
+          done: true,
+          prompt_eval_count: 5,
+          eval_count: 2,
+        }) + '\n',
       ]);
       const chunks = await collectStream(provider.parseStreamResponse(body));
       const contents = chunks.filter((c) => c.content).map((c) => c.content);
@@ -258,7 +263,7 @@ describe('OllamaProvider', () => {
     it('handles lines split across read chunks', async () => {
       const body = streamFrom([
         '{"message":{"content":"split',
-        '"},"done":false}\n{"message":{"content":"ok"},"done":true}\n'
+        '"},"done":false}\n{"message":{"content":"ok"},"done":true}\n',
       ]);
       const chunks = await collectStream(provider.parseStreamResponse(body));
       const contents = chunks.filter((c) => c.content).map((c) => c.content);
@@ -268,7 +273,7 @@ describe('OllamaProvider', () => {
     it('skips malformed lines without crashing', async () => {
       const body = streamFrom([
         '{not valid json}\n',
-        JSON.stringify({ message: { content: 'good' }, done: true }) + '\n'
+        JSON.stringify({ message: { content: 'good' }, done: true }) + '\n',
       ]);
       const chunks = await collectStream(provider.parseStreamResponse(body));
       const contents = chunks.filter((c) => c.content).map((c) => c.content);
@@ -280,7 +285,7 @@ describe('OllamaProvider', () => {
     it('POSTs to /api/chat with stream:true and returns stream + abort', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        body: streamFrom([JSON.stringify({ message: { content: 'hi' }, done: true }) + '\n'])
+        body: streamFrom([JSON.stringify({ message: { content: 'hi' }, done: true }) + '\n']),
       });
 
       const result = await provider.generateStreaming('s', 'u');
@@ -297,7 +302,7 @@ describe('OllamaProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         statusText: 'Bad Request',
-        json: async () => ({ error: 'broken' })
+        json: async () => ({ error: 'broken' }),
       });
       await expect(provider.generateStreaming('s', 'u')).rejects.toThrow('broken');
     });
@@ -313,16 +318,16 @@ describe('OllamaProvider', () => {
               name: 'llama3:latest',
               size: 4661211808,
               modified_at: '2024-05-01T00:00:00Z',
-              details: { family: 'llama', parameter_size: '8B', quantization_level: 'Q4_0' }
+              details: { family: 'llama', parameter_size: '8B', quantization_level: 'Q4_0' },
             },
             {
               name: 'qwen2.5:7b',
               size: 4500000000,
               modified_at: '2024-06-01T00:00:00Z',
-              details: { family: 'qwen', parameter_size: '7B', quantization_level: 'Q4_K_M' }
-            }
-          ]
-        })
+              details: { family: 'qwen', parameter_size: '7B', quantization_level: 'Q4_K_M' },
+            },
+          ],
+        }),
       });
 
       const models = await provider.getAvailableModels();
@@ -336,7 +341,7 @@ describe('OllamaProvider', () => {
     it('handles empty model list', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ models: [] })
+        json: async () => ({ models: [] }),
       });
       const models = await provider.getAvailableModels();
       expect(models).toEqual([]);
@@ -346,7 +351,7 @@ describe('OllamaProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         statusText: 'Bad Gateway',
-        json: async () => ({})
+        json: async () => ({}),
       });
       await expect(provider.getAvailableModels()).rejects.toThrow('Failed to fetch Ollama models');
     });
@@ -417,8 +422,8 @@ describe('OllamaProvider', () => {
           parameters: 'temperature 0.7\ntop_p 0.9\nstop "<|eot_id|>"',
           model_info: { 'llama.context_length': 8192, 'llama.block_count': 32 },
           capabilities: ['completion', 'tools'],
-          details: { family: 'llama', parameter_size: '8B' }
-        })
+          details: { family: 'llama', parameter_size: '8B' },
+        }),
       });
 
       const info = await provider.getModelInfo('llama3:latest');
@@ -437,7 +442,7 @@ describe('OllamaProvider', () => {
     it('falls back to provider.model when no name passed', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ parameters: '', model_info: {}, capabilities: [] })
+        json: async () => ({ parameters: '', model_info: {}, capabilities: [] }),
       });
       await provider.getModelInfo();
       expect(JSON.parse(mockFetch.mock.calls[0][1].body)).toEqual({ name: 'llama3:latest' });
@@ -451,7 +456,7 @@ describe('OllamaProvider', () => {
     it('handles missing parameters/capabilities/details defensively', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ model_info: { 'llama.context_length': 4096 } })
+        json: async () => ({ model_info: { 'llama.context_length': 4096 } }),
       });
       const info = await provider.getModelInfo('m');
       expect(info.contextLength).toBe(4096);

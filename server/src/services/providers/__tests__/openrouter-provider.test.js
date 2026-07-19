@@ -12,14 +12,14 @@ describe('OpenRouterProvider', () => {
 
     provider = new OpenRouterProvider({
       apiKey: 'test-api-key',
-      model: 'anthropic/claude-3.5-sonnet'
+      model: 'anthropic/claude-3.5-sonnet',
     });
   });
 
   describe('Configuration', () => {
     it('should initialize with correct defaults', () => {
       const defaultProvider = new OpenRouterProvider({
-        apiKey: 'test-key'
+        apiKey: 'test-key',
       });
 
       expect(defaultProvider.baseURL).toBe('https://openrouter.ai/api/v1');
@@ -30,7 +30,7 @@ describe('OpenRouterProvider', () => {
     it('should allow custom base URL', () => {
       const customProvider = new OpenRouterProvider({
         apiKey: 'test-key',
-        baseURL: 'https://custom-api.com/v1'
+        baseURL: 'https://custom-api.com/v1',
       });
 
       expect(customProvider.baseURL).toBe('https://custom-api.com/v1');
@@ -39,7 +39,7 @@ describe('OpenRouterProvider', () => {
     it('should allow custom model', () => {
       const customProvider = new OpenRouterProvider({
         apiKey: 'test-key',
-        model: 'openai/gpt-4'
+        model: 'openai/gpt-4',
       });
 
       expect(customProvider.model).toBe('openai/gpt-4');
@@ -48,7 +48,7 @@ describe('OpenRouterProvider', () => {
     it('should accept provider preferences', () => {
       const customProvider = new OpenRouterProvider({
         apiKey: 'test-key',
-        providers: ['anthropic', 'openai']
+        providers: ['anthropic', 'openai'],
       });
 
       expect(customProvider.providers).toEqual(['anthropic', 'openai']);
@@ -57,7 +57,7 @@ describe('OpenRouterProvider', () => {
     it('should allow disabling fallbacks', () => {
       const customProvider = new OpenRouterProvider({
         apiKey: 'test-key',
-        allowFallbacks: false
+        allowFallbacks: false,
       });
 
       expect(customProvider.allowFallbacks).toBe(false);
@@ -91,7 +91,7 @@ describe('OpenRouterProvider', () => {
 
     it('should use default model when none specified', () => {
       const defaultProvider = new OpenRouterProvider({
-        apiKey: 'test-key'
+        apiKey: 'test-key',
       });
       // OpenRouter defaults to a model, so it should be valid
       const result = defaultProvider.validateConfig();
@@ -117,7 +117,7 @@ describe('OpenRouterProvider', () => {
     it('should include provider preferences when set', () => {
       const customProvider = new OpenRouterProvider({
         apiKey: 'test-key',
-        providers: ['anthropic', 'openai']
+        providers: ['anthropic', 'openai'],
       });
 
       const headers = customProvider.buildHeaders();
@@ -140,22 +140,19 @@ describe('OpenRouterProvider', () => {
             {
               message: {
                 content: 'Generated response',
-                reasoning: 'Thinking process'
-              }
-            }
+                reasoning: 'Thinking process',
+              },
+            },
           ],
           usage: {
             prompt_tokens: 100,
-            completion_tokens: 50
+            completion_tokens: 50,
           },
-          model: 'anthropic/claude-3.5-sonnet'
-        })
+          model: 'anthropic/claude-3.5-sonnet',
+        }),
       });
 
-      const result = await provider.generate(
-        'You are a helpful assistant',
-        'Hello, how are you?'
-      );
+      const result = await provider.generate('You are a helpful assistant', 'Hello, how are you?');
 
       expect(result.content).toBe('Generated response');
       expect(result.reasoning).toBe('Thinking process');
@@ -168,13 +165,13 @@ describe('OpenRouterProvider', () => {
         headers: new Map(),
         json: async () => ({
           choices: [{ message: { content: 'Response' } }],
-          model: 'test-model'
-        })
+          model: 'test-model',
+        }),
       });
 
       await provider.generate('System prompt', 'User prompt', {
         maxTokens: 2000,
-        temperature: 0.7
+        temperature: 0.7,
       });
 
       const callArgs = mockFetch.mock.calls[0];
@@ -191,9 +188,7 @@ describe('OpenRouterProvider', () => {
     it('should throw error when API key is missing', async () => {
       const noKeyProvider = new OpenRouterProvider({ apiKey: '' });
 
-      await expect(
-        noKeyProvider.generate('System', 'User')
-      ).rejects.toThrow('API key not set');
+      await expect(noKeyProvider.generate('System', 'User')).rejects.toThrow('API key not set');
     });
 
     it('should handle API errors', async () => {
@@ -201,13 +196,11 @@ describe('OpenRouterProvider', () => {
         ok: false,
         statusText: 'Bad Request',
         json: async () => ({
-          error: { message: 'Invalid request' }
-        })
+          error: { message: 'Invalid request' },
+        }),
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('Invalid request');
+      await expect(provider.generate('System', 'User')).rejects.toThrow('Invalid request');
     });
 
     it('should include optional parameters', async () => {
@@ -216,15 +209,15 @@ describe('OpenRouterProvider', () => {
         headers: new Map(),
         json: async () => ({
           choices: [{ message: { content: 'Response' } }],
-          model: 'test-model'
-        })
+          model: 'test-model',
+        }),
       });
 
       await provider.generate('System', 'User', {
         top_p: 0.9,
         frequency_penalty: 0.5,
         presence_penalty: 0.3,
-        stop_sequences: ['STOP']
+        stop_sequences: ['STOP'],
       });
 
       const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body);
@@ -237,7 +230,7 @@ describe('OpenRouterProvider', () => {
     it('should add route parameter when fallbacks disabled', async () => {
       const noFallbackProvider = new OpenRouterProvider({
         apiKey: 'test-key',
-        allowFallbacks: false
+        allowFallbacks: false,
       });
 
       mockFetch.mockResolvedValueOnce({
@@ -245,8 +238,8 @@ describe('OpenRouterProvider', () => {
         headers: new Map(),
         json: async () => ({
           choices: [{ message: { content: 'Response' } }],
-          model: 'test-model'
-        })
+          model: 'test-model',
+        }),
       });
 
       await noFallbackProvider.generate('System', 'User');
@@ -260,9 +253,9 @@ describe('OpenRouterProvider', () => {
     it('should throw error when API key is missing', async () => {
       const noKeyProvider = new OpenRouterProvider({ apiKey: '' });
 
-      await expect(
-        noKeyProvider.generateStreaming('System', 'User')
-      ).rejects.toThrow('API key not set');
+      await expect(noKeyProvider.generateStreaming('System', 'User')).rejects.toThrow(
+        'API key not set',
+      );
     });
 
     it('should return stream object with abort function', async () => {
@@ -271,9 +264,9 @@ describe('OpenRouterProvider', () => {
         headers: new Map([['X-OpenRouter-Provider', 'anthropic']]),
         body: {
           getReader: () => ({
-            read: async () => ({ done: true })
-          })
-        }
+            read: async () => ({ done: true }),
+          }),
+        },
       });
 
       const result = await provider.generateStreaming('System', 'User');
@@ -289,13 +282,11 @@ describe('OpenRouterProvider', () => {
         ok: false,
         statusText: 'Server Error',
         json: async () => ({
-          error: { message: 'Server error' }
-        })
+          error: { message: 'Server error' },
+        }),
       });
 
-      await expect(
-        provider.generateStreaming('System', 'User')
-      ).rejects.toThrow('Server error');
+      await expect(provider.generateStreaming('System', 'User')).rejects.toThrow('Server error');
     });
   });
 
@@ -352,16 +343,16 @@ describe('OpenRouterProvider', () => {
               description: 'Fast and capable',
               context_length: 200000,
               pricing: { prompt: 0.003, completion: 0.015 },
-              top_provider: { name: 'Anthropic' }
+              top_provider: { name: 'Anthropic' },
             },
             {
               id: 'openai/gpt-4',
               name: 'GPT-4',
               context_length: 8192,
-              pricing: { prompt: 0.03, completion: 0.06 }
-            }
-          ]
-        })
+              pricing: { prompt: 0.03, completion: 0.06 },
+            },
+          ],
+        }),
       });
 
       const models = await provider.getAvailableModels();
@@ -376,7 +367,7 @@ describe('OpenRouterProvider', () => {
     it('should return empty array on error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        statusText: 'Server Error'
+        statusText: 'Server Error',
       });
 
       const models = await provider.getAvailableModels();
@@ -395,11 +386,11 @@ describe('OpenRouterProvider', () => {
               top_provider: {
                 name: 'Anthropic',
                 max_completion_tokens: 8192,
-                is_moderated: false
-              }
-            }
-          ]
-        })
+                is_moderated: false,
+              },
+            },
+          ],
+        }),
       });
 
       const providers = await provider.getModelProviders('anthropic/claude-3.5-sonnet');
@@ -414,10 +405,10 @@ describe('OpenRouterProvider', () => {
         json: async () => ({
           data: [
             {
-              id: 'other/model'
-            }
-          ]
-        })
+              id: 'other/model',
+            },
+          ],
+        }),
       });
 
       const providers = await provider.getModelProviders('anthropic/claude-3.5-sonnet');
@@ -427,7 +418,7 @@ describe('OpenRouterProvider', () => {
     it('should return empty array on error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        statusText: 'Error'
+        statusText: 'Error',
       });
 
       const providers = await provider.getModelProviders('any-model');

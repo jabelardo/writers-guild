@@ -1,7 +1,9 @@
 <template>
   <div v-if="progress && progress.total" class="image-progress">
     <div class="image-progress-label">
-      <span>{{ progress.stage === 'lorebook' ? 'Caching lorebook images' : 'Caching images' }}</span>
+      <span>{{
+        progress.stage === 'lorebook' ? 'Caching lorebook images' : 'Caching images'
+      }}</span>
       <span>{{ progress.completed }} / {{ progress.total }}</span>
     </div>
     <div
@@ -27,9 +29,9 @@ defineProps({
   /** null | { completed, total, failed, stage } */
   progress: {
     type: Object,
-    default: null
-  }
-})
+    default: null,
+  },
+});
 </script>
 
 <style scoped>

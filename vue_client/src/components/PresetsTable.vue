@@ -1,10 +1,5 @@
 <template>
-  <DataTable
-    :columns="columns"
-    :data="presets"
-    default-sort="name"
-    row-key="id"
-  >
+  <DataTable :columns="columns" :data="presets" default-sort="name" row-key="id">
     <!-- Provider column -->
     <template #cell-provider="{ row }">
       <span class="provider-badge">
@@ -23,22 +18,13 @@
           <i :class="row.id === defaultPresetId ? 'fas fa-check' : 'fas fa-star'"></i>
           Set Default
         </button>
-        <button
-          class="btn btn-small btn-secondary"
-          @click="$emit('edit', row.id)"
-        >
+        <button class="btn btn-small btn-secondary" @click="$emit('edit', row.id)">
           <i class="fas fa-edit"></i> Edit
         </button>
-        <button
-          class="btn btn-small btn-secondary"
-          @click="$emit('duplicate', row.id)"
-        >
+        <button class="btn btn-small btn-secondary" @click="$emit('duplicate', row.id)">
           <i class="fas fa-copy"></i> Duplicate
         </button>
-        <button
-          class="btn btn-small btn-secondary"
-          @click="$emit('delete', row)"
-        >
+        <button class="btn btn-small btn-secondary" @click="$emit('delete', row)">
           <i class="fas fa-trash"></i> Delete
         </button>
       </div>
@@ -47,20 +33,20 @@
 </template>
 
 <script setup>
-import DataTable from './DataTable.vue'
+import DataTable from './DataTable.vue';
 
 const props = defineProps({
   presets: {
     type: Array,
-    required: true
+    required: true,
   },
   defaultPresetId: {
     type: String,
-    default: null
-  }
-})
+    default: null,
+  },
+});
 
-defineEmits(['edit', 'duplicate', 'delete', 'set-default'])
+defineEmits(['edit', 'duplicate', 'delete', 'set-default']);
 
 function getProviderDisplayName(provider) {
   const names = {
@@ -68,9 +54,9 @@ function getProviderDisplayName(provider) {
     aihorde: 'AI Horde',
     openai: 'OpenAI',
     anthropic: 'Claude',
-    openrouter: 'OpenRouter'
-  }
-  return names[provider] || provider
+    openrouter: 'OpenRouter',
+  };
+  return names[provider] || provider;
 }
 
 const columns = [
@@ -78,21 +64,21 @@ const columns = [
     key: 'name',
     label: 'Name',
     sortable: true,
-    cellClass: 'name-cell'
+    cellClass: 'name-cell',
   },
   {
     key: 'provider',
     label: 'Provider',
     sortable: true,
-    cellClass: 'provider-cell'
+    cellClass: 'provider-cell',
   },
   {
     key: 'actions',
     label: 'Actions',
     sortable: false,
-    headerClass: 'actions-col-wide'
-  }
-]
+    headerClass: 'actions-col-wide',
+  },
+];
 </script>
 
 <style scoped>

@@ -15,7 +15,9 @@ export class LLMProvider {
    */
   constructor(config) {
     if (new.target === LLMProvider) {
-      throw new TypeError("Cannot construct LLMProvider instances directly - must extend this class");
+      throw new TypeError(
+        'Cannot construct LLMProvider instances directly - must extend this class',
+      );
     }
 
     this.config = config;
@@ -36,7 +38,7 @@ export class LLMProvider {
    * @returns {number} capabilities.maxContextWindow - Maximum context window in tokens
    */
   getCapabilities() {
-    throw new Error("getCapabilities() must be implemented by subclass");
+    throw new Error('getCapabilities() must be implemented by subclass');
   }
 
   /**
@@ -46,7 +48,7 @@ export class LLMProvider {
    * @returns {string} [result.error] - Error message if invalid
    */
   validateConfig() {
-    throw new Error("validateConfig() must be implemented by subclass");
+    throw new Error('validateConfig() must be implemented by subclass');
   }
 
   /**
@@ -104,7 +106,7 @@ export class LLMProvider {
       systemPromptTemplate,
       // Pass imagePreserver if provided (for preserving images after truncation)
       imagePreserver: customParams.imagePreserver || null,
-      ...customParams
+      ...customParams,
     });
   }
 
@@ -122,8 +124,8 @@ export class LLMProvider {
    * @returns {Object} [result.usage] - Token usage statistics
    * @returns {Object} [result.metadata] - Provider-specific metadata
    */
-  async generate(systemPrompt, userPrompt, options = {}) {
-    throw new Error("generate() must be implemented by subclass");
+  async generate(_systemPrompt, _userPrompt, _options = {}) {
+    throw new Error('generate() must be implemented by subclass');
   }
 
   /**
@@ -145,8 +147,8 @@ export class LLMProvider {
    * @yields {boolean} chunk.finished - Whether generation is complete
    * @yields {Object} [chunk.usage] - Token usage (typically only on final chunk)
    */
-  async generateStreaming(systemPrompt, userPrompt, options = {}) {
-    throw new Error("generateStreaming() must be implemented by subclass");
+  async generateStreaming(_systemPrompt, _userPrompt, _options = {}) {
+    throw new Error('generateStreaming() must be implemented by subclass');
   }
 
   /**
@@ -162,7 +164,7 @@ export class LLMProvider {
     return {
       code: 'API_ERROR',
       message: error.message || 'Unknown error occurred',
-      original: error
+      original: error,
     };
   }
 }

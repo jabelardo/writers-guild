@@ -35,31 +35,31 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
-import BaseProviderConfig from './shared/BaseProviderConfig.vue'
-import ApiConfigSection from './shared/ApiConfigSection.vue'
-import ModelSelector from './shared/ModelSelector.vue'
-import { presetsAPI } from '../../services/api'
-import { useModelSelector } from '../../composables/useModelSelector'
+import { computed, onMounted } from 'vue';
+import BaseProviderConfig from './shared/BaseProviderConfig.vue';
+import ApiConfigSection from './shared/ApiConfigSection.vue';
+import ModelSelector from './shared/ModelSelector.vue';
+import { presetsAPI } from '../../services/api';
+import { useModelSelector } from '../../composables/useModelSelector';
 
 const props = defineProps({
   config: {
     type: Object,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const emit = defineEmits(['update:config'])
+const emit = defineEmits(['update:config']);
 
 // Local computed for API config
 const localApiConfig = computed({
   get() {
-    return props.config.apiConfig || {}
+    return props.config.apiConfig || {};
   },
   set(value) {
-    emit('update:config', { ...props.config, apiConfig: value })
-  }
-})
+    emit('update:config', { ...props.config, apiConfig: value });
+  },
+});
 
 // Use the shared model selector composable
 const {
@@ -77,32 +77,32 @@ const {
       ...props.config,
       apiConfig: {
         ...localApiConfig.value,
-        model: updates.model
+        model: updates.model,
       },
       generationSettings: {
         ...props.config.generationSettings,
-        maxContextTokens: updates.contextLength
-      }
-    })
-  }
-})
+        maxContextTokens: updates.contextLength,
+      },
+    });
+  },
+});
 
 // Wrapper to handle model selection
 function selectModel(model) {
-  baseSelectModel(model)
+  baseSelectModel(model);
 }
 
 // Wrapper for fetch
 function fetchModels() {
-  fetchAvailableModels()
+  fetchAvailableModels();
 }
 
 // Auto-fetch models on mount if API key is present
 onMounted(() => {
   if (localApiConfig.value.apiKey) {
-    fetchAvailableModels(true) // silent fetch on mount
+    fetchAvailableModels(true); // silent fetch on mount
   }
-})
+});
 </script>
 
 <style scoped>

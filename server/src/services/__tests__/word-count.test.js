@@ -147,7 +147,7 @@ describe('SqliteStorageService Word Count Integration', () => {
 
       // Verify it's also stored in the database
       const stories = await storage.listStories();
-      const created = stories.find(s => s.id === story.id);
+      const created = stories.find((s) => s.id === story.id);
       expect(created.wordCount).toBe(0);
     });
   });
@@ -159,7 +159,7 @@ describe('SqliteStorageService Word Count Integration', () => {
       await storage.updateStoryContent(story.id, 'Hello world');
 
       const stories = await storage.listStories();
-      const updated = stories.find(s => s.id === story.id);
+      const updated = stories.find((s) => s.id === story.id);
       expect(updated.wordCount).toBe(2);
     });
 
@@ -168,11 +168,11 @@ describe('SqliteStorageService Word Count Integration', () => {
 
       await storage.updateStoryContent(story.id, 'One two three');
       let stories = await storage.listStories();
-      expect(stories.find(s => s.id === story.id).wordCount).toBe(3);
+      expect(stories.find((s) => s.id === story.id).wordCount).toBe(3);
 
       await storage.updateStoryContent(story.id, 'One two three four five');
       stories = await storage.listStories();
-      expect(stories.find(s => s.id === story.id).wordCount).toBe(5);
+      expect(stories.find((s) => s.id === story.id).wordCount).toBe(5);
     });
 
     it('should not update when content is unchanged', async () => {
@@ -191,7 +191,7 @@ describe('SqliteStorageService Word Count Integration', () => {
       await storage.updateStoryContent(story.id, "I don't know about this well-known fact");
 
       const stories = await storage.listStories();
-      const updated = stories.find(s => s.id === story.id);
+      const updated = stories.find((s) => s.id === story.id);
       // Words: I, don't, know, about, this, well-known, fact = 7
       expect(updated.wordCount).toBe(7);
     });
@@ -203,7 +203,7 @@ describe('SqliteStorageService Word Count Integration', () => {
       await storage.updateStoryContent(story.id, '');
 
       const stories = await storage.listStories();
-      const updated = stories.find(s => s.id === story.id);
+      const updated = stories.find((s) => s.id === story.id);
       expect(updated.wordCount).toBe(0);
     });
 
@@ -215,7 +215,7 @@ describe('SqliteStorageService Word Count Integration', () => {
       await storage.updateStoryContent(story.id, words);
 
       const stories = await storage.listStories();
-      const updated = stories.find(s => s.id === story.id);
+      const updated = stories.find((s) => s.id === story.id);
       expect(updated.wordCount).toBe(1000);
     });
   });
@@ -375,15 +375,12 @@ describe('Schema Migration (v1 to v3)', () => {
     // Open with SqliteStorageService, which should trigger migration
     const storage = new SqliteStorageService(tempDir);
 
-    // Verify word_count column exists by creating a story
-    const story = storage.db.prepare('SELECT * FROM stories LIMIT 1').get();
-    const columns = Object.keys(storage.db.prepare('SELECT * FROM stories LIMIT 0').getColumnNames ?
-      { word_count: true } : // Fallback
-      storage.db.prepare('PRAGMA table_info(stories)').all().reduce((acc, col) => {
-        acc[col.name] = true;
-        return acc;
-      }, {})
-    );
+    // Verify word_count column exists after migration
+    const columns = storage.db
+      .prepare('PRAGMA table_info(stories)')
+      .all()
+      .map((col) => col.name);
+    expect(columns).toContain('word_count');
 
     // Check schema version was updated (v6 includes story_history tables)
     const version = storage.db.prepare('SELECT version FROM schema_version').get();
@@ -399,20 +396,33 @@ describe('Schema Migration (v1 to v3)', () => {
     // Create v1 database with existing stories
     const v1db = createV1Database(dbPath);
 
-    v1db.prepare(`
+    v1db
+      .prepare(`
       INSERT INTO stories (id, title, description, content, created, modified)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run('story-1', 'Story One', 'Description', 'Hello world', now, now);
+    `)
+      .run('story-1', 'Story One', 'Description', 'Hello world', now, now);
 
-    v1db.prepare(`
+    v1db
+      .prepare(`
       INSERT INTO stories (id, title, description, content, created, modified)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run('story-2', 'Story Two', 'Description', "I don't know about this well-known fact", now, now);
+    `)
+      .run(
+        'story-2',
+        'Story Two',
+        'Description',
+        "I don't know about this well-known fact",
+        now,
+        now,
+      );
 
-    v1db.prepare(`
+    v1db
+      .prepare(`
       INSERT INTO stories (id, title, description, content, created, modified)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run('story-3', 'Empty Story', 'Description', '', now, now);
+    `)
+      .run('story-3', 'Empty Story', 'Description', '', now, now);
 
     v1db.close();
 
@@ -423,9 +433,9 @@ describe('Schema Migration (v1 to v3)', () => {
     const stories = storage.db.prepare('SELECT id, word_count FROM stories ORDER BY id').all();
 
     expect(stories).toHaveLength(3);
-    expect(stories.find(s => s.id === 'story-1').word_count).toBe(2); // "Hello world"
-    expect(stories.find(s => s.id === 'story-2').word_count).toBe(7); // "I don't know about this well-known fact"
-    expect(stories.find(s => s.id === 'story-3').word_count).toBe(0); // empty
+    expect(stories.find((s) => s.id === 'story-1').word_count).toBe(2); // "Hello world"
+    expect(stories.find((s) => s.id === 'story-2').word_count).toBe(7); // "I don't know about this well-known fact"
+    expect(stories.find((s) => s.id === 'story-3').word_count).toBe(0); // empty
 
     storage.close();
   });
@@ -445,10 +455,20 @@ describe('Schema Migration (v1 to v3)', () => {
     expect(version.version).toBe(SCHEMA_VERSION);
 
     // Verify we can create stories with word_count
-    const story = storage.db.prepare(`
+    storage.db
+      .prepare(`
       INSERT INTO stories (id, title, description, content, word_count, created, modified)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run('test-id', 'Test', '', 'one two three', 3, new Date().toISOString(), new Date().toISOString());
+    `)
+      .run(
+        'test-id',
+        'Test',
+        '',
+        'one two three',
+        3,
+        new Date().toISOString(),
+        new Date().toISOString(),
+      );
 
     const result = storage.db.prepare('SELECT word_count FROM stories WHERE id = ?').get('test-id');
     expect(result.word_count).toBe(3);
@@ -462,10 +482,12 @@ describe('Schema Migration (v1 to v3)', () => {
 
     // Create v1 database with stories
     const v1db = createV1Database(dbPath);
-    v1db.prepare(`
+    v1db
+      .prepare(`
       INSERT INTO stories (id, title, description, content, created, modified)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run('story-1', 'Story', 'Desc', 'Hello world', now, now);
+    `)
+      .run('story-1', 'Story', 'Desc', 'Hello world', now, now);
     v1db.close();
 
     // Open with SqliteStorageService

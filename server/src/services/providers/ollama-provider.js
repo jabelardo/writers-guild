@@ -37,7 +37,7 @@ const SAMPLER_NAME_MAP = {
   rep_pen_range: 'repeat_last_n',
   mirostat: 'mirostat',
   mirostat_tau: 'mirostat_tau',
-  mirostat_eta: 'mirostat_eta'
+  mirostat_eta: 'mirostat_eta',
   // Not mapped (Ollama has no equivalent): top_a, rep_pen_slope
 };
 
@@ -98,7 +98,7 @@ export class OllamaProvider extends LLMProvider {
     const ollamaConfig = {
       ...config,
       baseURL: normalizeBaseURL(config.baseURL),
-      model: config.model || ''
+      model: config.model || '',
     };
 
     super(ollamaConfig);
@@ -111,7 +111,7 @@ export class OllamaProvider extends LLMProvider {
       streaming: true,
       reasoning: false,
       visionAPI: false,
-      maxContextWindow: 8192
+      maxContextWindow: 8192,
     };
   }
 
@@ -142,7 +142,7 @@ export class OllamaProvider extends LLMProvider {
     const ollamaOptions = {
       num_predict: options.maxTokens ?? 200,
       num_ctx: options.maxContextTokens ?? 4096,
-      temperature: options.temperature ?? 0.7
+      temperature: options.temperature ?? 0.7,
     };
 
     for (const [presetKey, ollamaKey] of Object.entries(SAMPLER_NAME_MAP)) {
@@ -159,7 +159,7 @@ export class OllamaProvider extends LLMProvider {
       model: this.model,
       messages,
       stream,
-      options: ollamaOptions
+      options: ollamaOptions,
     };
 
     return body;
@@ -176,7 +176,7 @@ export class OllamaProvider extends LLMProvider {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
-      signal: options.signal
+      signal: options.signal,
     });
 
     if (!response.ok) {
@@ -192,12 +192,12 @@ export class OllamaProvider extends LLMProvider {
       usage: {
         promptTokens: data.prompt_eval_count,
         completionTokens: data.eval_count,
-        totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0)
+        totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0),
       },
       metadata: {
         model: data.model,
-        totalDuration: data.total_duration
-      }
+        totalDuration: data.total_duration,
+      },
     };
   }
 
@@ -215,7 +215,7 @@ export class OllamaProvider extends LLMProvider {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
-      signal
+      signal,
     });
 
     if (!response.ok) {
@@ -227,7 +227,7 @@ export class OllamaProvider extends LLMProvider {
       stream: this.parseStreamResponse(response.body),
       // Ollama has no server-side abort — disconnecting the request stops generation.
       abort: () => controller.abort(),
-      metadata: { userPrompt, systemPrompt }
+      metadata: { userPrompt, systemPrompt },
     };
   }
 
@@ -267,8 +267,8 @@ export class OllamaProvider extends LLMProvider {
                 usage: {
                   promptTokens: data.prompt_eval_count,
                   completionTokens: data.eval_count,
-                  totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0)
-                }
+                  totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0),
+                },
               };
               return;
             }
@@ -296,7 +296,7 @@ export class OllamaProvider extends LLMProvider {
   async getAvailableModels() {
     const response = await fetch(`${this.baseURL}/api/tags`, {
       method: 'GET',
-      headers: this.authHeaders()
+      headers: this.authHeaders(),
     });
 
     if (!response.ok) {
@@ -306,20 +306,22 @@ export class OllamaProvider extends LLMProvider {
     const data = await response.json();
     const models = Array.isArray(data.models) ? data.models : [];
 
-    return models.map((m) => {
-      const details = m.details || {};
-      const parts = [details.parameter_size, details.quantization_level].filter(Boolean);
-      return {
-        id: m.name,
-        name: m.name,
-        description: parts.length ? parts.join(' · ') : (details.family || ''),
-        contextLength: 0, // unknown without /api/show
-        size: m.size,
-        parameterSize: details.parameter_size,
-        family: details.family,
-        modifiedAt: m.modified_at
-      };
-    }).sort((a, b) => (b.modifiedAt || '').localeCompare(a.modifiedAt || ''));
+    return models
+      .map((m) => {
+        const details = m.details || {};
+        const parts = [details.parameter_size, details.quantization_level].filter(Boolean);
+        return {
+          id: m.name,
+          name: m.name,
+          description: parts.length ? parts.join(' · ') : details.family || '',
+          contextLength: 0, // unknown without /api/show
+          size: m.size,
+          parameterSize: details.parameter_size,
+          family: details.family,
+          modifiedAt: m.modified_at,
+        };
+      })
+      .toSorted((a, b) => (b.modifiedAt || '').localeCompare(a.modifiedAt || ''));
   }
 
   /**
@@ -334,7 +336,7 @@ export class OllamaProvider extends LLMProvider {
     const response = await fetch(`${this.baseURL}/api/show`, {
       method: 'POST',
       headers: this.authHeaders(),
-      body: JSON.stringify({ name })
+      body: JSON.stringify({ name }),
     });
 
     if (!response.ok) {
@@ -346,7 +348,7 @@ export class OllamaProvider extends LLMProvider {
       contextLength: extractContextLength(data.model_info),
       parameters: parseModelfileParameters(data.parameters || ''),
       capabilities: Array.isArray(data.capabilities) ? data.capabilities : [],
-      details: data.details || {}
+      details: data.details || {},
     };
   }
 
@@ -356,21 +358,25 @@ export class OllamaProvider extends LLMProvider {
       return {
         code: 'AUTH_ERROR',
         message: 'Wrong bearer token, or endpoint requires authentication',
-        original: error
+        original: error,
       };
     }
-    if (msg.includes('ECONNREFUSED') || msg.includes('fetch failed') || error.cause?.code === 'ECONNREFUSED') {
+    if (
+      msg.includes('ECONNREFUSED') ||
+      msg.includes('fetch failed') ||
+      error.cause?.code === 'ECONNREFUSED'
+    ) {
       return {
         code: 'CONNECTION_ERROR',
         message: `Could not reach Ollama at ${this.baseURL}`,
-        original: error
+        original: error,
       };
     }
     if (msg.includes('model') && msg.toLowerCase().includes('not found')) {
       return {
         code: 'MODEL_NOT_FOUND',
         message: `Model "${this.model}" is not installed. Run \`ollama pull ${this.model}\` on the host first.`,
-        original: error
+        original: error,
       };
     }
     return super.parseError(error);

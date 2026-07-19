@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { parseSSEStream, transformers } from '../stream-parser.js';
 
 /**
@@ -17,8 +17,8 @@ function createMockStream(chunks) {
 
       const chunk = chunks[index++];
       controller.enqueue(encoder.encode(chunk));
-      await new Promise(resolve => setTimeout(resolve, 0)); // Simulate async
-    }
+      await new Promise((resolve) => setTimeout(resolve, 0)); // Simulate async
+    },
   });
 }
 
@@ -26,7 +26,7 @@ function createMockStream(chunks) {
  * Helper: Create SSE-formatted chunks
  */
 function createSSEChunks(dataArray) {
-  return dataArray.map(data => {
+  return dataArray.map((data) => {
     if (data === '[DONE]') {
       return `data: [DONE]\n\n`;
     }
@@ -49,7 +49,7 @@ describe('stream-parser.js', () => {
       for await (const chunk of parseSSEStream(
         { getReader: () => stream.getReader() },
         (delta) => ({ content: delta.content || null }),
-        'TestProvider'
+        'TestProvider',
       )) {
         results.push(chunk);
       }
@@ -78,7 +78,7 @@ describe('stream-parser.js', () => {
           reasoning: delta.reasoning_content || null,
           content: delta.content || null,
         }),
-        'DeepSeek'
+        'DeepSeek',
       )) {
         results.push(chunk);
       }
@@ -108,7 +108,7 @@ describe('stream-parser.js', () => {
             return;
           }
           controller.enqueue(encoder.encode(customChunks.shift()));
-        }
+        },
       });
 
       const results = [];
@@ -117,7 +117,7 @@ describe('stream-parser.js', () => {
       for await (const chunk of parseSSEStream(
         { getReader: () => stream.getReader() },
         (delta) => ({ content: delta.content || null }),
-        'Test'
+        'Test',
       )) {
         results.push(chunk);
       }
@@ -146,7 +146,7 @@ describe('stream-parser.js', () => {
             return;
           }
           controller.enqueue(encoder.encode(customChunks.shift()));
-        }
+        },
       });
 
       const results = [];
@@ -155,14 +155,14 @@ describe('stream-parser.js', () => {
       for await (const chunk of parseSSEStream(
         { getReader: () => stream.getReader() },
         (delta) => ({ content: delta.content || null }),
-        'Test'
+        'Test',
       )) {
         results.push(chunk);
       }
 
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         expect.stringContaining('[Test] Failed to parse SSE line:'),
-        expect.anything()
+        expect.anything(),
       );
 
       // Should still parse the valid chunk
@@ -184,7 +184,7 @@ describe('stream-parser.js', () => {
       for await (const chunk of parseSSEStream(
         { getReader: () => stream.getReader() },
         (delta) => ({ content: delta.content || null }),
-        'Test'
+        'Test',
       )) {
         results.push(chunk);
       }
@@ -201,7 +201,9 @@ describe('stream-parser.js', () => {
       const stream = new ReadableStream({
         async pull(controller) {
           if (chunkCount === 0) {
-            controller.enqueue(encoder.encode('data: {"choices":[{"delta":{"content":"partial"}}]}\n\n'));
+            controller.enqueue(
+              encoder.encode('data: {"choices":[{"delta":{"content":"partial"}}]}\n\n'),
+            );
             chunkCount++;
           } else {
             // Simulate abort by throwing AbortError
@@ -209,7 +211,7 @@ describe('stream-parser.js', () => {
             error.name = 'AbortError';
             controller.error(error);
           }
-        }
+        },
       });
 
       const results = [];
@@ -219,7 +221,7 @@ describe('stream-parser.js', () => {
         for await (const chunk of parseSSEStream(
           { getReader: () => stream.getReader() },
           (delta) => ({ content: delta.content || null }),
-          'Test'
+          'Test',
         )) {
           results.push(chunk);
         }
@@ -246,7 +248,7 @@ describe('stream-parser.js', () => {
       for await (const chunk of parseSSEStream(
         { getReader: () => reader },
         (delta) => ({ content: delta.content || null }),
-        'Test'
+        'Test',
       )) {
         results.push(chunk);
       }
@@ -258,19 +260,23 @@ describe('stream-parser.js', () => {
     it('should handle OpenRouter-style reasoning_details', async () => {
       const chunks = createSSEChunks([
         {
-          choices: [{
-            delta: {
-              reasoning_details: [{ text: 'Let me think...' }],
-              content: null
+          choices: [
+            {
+              delta: {
+                reasoning_details: [{ text: 'Let me think...' }],
+                content: null,
+              },
+              finish_reason: null,
             },
-            finish_reason: null
-          }]
+          ],
         },
         {
-          choices: [{
-            delta: { content: 'Answer here' },
-            finish_reason: null
-          }]
+          choices: [
+            {
+              delta: { content: 'Answer here' },
+              finish_reason: null,
+            },
+          ],
         },
         { choices: [{ delta: {}, finish_reason: 'stop' }] },
       ]);
@@ -290,7 +296,7 @@ describe('stream-parser.js', () => {
             content: delta.content || null,
           };
         },
-        'OpenRouter'
+        'OpenRouter',
       )) {
         results.push(chunk);
       }
@@ -310,7 +316,7 @@ describe('stream-parser.js', () => {
           // Send incomplete JSON (missing closing brace)
           controller.enqueue(encoder.encode('data: {"choices":[{"delta":{"content":"partial"'));
           controller.close();
-        }
+        },
       });
 
       const results = [];
@@ -319,7 +325,7 @@ describe('stream-parser.js', () => {
       for await (const chunk of parseSSEStream(
         { getReader: () => stream.getReader() },
         (delta) => ({ content: delta.content || null }),
-        'Test'
+        'Test',
       )) {
         results.push(chunk);
       }
@@ -336,7 +342,7 @@ describe('stream-parser.js', () => {
       it('should extract reasoning_content field', () => {
         const delta = {
           reasoning_content: 'Deep thought',
-          content: 'Answer'
+          content: 'Answer',
         };
 
         const result = transformers.deepseek(delta);
@@ -348,7 +354,7 @@ describe('stream-parser.js', () => {
       it('should handle null reasoning_content', () => {
         const delta = {
           reasoning_content: null,
-          content: 'Answer'
+          content: 'Answer',
         };
 
         const result = transformers.deepseek(delta);
@@ -359,7 +365,7 @@ describe('stream-parser.js', () => {
 
       it('should handle missing content', () => {
         const delta = {
-          reasoning_content: 'Thinking...'
+          reasoning_content: 'Thinking...',
         };
 
         const result = transformers.deepseek(delta);
@@ -372,7 +378,7 @@ describe('stream-parser.js', () => {
     describe('openai', () => {
       it('should extract content field', () => {
         const delta = {
-          content: 'Hello from OpenAI'
+          content: 'Hello from OpenAI',
         };
 
         const result = transformers.openai(delta);
@@ -395,7 +401,7 @@ describe('stream-parser.js', () => {
       it('should extract reasoning from reasoning field', () => {
         const delta = {
           reasoning: 'OpenRouter reasoning',
-          content: 'Answer'
+          content: 'Answer',
         };
 
         const result = transformers.openrouter(delta, {});
@@ -406,11 +412,13 @@ describe('stream-parser.js', () => {
 
       it('should extract reasoning from reasoning_details array', () => {
         const data = {
-          choices: [{
-            delta: {
-              reasoning_details: [{ text: 'Detailed reasoning' }]
-            }
-          }]
+          choices: [
+            {
+              delta: {
+                reasoning_details: [{ text: 'Detailed reasoning' }],
+              },
+            },
+          ],
         };
 
         const delta = data.choices[0].delta;
@@ -422,7 +430,7 @@ describe('stream-parser.js', () => {
 
       it('should handle missing reasoning', () => {
         const delta = {
-          content: 'Answer only'
+          content: 'Answer only',
         };
 
         const result = transformers.openrouter(delta, {});
@@ -435,8 +443,8 @@ describe('stream-parser.js', () => {
         const data = {
           usage: {
             prompt_tokens: 10,
-            completion_tokens: 5
-          }
+            completion_tokens: 5,
+          },
         };
 
         const delta = { content: 'Answer' };

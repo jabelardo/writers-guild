@@ -7,8 +7,8 @@ describe('ConfirmDialog', () => {
     it('should render with required props', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Are you sure?'
-        }
+          message: 'Are you sure?',
+        },
       });
 
       expect(wrapper.text()).toContain('Are you sure?');
@@ -17,8 +17,8 @@ describe('ConfirmDialog', () => {
     it('should display custom message', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Delete this item?'
-        }
+          message: 'Delete this item?',
+        },
       });
 
       expect(wrapper.find('.confirm-message').text()).toBe('Delete this item?');
@@ -27,8 +27,8 @@ describe('ConfirmDialog', () => {
     it('should display default button texts', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       const buttons = wrapper.findAll('button');
@@ -40,8 +40,8 @@ describe('ConfirmDialog', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
           message: 'Test',
-          confirmText: 'Delete'
-        }
+          confirmText: 'Delete',
+        },
       });
 
       const confirmButton = wrapper.findAll('button')[1];
@@ -52,8 +52,8 @@ describe('ConfirmDialog', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
           message: 'Test',
-          cancelText: 'Keep'
-        }
+          cancelText: 'Keep',
+        },
       });
 
       const cancelButton = wrapper.findAll('button')[0];
@@ -65,8 +65,8 @@ describe('ConfirmDialog', () => {
     it('should default to default variant', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       expect(wrapper.find('.confirm-dialog').classes()).toContain('confirm-default');
@@ -76,8 +76,8 @@ describe('ConfirmDialog', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
           message: 'Test',
-          variant: 'danger'
-        }
+          variant: 'danger',
+        },
       });
 
       expect(wrapper.find('.confirm-dialog').classes()).toContain('confirm-danger');
@@ -87,8 +87,8 @@ describe('ConfirmDialog', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
           message: 'Test',
-          variant: 'warning'
-        }
+          variant: 'warning',
+        },
       });
 
       expect(wrapper.find('.confirm-dialog').classes()).toContain('confirm-warning');
@@ -98,8 +98,8 @@ describe('ConfirmDialog', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
           message: 'Test',
-          variant: 'default'
-        }
+          variant: 'default',
+        },
       });
 
       expect(wrapper.find('.fa-circle-question').exists()).toBe(true);
@@ -109,8 +109,8 @@ describe('ConfirmDialog', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
           message: 'Test',
-          variant: 'danger'
-        }
+          variant: 'danger',
+        },
       });
 
       expect(wrapper.find('.fa-trash-can').exists()).toBe(true);
@@ -120,8 +120,8 @@ describe('ConfirmDialog', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
           message: 'Test',
-          variant: 'warning'
-        }
+          variant: 'warning',
+        },
       });
 
       expect(wrapper.find('.fa-triangle-exclamation').exists()).toBe(true);
@@ -133,8 +133,8 @@ describe('ConfirmDialog', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
           message: 'Test',
-          variant: 'default'
-        }
+          variant: 'default',
+        },
       });
 
       const confirmButton = wrapper.findAll('button')[1];
@@ -145,8 +145,8 @@ describe('ConfirmDialog', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
           message: 'Test',
-          variant: 'danger'
-        }
+          variant: 'danger',
+        },
       });
 
       const confirmButton = wrapper.findAll('button')[1];
@@ -157,8 +157,8 @@ describe('ConfirmDialog', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
           message: 'Test',
-          variant: 'warning'
-        }
+          variant: 'warning',
+        },
       });
 
       const confirmButton = wrapper.findAll('button')[1];
@@ -168,8 +168,8 @@ describe('ConfirmDialog', () => {
     it('should always apply secondary class to cancel button', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       const cancelButton = wrapper.findAll('button')[0];
@@ -181,8 +181,8 @@ describe('ConfirmDialog', () => {
     it('should emit confirm event when confirm button clicked', async () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       const confirmButton = wrapper.findAll('button')[1];
@@ -195,8 +195,8 @@ describe('ConfirmDialog', () => {
     it('should emit cancel event when cancel button clicked', async () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       const cancelButton = wrapper.findAll('button')[0];
@@ -209,8 +209,8 @@ describe('ConfirmDialog', () => {
     it('should not emit cancel when confirm is clicked', async () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       const confirmButton = wrapper.findAll('button')[1];
@@ -222,8 +222,8 @@ describe('ConfirmDialog', () => {
     it('should not emit confirm when cancel is clicked', async () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       const cancelButton = wrapper.findAll('button')[0];
@@ -237,8 +237,8 @@ describe('ConfirmDialog', () => {
     it('should have overlay wrapper', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       expect(wrapper.find('.confirm-overlay').exists()).toBe(true);
@@ -247,8 +247,8 @@ describe('ConfirmDialog', () => {
     it('should have dialog container', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       expect(wrapper.find('.confirm-dialog').exists()).toBe(true);
@@ -257,8 +257,8 @@ describe('ConfirmDialog', () => {
     it('should have icon section', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       expect(wrapper.find('.confirm-icon').exists()).toBe(true);
@@ -267,8 +267,8 @@ describe('ConfirmDialog', () => {
     it('should have message section', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       expect(wrapper.find('.confirm-message').exists()).toBe(true);
@@ -277,8 +277,8 @@ describe('ConfirmDialog', () => {
     it('should have actions section', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       expect(wrapper.find('.confirm-actions').exists()).toBe(true);
@@ -287,8 +287,8 @@ describe('ConfirmDialog', () => {
     it('should have exactly two buttons', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: 'Test'
-        }
+          message: 'Test',
+        },
       });
 
       expect(wrapper.findAll('button')).toHaveLength(2);
@@ -299,8 +299,8 @@ describe('ConfirmDialog', () => {
     it('should handle empty message', () => {
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: ''
-        }
+          message: '',
+        },
       });
 
       expect(wrapper.find('.confirm-message').text()).toBe('');
@@ -310,8 +310,8 @@ describe('ConfirmDialog', () => {
       const longMessage = 'a'.repeat(500);
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: longMessage
-        }
+          message: longMessage,
+        },
       });
 
       expect(wrapper.find('.confirm-message').text()).toBe(longMessage);
@@ -321,8 +321,8 @@ describe('ConfirmDialog', () => {
       const specialMessage = 'Delete "file.txt"? This can\'t be undone!';
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: specialMessage
-        }
+          message: specialMessage,
+        },
       });
 
       expect(wrapper.find('.confirm-message').text()).toBe(specialMessage);
@@ -332,8 +332,8 @@ describe('ConfirmDialog', () => {
       const multilineMessage = 'Line 1\nLine 2\nLine 3';
       const wrapper = mount(ConfirmDialog, {
         props: {
-          message: multilineMessage
-        }
+          message: multilineMessage,
+        },
       });
 
       expect(wrapper.find('.confirm-message').text()).toBe(multilineMessage);
@@ -344,12 +344,12 @@ describe('ConfirmDialog', () => {
     it('should accept valid variant values', () => {
       const validVariants = ['default', 'danger', 'warning'];
 
-      validVariants.forEach(variant => {
+      validVariants.forEach((variant) => {
         const wrapper = mount(ConfirmDialog, {
           props: {
             message: 'Test',
-            variant
-          }
+            variant,
+          },
         });
 
         expect(wrapper.exists()).toBe(true);
@@ -362,15 +362,15 @@ describe('ConfirmDialog', () => {
       const wrapper1 = mount(ConfirmDialog, {
         props: {
           message: 'First dialog',
-          variant: 'danger'
-        }
+          variant: 'danger',
+        },
       });
 
       const wrapper2 = mount(ConfirmDialog, {
         props: {
           message: 'Second dialog',
-          variant: 'warning'
-        }
+          variant: 'warning',
+        },
       });
 
       expect(wrapper1.find('.confirm-message').text()).toBe('First dialog');

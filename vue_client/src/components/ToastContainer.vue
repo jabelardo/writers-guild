@@ -11,11 +11,7 @@
       >
         <i :class="getIcon(toast.type)" class="toast-icon"></i>
         <span class="toast-message">{{ toast.message }}</span>
-        <button
-          class="toast-close"
-          @click="removeToast(toast.id)"
-          aria-label="Close notification"
-        >
+        <button class="toast-close" @click="removeToast(toast.id)" aria-label="Close notification">
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -24,22 +20,22 @@
 </template>
 
 <script setup>
-import { useToast } from '../composables/useToast'
+import { useToast } from '../composables/useToast';
 
-const { toasts, remove } = useToast()
+const { toasts, remove } = useToast();
 
 function getIcon(type) {
   const icons = {
     success: 'fas fa-check-circle',
     error: 'fas fa-exclamation-circle',
     info: 'fas fa-info-circle',
-    warning: 'fas fa-exclamation-triangle'
-  }
-  return icons[type] || icons.info
+    warning: 'fas fa-exclamation-triangle',
+  };
+  return icons[type] || icons.info;
 }
 
 function removeToast(id) {
-  remove(id)
+  remove(id);
 }
 </script>
 
@@ -168,13 +164,21 @@ function removeToast(id) {
   }
 
   @keyframes toast-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes toast-out {
-    from { opacity: 1; }
-    to { opacity: 0; }
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
   }
 }
 

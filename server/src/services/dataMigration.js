@@ -50,7 +50,7 @@ export async function migrateToSqlite(dataRoot) {
     lorebooks: 0,
     presets: 0,
     storyCharacterLinks: 0,
-    storyLorebookLinks: 0
+    storyLorebookLinks: 0,
   };
 
   try {
@@ -83,7 +83,7 @@ export async function migrateToSqlite(dataRoot) {
     if (fsSync.existsSync(charactersDir)) {
       console.log('Migrating characters...');
       const characterFiles = await fs.readdir(charactersDir);
-      const jsonFiles = characterFiles.filter(f => f.endsWith('.json'));
+      const jsonFiles = characterFiles.filter((f) => f.endsWith('.json'));
 
       for (const file of jsonFiles) {
         const characterId = path.parse(file).name;
@@ -158,7 +158,7 @@ export async function migrateToSqlite(dataRoot) {
           metadata.personaCharacterId || null,
           metadata.configPresetId || null,
           metadata.created || now,
-          metadata.modified || now
+          metadata.modified || now,
         );
 
         stats.stories++;
@@ -169,9 +169,13 @@ export async function migrateToSqlite(dataRoot) {
           for (const characterId of metadata.characterIds) {
             try {
               // Check if character exists before linking
-              const charExists = db.prepare('SELECT 1 FROM characters WHERE id = ?').get(characterId);
+              const charExists = db
+                .prepare('SELECT 1 FROM characters WHERE id = ?')
+                .get(characterId);
               if (charExists) {
-                db.prepare('INSERT OR IGNORE INTO story_characters (story_id, character_id) VALUES (?, ?)').run(storyId, characterId);
+                db.prepare(
+                  'INSERT OR IGNORE INTO story_characters (story_id, character_id) VALUES (?, ?)',
+                ).run(storyId, characterId);
                 stats.storyCharacterLinks++;
               } else {
                 console.log(`    Warning: Character ${characterId} not found, skipping link`);
@@ -187,9 +191,13 @@ export async function migrateToSqlite(dataRoot) {
           for (const lorebookId of metadata.lorebookIds) {
             try {
               // Check if lorebook exists before linking
-              const lorebookExists = db.prepare('SELECT 1 FROM lorebooks WHERE id = ?').get(lorebookId);
+              const lorebookExists = db
+                .prepare('SELECT 1 FROM lorebooks WHERE id = ?')
+                .get(lorebookId);
               if (lorebookExists) {
-                db.prepare('INSERT OR IGNORE INTO story_lorebooks (story_id, lorebook_id) VALUES (?, ?)').run(storyId, lorebookId);
+                db.prepare(
+                  'INSERT OR IGNORE INTO story_lorebooks (story_id, lorebook_id) VALUES (?, ?)',
+                ).run(storyId, lorebookId);
                 stats.storyLorebookLinks++;
               } else {
                 console.log(`    Warning: Lorebook ${lorebookId} not found, skipping link`);
@@ -216,9 +224,8 @@ export async function migrateToSqlite(dataRoot) {
 
     return {
       success: true,
-      stats
+      stats,
     };
-
   } catch (error) {
     console.error('Migration failed:', error);
     sqliteStorage.close();
@@ -278,10 +285,10 @@ async function copyDirectory(source, dest) {
  */
 export async function runSqliteMigration(dataRoot) {
   // Check if migration is needed
-  if (!await needsMigration(dataRoot)) {
+  if (!(await needsMigration(dataRoot))) {
     return {
       migrated: false,
-      message: 'No migration needed (database already exists or no file data found)'
+      message: 'No migration needed (database already exists or no file data found)',
     };
   }
 
@@ -300,6 +307,6 @@ export async function runSqliteMigration(dataRoot) {
     migrated: true,
     message: 'Successfully migrated file data to SQLite database',
     backupDir,
-    stats: result.stats
+    stats: result.stats,
   };
 }

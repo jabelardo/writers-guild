@@ -157,9 +157,9 @@ describe('useToast', () => {
 
       toastInstance.remove(id2);
       expect(toastInstance.toasts.value).toHaveLength(2);
-      expect(toastInstance.toasts.value.find(t => t.id === id1)).toBeDefined();
-      expect(toastInstance.toasts.value.find(t => t.id === id2)).toBeUndefined();
-      expect(toastInstance.toasts.value.find(t => t.id === id3)).toBeDefined();
+      expect(toastInstance.toasts.value.find((t) => t.id === id1)).toBeDefined();
+      expect(toastInstance.toasts.value.find((t) => t.id === id2)).toBeUndefined();
+      expect(toastInstance.toasts.value.find((t) => t.id === id3)).toBeDefined();
     });
 
     it('should handle removing non-existent toast', () => {

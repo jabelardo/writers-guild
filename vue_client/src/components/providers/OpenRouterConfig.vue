@@ -36,7 +36,8 @@
       <div class="form-group">
         <h4 class="subsection-title">Model Selection</h4>
         <p class="section-description">
-          Select which model to use from OpenRouter. Different models have different capabilities, pricing, and context windows.
+          Select which model to use from OpenRouter. Different models have different capabilities,
+          pricing, and context windows.
         </p>
 
         <div class="openrouter-actions">
@@ -123,11 +124,7 @@
 
           <!-- Models List Grouped by Vendor -->
           <div v-else class="models-list-grouped">
-            <div
-              v-for="(models, vendor) in groupedModels"
-              :key="vendor"
-              class="vendor-group"
-            >
+            <div v-for="(models, vendor) in groupedModels" :key="vendor" class="vendor-group">
               <h5 class="vendor-header">
                 {{ vendor }}
                 <span class="vendor-count">({{ models.length }} models)</span>
@@ -199,11 +196,7 @@
         </div>
 
         <div v-if="localProviders.length > 0" class="providers-list">
-          <div
-            v-for="(provider, index) in localProviders"
-            :key="index"
-            class="provider-tag"
-          >
+          <div v-for="(provider, index) in localProviders" :key="index" class="provider-tag">
             <span>{{ provider }}</span>
             <button
               type="button"
@@ -228,7 +221,8 @@
           <span>Allow Fallback Providers</span>
         </label>
         <small class="help-text">
-          When enabled, OpenRouter can use alternative providers if your preferred ones are unavailable.
+          When enabled, OpenRouter can use alternative providers if your preferred ones are
+          unavailable.
         </small>
       </div>
 
@@ -244,37 +238,37 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import BaseProviderConfig from './shared/BaseProviderConfig.vue'
-import { presetsAPI } from '../../services/api'
-import { useToast } from '../../composables/useToast'
+import { ref, computed, onMounted } from 'vue';
+import BaseProviderConfig from './shared/BaseProviderConfig.vue';
+import { presetsAPI } from '../../services/api';
+import { useToast } from '../../composables/useToast';
 
 const props = defineProps({
   config: {
     type: Object,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const emit = defineEmits(['update:config'])
+const emit = defineEmits(['update:config']);
 
-const toast = useToast()
+const toast = useToast();
 
-const showAdvancedApiConfig = ref(false)
+const showAdvancedApiConfig = ref(false);
 
 // OpenRouter model selection state
-const availableModels = ref([])
-const loadingModels = ref(false)
-const modelsError = ref(null)
+const availableModels = ref([]);
+const loadingModels = ref(false);
+const modelsError = ref(null);
 
 // Search and filtering state
-const searchQuery = ref('')
-const sortBy = ref('name')
-const groupByVendor = ref(false)
+const searchQuery = ref('');
+const sortBy = ref('name');
+const groupByVendor = ref(false);
 
 // Provider preferences state
-const providerInput = ref('')
-const selectedProviderFromDropdown = ref('')
+const providerInput = ref('');
+const selectedProviderFromDropdown = ref('');
 
 // Common OpenRouter providers
 const commonProviders = [
@@ -293,134 +287,134 @@ const commonProviders = [
   { id: 'Nous', name: 'Nous Research' },
   { id: 'Qwen', name: 'Qwen (Alibaba)' },
   { id: 'DeepSeek', name: 'DeepSeek' },
-  { id: 'xAI', name: 'xAI (Grok)' }
-]
+  { id: 'xAI', name: 'xAI (Grok)' },
+];
 
 // Local computed for API config
 const localApiConfig = computed({
   get() {
-    return props.config.apiConfig || {}
+    return props.config.apiConfig || {};
   },
   set(value) {
-    emit('update:config', { ...props.config, apiConfig: value })
-  }
-})
+    emit('update:config', { ...props.config, apiConfig: value });
+  },
+});
 
 // Local providers array that syncs with apiConfig.providers
 const localProviders = computed({
   get() {
-    return localApiConfig.value.providers || []
+    return localApiConfig.value.providers || [];
   },
   set(value) {
     localApiConfig.value = {
       ...localApiConfig.value,
-      providers: value
-    }
-  }
-})
+      providers: value,
+    };
+  },
+});
 
 // Local allow fallbacks that syncs with apiConfig.allowFallbacks
 const localAllowFallbacks = computed({
   get() {
-    return localApiConfig.value.allowFallbacks !== false // Default true
+    return localApiConfig.value.allowFallbacks !== false; // Default true
   },
   set(value) {
     localApiConfig.value = {
       ...localApiConfig.value,
-      allowFallbacks: value
-    }
-  }
-})
+      allowFallbacks: value,
+    };
+  },
+});
 
 // Automatically fetch models on mount if API key is present
 onMounted(() => {
   if (localApiConfig.value.apiKey) {
-    fetchOpenRouterModels()
+    fetchOpenRouterModels();
   }
-})
+});
 
 // Fetch OpenRouter models
 async function fetchOpenRouterModels() {
   if (!localApiConfig.value.apiKey) {
-    modelsError.value = 'API key is required to fetch models'
-    return
+    modelsError.value = 'API key is required to fetch models';
+    return;
   }
 
   try {
-    loadingModels.value = true
-    modelsError.value = null
+    loadingModels.value = true;
+    modelsError.value = null;
 
-    const response = await presetsAPI.getOpenRouterModels(localApiConfig.value.apiKey)
-    availableModels.value = response.models || []
+    const response = await presetsAPI.getOpenRouterModels(localApiConfig.value.apiKey);
+    availableModels.value = response.models || [];
 
     if (availableModels.value.length === 0) {
-      modelsError.value = 'No models available at this time'
+      modelsError.value = 'No models available at this time';
     } else {
-      toast.success(`Loaded ${availableModels.value.length} models`)
+      toast.success(`Loaded ${availableModels.value.length} models`);
     }
   } catch (error) {
-    console.error('Failed to fetch OpenRouter models:', error)
-    modelsError.value = 'Failed to fetch models: ' + error.message
+    console.error('Failed to fetch OpenRouter models:', error);
+    modelsError.value = 'Failed to fetch models: ' + error.message;
   } finally {
-    loadingModels.value = false
+    loadingModels.value = false;
   }
 }
 
 // Filter and sort models
 const filteredAndSortedModels = computed(() => {
-  let models = availableModels.value
+  let models = availableModels.value;
 
   // Apply search filter
   if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase()
+    const query = searchQuery.value.toLowerCase();
     models = models.filter(
       (m) =>
         m.name.toLowerCase().includes(query) ||
         m.id.toLowerCase().includes(query) ||
-        m.vendor.toLowerCase().includes(query)
-    )
+        m.vendor.toLowerCase().includes(query),
+    );
   }
 
   // Apply sorting
-  const sorted = [...models].sort((a, b) => {
+  const sorted = [...models].toSorted((a, b) => {
     switch (sortBy.value) {
       case 'name':
-        return a.name.localeCompare(b.name)
+        return a.name.localeCompare(b.name);
       case 'vendor':
-        return a.vendor.localeCompare(b.vendor) || a.name.localeCompare(b.name)
+        return a.vendor.localeCompare(b.vendor) || a.name.localeCompare(b.name);
       case 'contextLength':
-        return b.contextLength - a.contextLength
+        return b.contextLength - a.contextLength;
       case 'pricing':
-        const priceA = a.pricing.prompt + a.pricing.completion
-        const priceB = b.pricing.prompt + b.pricing.completion
-        return priceA - priceB
+        const priceA = a.pricing.prompt + a.pricing.completion;
+        const priceB = b.pricing.prompt + b.pricing.completion;
+        return priceA - priceB;
       default:
-        return 0
+        return 0;
     }
-  })
+  });
 
-  return sorted
-})
+  return sorted;
+});
 
 // Group models by vendor
 const groupedModels = computed(() => {
-  const groups = {}
+  const groups = {};
   filteredAndSortedModels.value.forEach((model) => {
-    const vendor = model.vendor || 'Other'
+    const vendor = model.vendor || 'Other';
     if (!groups[vendor]) {
-      groups[vendor] = []
+      groups[vendor] = [];
     }
-    groups[vendor].push(model)
-  })
-  return groups
-})
+    groups[vendor].push(model);
+  });
+  return groups;
+});
 
 // Model selection methods
 function selectModel(model) {
   localApiConfig.value = {
     ...localApiConfig.value,
-    model: model.id
-  }
+    model: model.id,
+  };
 
   // Auto-update context length if the setting exists
   if (props.config.generationSettings && model.contextLength) {
@@ -428,77 +422,77 @@ function selectModel(model) {
       ...props.config,
       apiConfig: {
         ...localApiConfig.value,
-        model: model.id
+        model: model.id,
       },
       generationSettings: {
         ...props.config.generationSettings,
-        maxContextTokens: model.contextLength
-      }
-    })
+        maxContextTokens: model.contextLength,
+      },
+    });
   }
 
-  toast.success(`Selected model: ${model.name}`)
+  toast.success(`Selected model: ${model.name}`);
 }
 
 function isModelSelected(modelId) {
-  return localApiConfig.value.model === modelId
+  return localApiConfig.value.model === modelId;
 }
 
 // Provider management methods
 function addProvider() {
-  const provider = providerInput.value.trim()
+  const provider = providerInput.value.trim();
   if (provider && !localProviders.value.includes(provider)) {
-    localProviders.value = [...localProviders.value, provider]
-    providerInput.value = ''
-    toast.success(`Added provider: ${provider}`)
+    localProviders.value = [...localProviders.value, provider];
+    providerInput.value = '';
+    toast.success(`Added provider: ${provider}`);
   }
 }
 
 function addProviderFromDropdown() {
-  const provider = selectedProviderFromDropdown.value
+  const provider = selectedProviderFromDropdown.value;
   if (provider && !localProviders.value.includes(provider)) {
-    localProviders.value = [...localProviders.value, provider]
-    toast.success(`Added provider: ${provider}`)
+    localProviders.value = [...localProviders.value, provider];
+    toast.success(`Added provider: ${provider}`);
   }
   // Reset dropdown
-  selectedProviderFromDropdown.value = ''
+  selectedProviderFromDropdown.value = '';
 }
 
 function removeProvider(index) {
-  const provider = localProviders.value[index]
-  localProviders.value = localProviders.value.filter((_, i) => i !== index)
-  toast.success(`Removed provider: ${provider}`)
+  const provider = localProviders.value[index];
+  localProviders.value = localProviders.value.filter((_, i) => i !== index);
+  toast.success(`Removed provider: ${provider}`);
 }
 
 // Formatting helpers
 function formatContextLength(length) {
   if (length >= 1000000) {
-    return `${(length / 1000000).toFixed(1)}M context`
+    return `${(length / 1000000).toFixed(1)}M context`;
   } else if (length >= 1000) {
-    return `${(length / 1000).toFixed(0)}k context`
+    return `${(length / 1000).toFixed(0)}k context`;
   }
-  return `${length} tokens`
+  return `${length} tokens`;
 }
 
 function formatPricing(pricing) {
-  const promptPrice = pricing.prompt * 1000000 // Convert to per 1M tokens
-  const completionPrice = pricing.completion * 1000000
+  const promptPrice = pricing.prompt * 1000000; // Convert to per 1M tokens
+  const completionPrice = pricing.completion * 1000000;
 
   if (promptPrice === 0 && completionPrice === 0) {
-    return 'Free'
+    return 'Free';
   }
 
-  const avgPrice = (promptPrice + completionPrice) / 2
+  const avgPrice = (promptPrice + completionPrice) / 2;
   if (avgPrice < 0.01) {
-    return '< $0.01/1M'
+    return '< $0.01/1M';
   }
-  return `~$${avgPrice.toFixed(2)}/1M`
+  return `~$${avgPrice.toFixed(2)}/1M`;
 }
 
 function truncateDescription(description, maxLength = 100) {
-  if (!description) return ''
-  if (description.length <= maxLength) return description
-  return description.substring(0, maxLength) + '...'
+  if (!description) return '';
+  if (description.length <= maxLength) return description;
+  return description.substring(0, maxLength) + '...';
 }
 </script>
 
@@ -687,7 +681,7 @@ function truncateDescription(description, maxLength = 100) {
   cursor: pointer;
 }
 
-.checkbox-group input[type="checkbox"] {
+.checkbox-group input[type='checkbox'] {
   width: 16px;
   height: 16px;
   cursor: pointer;
@@ -893,7 +887,7 @@ function truncateDescription(description, maxLength = 100) {
   font-weight: normal;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   width: 16px;
   height: 16px;
   cursor: pointer;
@@ -904,7 +898,11 @@ function truncateDescription(description, maxLength = 100) {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

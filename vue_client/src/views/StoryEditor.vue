@@ -17,46 +17,22 @@
         >
           <i class="fas fa-eye"></i>
         </button>
-        <button
-          class="icon-btn"
-          @click="showManageCharacters = true"
-          title="Manage Characters"
-        >
+        <button class="icon-btn" @click="showManageCharacters = true" title="Manage Characters">
           <i class="fas fa-user"></i>
         </button>
-        <button
-          class="icon-btn"
-          @click="showManageLorebooks = true"
-          title="Manage Lorebooks"
-        >
+        <button class="icon-btn" @click="showManageLorebooks = true" title="Manage Lorebooks">
           <i class="fas fa-book"></i>
         </button>
-        <button
-          class="icon-btn"
-          @click="showRenameStory = true"
-          title="Edit Story"
-        >
+        <button class="icon-btn" @click="showRenameStory = true" title="Edit Story">
           <i class="fas fa-pencil"></i>
         </button>
-        <button
-          class="icon-btn"
-          @click="showPresetSelector = true"
-          title="Configuration Preset"
-        >
+        <button class="icon-btn" @click="showPresetSelector = true" title="Configuration Preset">
           <i class="fas fa-sliders"></i>
         </button>
-        <button
-          class="icon-btn"
-          @click="deleteStory"
-          title="Delete Story"
-        >
+        <button class="icon-btn" @click="deleteStory" title="Delete Story">
           <i class="fas fa-trash"></i>
         </button>
-        <button
-          class="icon-btn"
-          @click="goToSettings"
-          title="Settings"
-        >
+        <button class="icon-btn" @click="goToSettings" title="Settings">
           <i class="fas fa-cog"></i>
         </button>
       </div>
@@ -83,7 +59,7 @@
           @input="handleInput"
         ></textarea>
         <div v-else ref="previewRef" class="story-preview" v-html="renderedContent"></div>
-        
+
         <!-- Bottom input bar for preview mode -->
         <div v-if="showPreview" class="preview-input-bar">
           <input
@@ -123,11 +99,7 @@
         <div v-else class="toolbar-main-buttons">
           <!-- Show Story Starter when content is empty -->
           <template v-if="isStoryEmpty">
-            <button
-              class="btn btn-primary"
-              :disabled="!story"
-              @click="handleStoryStarter"
-            >
+            <button class="btn btn-primary" :disabled="!story" @click="handleStoryStarter">
               <i class="fas fa-rocket"></i> Start Story
             </button>
             <button
@@ -148,11 +120,7 @@
             >
               <i class="fas fa-comments"></i> Continue for Character
             </button>
-            <button
-              class="btn btn-primary"
-              :disabled="!story"
-              @click="handleContinue"
-            >
+            <button class="btn btn-primary" :disabled="!story" @click="handleContinue">
               <i class="fas fa-play"></i> Continue
             </button>
             <button
@@ -323,412 +291,415 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { storiesAPI, charactersAPI, settingsAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
-import { useNavigation } from '../composables/useNavigation'
-import { useConfirm } from '../composables/useConfirm'
-import { setPageTitle } from '../router'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { storiesAPI, charactersAPI, settingsAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
+import { useNavigation } from '../composables/useNavigation';
+import { useConfirm } from '../composables/useConfirm';
+import { setPageTitle } from '../router';
 import {
   MARKDOWN_IMAGE_RE,
   MARKDOWN_IMAGE_NORMALIZE_RE,
   HTML_IMAGE_RE,
-} from '../../../shared/regex-patterns.js'
-import DOMPurify from 'dompurify'
-import ReasoningPanel from '../components/ReasoningPanel.vue'
-import CharacterResponseModal from '../components/CharacterResponseModal.vue'
-import GreetingSelectorModal from '../components/GreetingSelectorModal.vue'
-import ViewPromptModal from '../components/ViewPromptModal.vue'
-import CustomPromptModal from '../components/CustomPromptModal.vue'
-import ManageCharactersModal from '../components/ManageCharactersModal.vue'
-import ManageLorebooksModal from '../components/ManageLorebooksModal.vue'
-import RenameStoryModal from '../components/RenameStoryModal.vue'
-import StoryPresetModal from '../components/StoryPresetModal.vue'
-import IdeateModal from '../components/IdeateModal.vue'
-import FloatingAvatarWindow from '../components/FloatingAvatarWindow.vue'
-import ThirdPersonPromptModal from '../components/ThirdPersonPromptModal.vue'
-import { SKIP_THIRD_PERSON_PROMPT_KEY } from '../config/storageKeys'
+} from '../../../shared/regex-patterns.js';
+import DOMPurify from 'dompurify';
+import ReasoningPanel from '../components/ReasoningPanel.vue';
+import CharacterResponseModal from '../components/CharacterResponseModal.vue';
+import GreetingSelectorModal from '../components/GreetingSelectorModal.vue';
+import ViewPromptModal from '../components/ViewPromptModal.vue';
+import CustomPromptModal from '../components/CustomPromptModal.vue';
+import ManageCharactersModal from '../components/ManageCharactersModal.vue';
+import ManageLorebooksModal from '../components/ManageLorebooksModal.vue';
+import RenameStoryModal from '../components/RenameStoryModal.vue';
+import StoryPresetModal from '../components/StoryPresetModal.vue';
+import IdeateModal from '../components/IdeateModal.vue';
+import FloatingAvatarWindow from '../components/FloatingAvatarWindow.vue';
+import ThirdPersonPromptModal from '../components/ThirdPersonPromptModal.vue';
+import { SKIP_THIRD_PERSON_PROMPT_KEY } from '../config/storageKeys';
 
 const props = defineProps({
   storyId: {
     type: String,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const router = useRouter()
-const route = useRoute()
-const toast = useToast()
-const { goBack } = useNavigation()
-const { confirm } = useConfirm()
+const router = useRouter();
+const route = useRoute();
+const toast = useToast();
+const { goBack } = useNavigation();
+const { confirm } = useConfirm();
 
 // State
-const story = ref(null)
-const content = ref('')
-const originalContent = ref('')
-const editorRef = ref(null)
-const previewRef = ref(null)
-const generating = ref(false)
-const generationStatus = ref('Thinking...')
-const reasoning = ref('')
-const showReasoningPanel = ref(false)
-const lastPrompts = ref({ system: '', user: '' })
-const showOverflowMenu = ref(false)
-const showCharacterSelector = ref(false)
-const showGreetingSelector = ref(false)
-const showViewPromptModal = ref(false)
-const showCustomPromptModal = ref(false)
-const showManageCharacters = ref(false)
-const showManageLorebooks = ref(false)
-const showRenameStory = ref(false)
-const showPresetSelector = ref(false)
-const showIdeateModal = ref(false)
-const ideateResponse = ref('')
-const ideateLoading = ref(false)
-const ideateStatus = ref('Thinking...')
-const showThirdPersonPrompt = ref(false)
-const showPreview = ref(false)
-let abortController = null
+const story = ref(null);
+const content = ref('');
+const originalContent = ref('');
+const editorRef = ref(null);
+const previewRef = ref(null);
+const generating = ref(false);
+const generationStatus = ref('Thinking...');
+const reasoning = ref('');
+const showReasoningPanel = ref(false);
+const lastPrompts = ref({ system: '', user: '' });
+const showOverflowMenu = ref(false);
+const showCharacterSelector = ref(false);
+const showGreetingSelector = ref(false);
+const showViewPromptModal = ref(false);
+const showCustomPromptModal = ref(false);
+const showManageCharacters = ref(false);
+const showManageLorebooks = ref(false);
+const showRenameStory = ref(false);
+const showPresetSelector = ref(false);
+const showIdeateModal = ref(false);
+const ideateResponse = ref('');
+const ideateLoading = ref(false);
+const ideateStatus = ref('Thinking...');
+const showThirdPersonPrompt = ref(false);
+const showPreview = ref(false);
+let abortController = null;
 
 // Bottom input for preview mode
-const bottomInput = ref('')
-const bottomInputRef = ref(null)
+const bottomInput = ref('');
+const bottomInputRef = ref(null);
 
 // Check if story has images
 const hasImages = computed(() => {
-  if (!content.value) return false
-  return MARKDOWN_IMAGE_RE.test(content.value) || HTML_IMAGE_RE.test(content.value)
-})
+  if (!content.value) return false;
+  return MARKDOWN_IMAGE_RE.test(content.value) || HTML_IMAGE_RE.test(content.value);
+});
 
 // Avatar windows (stored on server per-story)
-const avatarWindows = ref([])
+const avatarWindows = ref([]);
 
-const storyCharacters = ref([])
-const shouldShowReasoning = ref(false) // Setting from server
+const storyCharacters = ref([]);
+const shouldShowReasoning = ref(false); // Setting from server
 
 // Computed: is story content empty?
 const isStoryEmpty = computed(() => {
-  return !content.value || content.value.trim().length === 0
-})
+  return !content.value || content.value.trim().length === 0;
+});
 
 // Throttled rendered content — updated at most once per animation frame
 // to avoid tearing down/recreating <img> elements on every streaming token.
 function renderContent(text) {
-  if (!text) return ''
-  let html = text
+  if (!text) return '';
+  let html = text;
 
   // 1. Extract HTML <img> tags before escaping so they survive the pipeline
-  const savedImgs = []
-  HTML_IMAGE_RE.lastIndex = 0
+  const savedImgs = [];
+  HTML_IMAGE_RE.lastIndex = 0;
   html = html.replace(HTML_IMAGE_RE, (match) => {
-    const marker = `\x00IMG_MARKER_${savedImgs.length}\x00`
-    savedImgs.push({ marker, original: match })
+    const marker = `\x00IMG_MARKER_${savedImgs.length}\x00`;
+    savedImgs.push({ marker, original: match });
     // Inject loading=lazy and class=story-image into the saved tag
-    const enhanced = match.replace('<img', '<img loading="lazy" class="story-image"')
-    savedImgs[savedImgs.length - 1].original = enhanced
-    return marker
-  })
+    const enhanced = match.replace('<img', '<img loading="lazy" class="story-image"');
+    savedImgs[savedImgs.length - 1].original = enhanced;
+    return marker;
+  });
 
   // 2. Escape HTML special chars including quotes (defense before markdown img injection)
   html = html
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
+    .replace(/"/g, '&quot;');
 
   // 3. Convert markdown images: ![alt](url) and ![alt] (url)
-  MARKDOWN_IMAGE_RE.lastIndex = 0
-  html = html.replace(MARKDOWN_IMAGE_RE, '<img src="$2" alt="$1" class="story-image" loading="lazy">')
+  MARKDOWN_IMAGE_RE.lastIndex = 0;
+  html = html.replace(
+    MARKDOWN_IMAGE_RE,
+    '<img src="$2" alt="$1" class="story-image" loading="lazy">',
+  );
 
   // 4. Convert double newlines to paragraphs
-  html = '<p>' + html.replace(/\n\n/g, '</p><p>') + '</p>'
+  html = '<p>' + html.replace(/\n\n/g, '</p><p>') + '</p>';
   // Convert single newlines to <br>
-  html = html.replace(/\n/g, '<br>')
+  html = html.replace(/\n/g, '<br>');
   // Remove empty paragraphs
-  html = html.replace(/<p><\/p>/g, '')
+  html = html.replace(/<p><\/p>/g, '');
 
   // 5. Restore saved HTML <img> tags (reinserted after all transformations)
   for (const { marker, original } of savedImgs) {
-    html = html.replace(marker, original)
+    html = html.replace(marker, original);
   }
 
   // 6. Sanitize final HTML against any remaining XSS vectors (event handlers, javascript: URLs, etc.)
-  html = DOMPurify.sanitize(html)
-  return html
+  html = DOMPurify.sanitize(html);
+  return html;
 }
 
-const renderedContent = ref('')
-let renderRAF = null
+const renderedContent = ref('');
+let renderRAF = null;
 
 function scheduleRender() {
-  if (renderRAF) return
+  if (renderRAF) return;
   renderRAF = requestAnimationFrame(() => {
-    renderRAF = null
-    renderedContent.value = renderContent(content.value)
-  })
+    renderRAF = null;
+    renderedContent.value = renderContent(content.value);
+  });
 }
 
-watch(content, scheduleRender, { immediate: true })
+watch(content, scheduleRender, { immediate: true });
 
 // Auto-save
-let autoSaveTimeout = null
+let autoSaveTimeout = null;
 
 // Undo/Redo state
-const canUndo = ref(false)
-const canRedo = ref(false)
-let isUndoRedoOperation = false // Flag to skip auto-save during undo/redo
-const undoRedoInProgress = ref(false) // Prevents rapid concurrent undo/redo operations
+const canUndo = ref(false);
+const canRedo = ref(false);
+let isUndoRedoOperation = false; // Flag to skip auto-save during undo/redo
+const undoRedoInProgress = ref(false); // Prevents rapid concurrent undo/redo operations
 
 // Normalize trailing line breaks to exactly 2
 function normalizeTrailingLineBreaks() {
-  const trimmed = content.value.replace(/\n+$/, '')
-  content.value = trimmed + '\n\n'
+  const trimmed = content.value.replace(/\n+$/, '');
+  content.value = trimmed + '\n\n';
 }
 
 // Normalize markdown image syntax spacing: ![alt] (url) -> ![alt](url)
 function normalizeMarkdownImageSpacing(text) {
-  if (!text) return text
+  if (!text) return text;
   MARKDOWN_IMAGE_NORMALIZE_RE.lastIndex = 0;
-  return text.replace(MARKDOWN_IMAGE_NORMALIZE_RE, '![$1]($2)')
+  return text.replace(MARKDOWN_IMAGE_NORMALIZE_RE, '![$1]($2)');
 }
 
 // Keyboard shortcut handler for quick paragraph generation, modal opening, and undo/redo
 function handleKeyboardShortcut(event) {
   // Check for Cmd (Mac) or Ctrl (Windows/Linux) modifier
-  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
-  const modifierKey = isMac ? event.metaKey : event.ctrlKey
+  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  const modifierKey = isMac ? event.metaKey : event.ctrlKey;
 
-  if (!modifierKey) return
+  if (!modifierKey) return;
 
   // Cmd/Ctrl+Enter opens the Continue with Instruction modal
   if (event.key === 'Enter' && !event.shiftKey) {
     // Don't trigger if a modal is already open or if generating
-    if (showCustomPromptModal.value || generating.value || !story.value) return
+    if (showCustomPromptModal.value || generating.value || !story.value) return;
 
-    event.preventDefault()
-    showCustomPromptModal.value = true
-    return
+    event.preventDefault();
+    showCustomPromptModal.value = true;
+    return;
   }
 
   // Cmd/Ctrl+Z for undo, Cmd/Ctrl+Shift+Z for redo
   if (event.key === 'z') {
     // Don't trigger if generating
-    if (generating.value || !story.value) return
+    if (generating.value || !story.value) return;
 
     if (event.shiftKey) {
       // Redo
-      event.preventDefault()
-      handleRedo()
+      event.preventDefault();
+      handleRedo();
     } else {
       // Undo
-      event.preventDefault()
-      handleUndo()
+      event.preventDefault();
+      handleUndo();
     }
   }
 }
 
 // Check if we should show the third person prompt (respects "don't ask again" preference)
 function shouldShowThirdPersonPrompt() {
-  return localStorage.getItem(SKIP_THIRD_PERSON_PROMPT_KEY) !== 'true'
+  return localStorage.getItem(SKIP_THIRD_PERSON_PROMPT_KEY) !== 'true';
 }
 
 onMounted(async () => {
-  await loadStory()
-  await Promise.all([loadCharacters(), loadSettings()])
-  startAutoSave()
+  await loadStory();
+  await Promise.all([loadCharacters(), loadSettings()]);
+  startAutoSave();
 
   // Load avatar windows from story
   if (story.value?.avatarWindows) {
-    avatarWindows.value = story.value.avatarWindows
+    avatarWindows.value = story.value.avatarWindows;
   }
 
   // Set preview mode as default if story has images
   if (hasImages.value) {
-    showPreview.value = true
+    showPreview.value = true;
   }
 
   // Add keyboard shortcut listener
-  window.addEventListener('keydown', handleKeyboardShortcut)
+  window.addEventListener('keydown', handleKeyboardShortcut);
 
   // Check if we should show greeting selector first (for newly created stories with characters)
   if (story.value?.needsRewritePrompt && story.value?.characterIds?.length > 0) {
     // Clear the flag on the server
     try {
-      await storiesAPI.setRewritePrompt(props.storyId, false)
+      await storiesAPI.setRewritePrompt(props.storyId, false);
     } catch (error) {
-      console.error('Failed to clear rewrite prompt flag:', error)
+      console.error('Failed to clear rewrite prompt flag:', error);
     }
-    
+
     // Show greeting selector FIRST before rewrite dialog
-    showGreetingSelector.value = true
-    return
+    showGreetingSelector.value = true;
+    return;
   }
-  
+
   // If we don't need to show greeting selector, check if we should show rewrite dialog
   if (story.value?.needsRewritePrompt) {
     // Clear the flag on the server
     try {
-      await storiesAPI.setRewritePrompt(props.storyId, false)
+      await storiesAPI.setRewritePrompt(props.storyId, false);
     } catch (error) {
-      console.error('Failed to clear rewrite prompt flag:', error)
+      console.error('Failed to clear rewrite prompt flag:', error);
     }
     if (shouldShowThirdPersonPrompt()) {
       // Show the prompt after a short delay to let the UI settle
-      await nextTick()
-      showThirdPersonPrompt.value = true
+      await nextTick();
+      showThirdPersonPrompt.value = true;
     }
   }
-})
+});
 
 onUnmounted(() => {
-  stopAutoSave()
+  stopAutoSave();
   // Mark component as unmounted to prevent API calls after destruction
-  isMounted.value = false
+  isMounted.value = false;
   // Clear avatar window save timeout to prevent memory leaks
   if (saveAvatarTimeoutRef.value) {
-    clearTimeout(saveAvatarTimeoutRef.value)
+    clearTimeout(saveAvatarTimeoutRef.value);
   }
   // Remove keyboard shortcut listener
-  window.removeEventListener('keydown', handleKeyboardShortcut)
+  window.removeEventListener('keydown', handleKeyboardShortcut);
   // Cancel pending render to prevent updating after unmount
   if (renderRAF) {
-    cancelAnimationFrame(renderRAF)
-    renderRAF = null
+    cancelAnimationFrame(renderRAF);
+    renderRAF = null;
   }
-})
+});
 
 // Watch content changes for auto-save
 watch(content, () => {
   // Skip auto-save if this is an undo/redo operation
   if (isUndoRedoOperation) {
-    return
+    return;
   }
 
   if (autoSaveTimeout) {
-    clearTimeout(autoSaveTimeout)
+    clearTimeout(autoSaveTimeout);
   }
   autoSaveTimeout = setTimeout(() => {
-    saveStory(true) // silent save
-  }, 2000) // Save 2 seconds after last edit
-})
+    saveStory(true); // silent save
+  }, 2000); // Save 2 seconds after last edit
+});
 
 // Watch reasoning panel opening to scroll textarea to bottom
 watch(showReasoningPanel, async (isOpen) => {
   if (isOpen) {
-    await nextTick()
+    await nextTick();
     if (editorRef.value) {
-      editorRef.value.scrollTop = editorRef.value.scrollHeight
-      editorRef.value.focus()
+      editorRef.value.scrollTop = editorRef.value.scrollHeight;
+      editorRef.value.focus();
     }
   }
-})
+});
 
 // Scroll to end when toggling preview or back to editor
 watch(showPreview, async (isPreview) => {
-  await nextTick()
+  await nextTick();
   if (isPreview && previewRef.value) {
-    previewRef.value.scrollTop = previewRef.value.scrollHeight
+    previewRef.value.scrollTop = previewRef.value.scrollHeight;
   } else if (!isPreview && editorRef.value) {
-    editorRef.value.scrollTop = editorRef.value.scrollHeight
-    editorRef.value.focus()
+    editorRef.value.scrollTop = editorRef.value.scrollHeight;
+    editorRef.value.focus();
   }
-})
+});
 
 // Close all avatar windows when characters are removed from story
 watch(storyCharacters, (characters) => {
   if (characters.length === 0 && avatarWindows.value.length > 0) {
-    avatarWindows.value = []
-    saveAvatarWindows()
+    avatarWindows.value = [];
+    saveAvatarWindows();
   }
-})
+});
 
 async function loadStory() {
   try {
-    const { story: loadedStory } = await storiesAPI.get(props.storyId)
-    story.value = loadedStory
-    content.value = loadedStory.content || ''
-    originalContent.value = content.value
+    const { story: loadedStory } = await storiesAPI.get(props.storyId);
+    story.value = loadedStory;
+    content.value = loadedStory.content || '';
+    originalContent.value = content.value;
     // Update page title with story name
-    setPageTitle(loadedStory.title || 'Untitled Story')
+    setPageTitle(loadedStory.title || 'Untitled Story');
 
     // Fetch initial history status
     try {
-      const historyStatus = await storiesAPI.getHistoryStatus(props.storyId)
-      canUndo.value = historyStatus.canUndo
-      canRedo.value = historyStatus.canRedo
+      const historyStatus = await storiesAPI.getHistoryStatus(props.storyId);
+      canUndo.value = historyStatus.canUndo;
+      canRedo.value = historyStatus.canRedo;
     } catch (err) {
-      console.error('Failed to load history status:', err)
+      console.error('Failed to load history status:', err);
     }
   } catch (error) {
-    console.error('Failed to load story:', error)
-    toast.error('Failed to load story: ' + error.message)
+    console.error('Failed to load story:', error);
+    toast.error('Failed to load story: ' + error.message);
   }
 }
 
 async function loadCharacters() {
   try {
     if (!story.value || !story.value.characterIds || story.value.characterIds.length === 0) {
-      storyCharacters.value = []
-      return
+      storyCharacters.value = [];
+      return;
     }
 
     // Load all characters and filter to story's characters
-    const { characters: allChars } = await charactersAPI.list()
-    storyCharacters.value = allChars.filter(c => story.value.characterIds.includes(c.id))
+    const { characters: allChars } = await charactersAPI.list();
+    storyCharacters.value = allChars.filter((c) => story.value.characterIds.includes(c.id));
   } catch (error) {
-    console.error('Failed to load characters:', error)
+    console.error('Failed to load characters:', error);
   }
 }
 
 async function loadSettings() {
   try {
-    const response = await settingsAPI.get()
-    const serverSettings = response.settings || response
-    shouldShowReasoning.value = serverSettings.showReasoning ?? false
+    const response = await settingsAPI.get();
+    const serverSettings = response.settings || response;
+    shouldShowReasoning.value = serverSettings.showReasoning ?? false;
   } catch (error) {
-    console.error('Failed to load settings:', error)
+    console.error('Failed to load settings:', error);
     // Default to false if settings can't be loaded
-    shouldShowReasoning.value = false
+    shouldShowReasoning.value = false;
   }
 }
 
 async function saveStory(silent = false) {
-  const normalizedContent = normalizeMarkdownImageSpacing(content.value)
-  const normalizedOriginal = normalizeMarkdownImageSpacing(originalContent.value)
+  const normalizedContent = normalizeMarkdownImageSpacing(content.value);
+  const normalizedOriginal = normalizeMarkdownImageSpacing(originalContent.value);
 
   // Check if normalization changed the editor content (e.g., image spacing)
-  const wasNormalized = normalizedContent !== content.value
+  const wasNormalized = normalizedContent !== content.value;
 
   // Keep editor content canonical when save is triggered
   if (wasNormalized) {
-    content.value = normalizedContent
+    content.value = normalizedContent;
   }
 
   // Only skip save if there are no semantic changes AND no formatting normalization
   if (!wasNormalized && normalizedContent === normalizedOriginal) {
-    return // No changes
+    return; // No changes
   }
 
   try {
-    const result = await storiesAPI.updateContent(props.storyId, normalizedContent)
-    originalContent.value = normalizedContent
+    const result = await storiesAPI.updateContent(props.storyId, normalizedContent);
+    originalContent.value = normalizedContent;
 
     // Update history status from response
     if (result.canUndo !== undefined) {
-      canUndo.value = result.canUndo
+      canUndo.value = result.canUndo;
     }
     if (result.canRedo !== undefined) {
-      canRedo.value = result.canRedo
+      canRedo.value = result.canRedo;
     }
 
     if (!silent) {
-      toast.success('Story saved')
+      toast.success('Story saved');
     }
   } catch (error) {
-    console.error('Failed to save story:', error)
+    console.error('Failed to save story:', error);
     if (!silent) {
-      toast.error('Failed to save story: ' + error.message)
+      toast.error('Failed to save story: ' + error.message);
     }
   }
 }
@@ -739,7 +710,7 @@ function startAutoSave() {
 
 function stopAutoSave() {
   if (autoSaveTimeout) {
-    clearTimeout(autoSaveTimeout)
+    clearTimeout(autoSaveTimeout);
   }
 }
 
@@ -748,291 +719,295 @@ function handleInput() {
 }
 
 async function handleUndo() {
-  if (!canUndo.value || generating.value || undoRedoInProgress.value) return
+  if (!canUndo.value || generating.value || undoRedoInProgress.value) return;
 
-  undoRedoInProgress.value = true
-  isUndoRedoOperation = true
+  undoRedoInProgress.value = true;
+  isUndoRedoOperation = true;
 
   try {
-    const result = await storiesAPI.undo(props.storyId)
+    const result = await storiesAPI.undo(props.storyId);
 
     // Update content
-    content.value = result.content
-    originalContent.value = result.content
+    content.value = result.content;
+    originalContent.value = result.content;
 
     // Update history status
-    canUndo.value = result.canUndo
-    canRedo.value = result.canRedo
+    canUndo.value = result.canUndo;
+    canRedo.value = result.canRedo;
 
     // Scroll to bottom after content update
-    await nextTick()
+    await nextTick();
     if (editorRef.value) {
-      editorRef.value.scrollTop = editorRef.value.scrollHeight
+      editorRef.value.scrollTop = editorRef.value.scrollHeight;
     }
   } catch (error) {
-    console.error('Failed to undo:', error)
+    console.error('Failed to undo:', error);
     if (error.message !== 'Nothing to undo') {
-      toast.error('Failed to undo: ' + error.message)
+      toast.error('Failed to undo: ' + error.message);
     }
   } finally {
     // Always clear flags, even on error
-    await nextTick()
-    isUndoRedoOperation = false
-    undoRedoInProgress.value = false
+    await nextTick();
+    isUndoRedoOperation = false;
+    undoRedoInProgress.value = false;
   }
 }
 
 async function handleRedo() {
-  if (!canRedo.value || generating.value || undoRedoInProgress.value) return
+  if (!canRedo.value || generating.value || undoRedoInProgress.value) return;
 
-  undoRedoInProgress.value = true
-  isUndoRedoOperation = true
+  undoRedoInProgress.value = true;
+  isUndoRedoOperation = true;
 
   try {
-    const result = await storiesAPI.redo(props.storyId)
+    const result = await storiesAPI.redo(props.storyId);
 
     // Update content
-    content.value = result.content
-    originalContent.value = result.content
+    content.value = result.content;
+    originalContent.value = result.content;
 
     // Update history status
-    canUndo.value = result.canUndo
-    canRedo.value = result.canRedo
+    canUndo.value = result.canUndo;
+    canRedo.value = result.canRedo;
 
     // Scroll to bottom after content update
-    await nextTick()
+    await nextTick();
     if (editorRef.value) {
-      editorRef.value.scrollTop = editorRef.value.scrollHeight
+      editorRef.value.scrollTop = editorRef.value.scrollHeight;
     }
   } catch (error) {
-    console.error('Failed to redo:', error)
+    console.error('Failed to redo:', error);
     if (error.message !== 'Nothing to redo') {
-      toast.error('Failed to redo: ' + error.message)
+      toast.error('Failed to redo: ' + error.message);
     }
   } finally {
     // Always clear flags, even on error
-    await nextTick()
-    isUndoRedoOperation = false
-    undoRedoInProgress.value = false
+    await nextTick();
+    isUndoRedoOperation = false;
+    undoRedoInProgress.value = false;
   }
 }
 
 async function handleBottomInputSend() {
-  if (!bottomInput.value.trim() || generating.value) return
+  if (!bottomInput.value.trim() || generating.value) return;
 
   try {
     // Add user message to content with newline before and after
-    const userMessage = bottomInput.value.trim()
-    const trimmed = content.value.replace(/\n+$/, '')
-    content.value = trimmed + '\n\n' + userMessage + '\n\n'
+    const userMessage = bottomInput.value.trim();
+    const trimmed = content.value.replace(/\n+$/, '');
+    content.value = trimmed + '\n\n' + userMessage + '\n\n';
 
-    bottomInput.value = ''
+    bottomInput.value = '';
 
     // Save the story
-    await saveStory(true)
+    await saveStory(true);
 
     // Trigger character response
-    await handleCharacterResponse()
+    await handleCharacterResponse();
   } catch (error) {
-    console.error('Failed to send message:', error)
-    toast.error('Failed to send message: ' + error.message)
+    console.error('Failed to send message:', error);
+    toast.error('Failed to send message: ' + error.message);
   }
 }
 
 async function handleContinue() {
-  await generate(false, null, null)
+  await generate(false, null, null);
 }
 
 function handleCharacterResponse() {
   if (storyCharacters.value.length === 0) {
-    toast.info('No characters in this story')
-    return
+    toast.info('No characters in this story');
+    return;
   } else if (storyCharacters.value.length === 1) {
     // Only one character, generate directly
-    generate(false, null, storyCharacters.value[0].id)
+    generate(false, null, storyCharacters.value[0].id);
   } else {
     // Multiple characters, show selector
-    showCharacterSelector.value = true
+    showCharacterSelector.value = true;
   }
 }
 
 function handleCharacterSelected(characterId) {
-  showCharacterSelector.value = false
-  generate(false, null, characterId)
+  showCharacterSelector.value = false;
+  generate(false, null, characterId);
 }
 
 async function handleCustomPrompt(instruction) {
-  await generate(true, instruction, null)
+  await generate(true, instruction, null);
 }
 
 async function handleStoryStarter() {
-  if (generating.value) return
+  if (generating.value) return;
 
   // Create abort controller for cancellation
-  abortController = new AbortController()
+  abortController = new AbortController();
 
   try {
-    generating.value = true
-    generationStatus.value = 'Thinking...'
-    reasoning.value = ''
-    showReasoningPanel.value = false
+    generating.value = true;
+    generationStatus.value = 'Thinking...';
+    reasoning.value = '';
+    showReasoningPanel.value = false;
 
-    let generatedContent = ''
-    let reasoningText = ''
+    let generatedContent = '';
+    let reasoningText = '';
 
     // Stream generation with abort signal
-    const stream = storiesAPI.storyStarter(props.storyId, abortController.signal)
+    const stream = storiesAPI.storyStarter(props.storyId, abortController.signal);
 
     for await (const chunk of stream) {
       // Capture prompts
       if (chunk.prompts) {
         lastPrompts.value = {
           system: chunk.prompts.system || '',
-          user: chunk.prompts.user || ''
-        }
+          user: chunk.prompts.user || '',
+        };
       }
 
       // Handle queue status (AI Horde)
       if (chunk.queueStatus) {
-        const { position, waitTime, finished, faulted } = chunk.queueStatus
+        const { position, waitTime, finished, faulted } = chunk.queueStatus;
         if (faulted) {
-          generationStatus.value = 'Queue error'
+          generationStatus.value = 'Queue error';
         } else if (finished) {
-          generationStatus.value = 'Processing...'
+          generationStatus.value = 'Processing...';
         } else if (position === 0) {
-          generationStatus.value = `Generating... (ETA: ${waitTime}s)`
+          generationStatus.value = `Generating... (ETA: ${waitTime}s)`;
         } else {
-          generationStatus.value = `In queue: position ${position} (ETA: ${waitTime}s)`
+          generationStatus.value = `In queue: position ${position} (ETA: ${waitTime}s)`;
         }
       }
 
       // Handle reasoning
       if (chunk.reasoning) {
         if (!showReasoningPanel.value && shouldShowReasoning.value) {
-          showReasoningPanel.value = true
+          showReasoningPanel.value = true;
         }
-        reasoningText += chunk.reasoning
-        reasoning.value = reasoningText
+        reasoningText += chunk.reasoning;
+        reasoning.value = reasoningText;
       }
 
       // Handle content
       if (chunk.content) {
-        if (generationStatus.value === 'Thinking...' || generationStatus.value.includes('queue') || generationStatus.value.includes('Processing')) {
-          generationStatus.value = 'Writing...'
+        if (
+          generationStatus.value === 'Thinking...' ||
+          generationStatus.value.includes('queue') ||
+          generationStatus.value.includes('Processing')
+        ) {
+          generationStatus.value = 'Writing...';
         }
 
-        generatedContent += chunk.content
-        content.value = generatedContent
+        generatedContent += chunk.content;
+        content.value = generatedContent;
 
         // Auto-scroll editor
-        await nextTick()
+        await nextTick();
         if (editorRef.value) {
-          editorRef.value.scrollTop = editorRef.value.scrollHeight
+          editorRef.value.scrollTop = editorRef.value.scrollHeight;
         }
       }
 
       // Server restores [WG_IMAGE_n] markers back to image markup on the final
       // chunk. Without this the placeholder stays visible in the story.
       if (chunk.imagesRestored && chunk.finalContent !== undefined) {
-        generatedContent = chunk.finalContent
-        content.value = generatedContent
-        await nextTick()
+        generatedContent = chunk.finalContent;
+        content.value = generatedContent;
+        await nextTick();
         if (editorRef.value) {
-          editorRef.value.scrollTop = editorRef.value.scrollHeight
+          editorRef.value.scrollTop = editorRef.value.scrollHeight;
         }
       }
 
       if (chunk.finished) {
-        break
+        break;
       }
     }
 
     // Add two line breaks
     if (generatedContent) {
-      generatedContent += '\n\n'
-      content.value = generatedContent
-      normalizeTrailingLineBreaks()
+      generatedContent += '\n\n';
+      content.value = generatedContent;
+      normalizeTrailingLineBreaks();
 
-      await nextTick()
+      await nextTick();
       if (editorRef.value) {
-        editorRef.value.selectionStart = generatedContent.length
-        editorRef.value.selectionEnd = generatedContent.length
-        editorRef.value.scrollTop = editorRef.value.scrollHeight
-        editorRef.value.focus()
+        editorRef.value.selectionStart = generatedContent.length;
+        editorRef.value.selectionEnd = generatedContent.length;
+        editorRef.value.scrollTop = editorRef.value.scrollHeight;
+        editorRef.value.focus();
       }
     }
 
     // Save
-    await saveStory(true)
-    toast.success('Story started!')
+    await saveStory(true);
+    toast.success('Story started!');
   } catch (error) {
     if (error.name === 'AbortError' || error.message === 'Generation cancelled') {
-      console.log('Story starter was cancelled by user')
-      toast.info('Generation cancelled')
+      console.log('Story starter was cancelled by user');
+      toast.info('Generation cancelled');
     } else {
-      console.error('Story starter error:', error)
-      const errorMessage = error.message || 'Unknown error occurred'
+      console.error('Story starter error:', error);
+      const errorMessage = error.message || 'Unknown error occurred';
       await confirm({
         message: `Story Starter Failed\n\n${errorMessage}`,
         confirmText: 'OK',
         cancelText: 'Dismiss',
-        variant: 'danger'
-      })
+        variant: 'danger',
+      });
     }
   } finally {
-    generating.value = false
-    abortController = null
+    generating.value = false;
+    abortController = null;
   }
 }
 
 async function generate(isCustom, instruction, characterId) {
-  if (generating.value) return
+  if (generating.value) return;
 
   // Save before generating
-  await saveStory(true)
+  await saveStory(true);
 
   // Create abort controller for cancellation
-  abortController = new AbortController()
+  abortController = new AbortController();
 
   try {
-    generating.value = true
-    generationStatus.value = 'Thinking...'
-    reasoning.value = ''
-    showReasoningPanel.value = false  // Only open when reasoning is actually received
+    generating.value = true;
+    generationStatus.value = 'Thinking...';
+    reasoning.value = '';
+    showReasoningPanel.value = false; // Only open when reasoning is actually received
 
     // Track cursor position (only if editor is visible)
-    const cursorPos = editorRef.value ? editorRef.value.selectionStart : content.value.length
-    const textBefore = content.value.substring(0, cursorPos)
-    const textAfter = content.value.substring(cursorPos)
+    const cursorPos = editorRef.value ? editorRef.value.selectionStart : content.value.length;
+    const textBefore = content.value.substring(0, cursorPos);
+    const textAfter = content.value.substring(cursorPos);
 
-    let generatedContent = ''
-    let reasoningText = ''
+    let generatedContent = '';
+    let reasoningText = '';
 
     // Stream generation with abort signal
     const stream = isCustom
       ? storiesAPI.continueWithInstruction(props.storyId, instruction, abortController.signal)
-      : storiesAPI.continueStory(props.storyId, characterId, abortController.signal)
+      : storiesAPI.continueStory(props.storyId, characterId, abortController.signal);
 
     for await (const chunk of stream) {
       // Capture prompts
       if (chunk.prompts) {
         lastPrompts.value = {
           system: chunk.prompts.system || '',
-          user: chunk.prompts.user || ''
-        }
+          user: chunk.prompts.user || '',
+        };
       }
 
       // Handle queue status (AI Horde)
       if (chunk.queueStatus) {
-        const { position, waitTime, finished, faulted } = chunk.queueStatus
+        const { position, waitTime, finished, faulted } = chunk.queueStatus;
         if (faulted) {
-          generationStatus.value = 'Queue error'
+          generationStatus.value = 'Queue error';
         } else if (finished) {
-          generationStatus.value = 'Processing...'
+          generationStatus.value = 'Processing...';
         } else if (position === 0) {
-          generationStatus.value = `Generating... (ETA: ${waitTime}s)`
+          generationStatus.value = `Generating... (ETA: ${waitTime}s)`;
         } else {
-          generationStatus.value = `In queue: position ${position} (ETA: ${waitTime}s)`
+          generationStatus.value = `In queue: position ${position} (ETA: ${waitTime}s)`;
         }
       }
 
@@ -1040,110 +1015,114 @@ async function generate(isCustom, instruction, characterId) {
       if (chunk.reasoning) {
         // Only open panel on first reasoning data if setting is enabled
         if (!showReasoningPanel.value && shouldShowReasoning.value) {
-          showReasoningPanel.value = true
+          showReasoningPanel.value = true;
         }
-        reasoningText += chunk.reasoning
-        reasoning.value = reasoningText
+        reasoningText += chunk.reasoning;
+        reasoning.value = reasoningText;
       }
 
       // Handle content
       if (chunk.content) {
-        if (generationStatus.value === 'Thinking...' || generationStatus.value.includes('queue') || generationStatus.value.includes('Processing')) {
-          generationStatus.value = 'Writing...'
+        if (
+          generationStatus.value === 'Thinking...' ||
+          generationStatus.value.includes('queue') ||
+          generationStatus.value.includes('Processing')
+        ) {
+          generationStatus.value = 'Writing...';
         }
 
-        generatedContent += chunk.content
-        content.value = textBefore + generatedContent + textAfter
+        generatedContent += chunk.content;
+        content.value = textBefore + generatedContent + textAfter;
 
         // Auto-scroll editor
-        await nextTick()
+        await nextTick();
         if (editorRef.value) {
-          editorRef.value.scrollTop = editorRef.value.scrollHeight
+          editorRef.value.scrollTop = editorRef.value.scrollHeight;
         }
       }
 
       // Server restores [WG_IMAGE_n] markers back to image markup on the final
       // chunk. Without this the placeholder stays visible in the story.
       if (chunk.imagesRestored && chunk.finalContent !== undefined) {
-        generatedContent = chunk.finalContent
-        content.value = textBefore + generatedContent + textAfter
-        await nextTick()
+        generatedContent = chunk.finalContent;
+        content.value = textBefore + generatedContent + textAfter;
+        await nextTick();
         if (editorRef.value) {
-          editorRef.value.scrollTop = editorRef.value.scrollHeight
+          editorRef.value.scrollTop = editorRef.value.scrollHeight;
         }
       }
 
       if (chunk.finished) {
-        break
+        break;
       }
     }
 
     // Add two line breaks and position cursor
     if (generatedContent) {
-      generatedContent += '\n\n'
-      content.value = textBefore + generatedContent + textAfter
+      generatedContent += '\n\n';
+      content.value = textBefore + generatedContent + textAfter;
 
       // Normalize trailing line breaks to prevent accumulation
-      normalizeTrailingLineBreaks()
+      normalizeTrailingLineBreaks();
 
       // Position cursor after generated content
-      const newCursorPos = textBefore.length + generatedContent.length
-      await nextTick()
+      const newCursorPos = textBefore.length + generatedContent.length;
+      await nextTick();
       if (editorRef.value) {
-        editorRef.value.selectionStart = newCursorPos
-        editorRef.value.selectionEnd = newCursorPos
-        editorRef.value.scrollTop = editorRef.value.scrollHeight
-        editorRef.value.focus()
+        editorRef.value.selectionStart = newCursorPos;
+        editorRef.value.selectionEnd = newCursorPos;
+        editorRef.value.scrollTop = editorRef.value.scrollHeight;
+        editorRef.value.focus();
       }
     }
 
     // Save
-    await saveStory(true)
-    toast.success('Generation complete')
+    await saveStory(true);
+    toast.success('Generation complete');
   } catch (error) {
     // Check if it was a cancellation
     if (error.name === 'AbortError' || error.message === 'Generation cancelled') {
-      console.log('Generation was cancelled by user')
-      toast.info('Generation cancelled')
+      console.log('Generation was cancelled by user');
+      toast.info('Generation cancelled');
     } else {
-      console.error('Generation error:', error)
+      console.error('Generation error:', error);
 
       // Show error dialog
-      const errorMessage = error.message || 'Unknown error occurred'
+      const errorMessage = error.message || 'Unknown error occurred';
       await confirm({
         message: `Generation Failed\n\n${errorMessage}`,
         confirmText: 'OK',
         cancelText: 'Dismiss',
-        variant: 'danger'
-      })
+        variant: 'danger',
+      });
     }
   } finally {
-    generating.value = false
-    abortController = null
+    generating.value = false;
+    abortController = null;
   }
 }
 
 function cancelGeneration() {
   if (abortController) {
-    console.log('Cancelling generation...')
-    abortController.abort()
+    console.log('Cancelling generation...');
+    abortController.abort();
   }
 }
 
 async function selectGreeting(greeting) {
-  content.value = greeting + '\n\n'
+  content.value = greeting + '\n\n';
   // Switch to preview mode if the greeting contains images
   if (hasImages.value) {
-    showPreview.value = true
+    showPreview.value = true;
   }
-  await saveStory()
-  showGreetingSelector.value = false
-  toast.success('Greeting selected')
+  await saveStory();
+  showGreetingSelector.value = false;
+  toast.success('Greeting selected');
 
   // Prompt user to rewrite to third person if they haven't opted out
   if (shouldShowThirdPersonPrompt()) {
-    await nextTick()
-    showThirdPersonPrompt.value = true
+    await nextTick();
+    showThirdPersonPrompt.value = true;
   }
 }
 
@@ -1152,73 +1131,74 @@ async function selectGreeting(greeting) {
  * Still shows the third-person rewrite prompt so it isn't silently skipped.
  */
 function handleCloseGreeting() {
-  showGreetingSelector.value = false
+  showGreetingSelector.value = false;
   nextTick().then(() => {
     if (shouldShowThirdPersonPrompt()) {
-      showThirdPersonPrompt.value = true
+      showThirdPersonPrompt.value = true;
     }
-  })
+  });
 }
 
 // Handler for when user accepts the third-person prompt
 function handleThirdPersonRewrite() {
   // Call with skipConfirm=true since user already confirmed via the prompt modal
-  rewriteToThirdPerson(true)
+  rewriteToThirdPerson(true);
 }
 
 async function rewriteToThirdPerson(skipConfirm = false) {
   if (!skipConfirm) {
     const confirmed = await confirm({
-      message: 'This will replace the entire document with a rewritten version in third-person past tense. Continue?',
+      message:
+        'This will replace the entire document with a rewritten version in third-person past tense. Continue?',
       confirmText: 'Rewrite',
-      variant: 'warning'
-    })
+      variant: 'warning',
+    });
 
-    if (!confirmed) return
+    if (!confirmed) return;
   }
 
   // Save the current content (with any embedded images) before rewriting
   // The server-side ImagePreserver handles image extraction/restoration
-  await saveStory(true)
+  await saveStory(true);
 
   // Create abort controller for cancellation
-  abortController = new AbortController()
+  abortController = new AbortController();
 
   try {
-    generating.value = true
-    generationStatus.value = 'Thinking...'
-    reasoning.value = ''
-    showReasoningPanel.value = false  // Only open when reasoning is actually received
+    generating.value = true;
+    generationStatus.value = 'Thinking...';
+    reasoning.value = '';
+    showReasoningPanel.value = false; // Only open when reasoning is actually received
 
     // Clear editor for rewrite
-    content.value = ''
+    content.value = '';
 
-    let rewrittenContent = ''
-    let reasoningText = ''
+    let rewrittenContent = '';
+    let reasoningText = '';
 
     // Stream rewrite with abort signal
-    const stream = storiesAPI.rewriteThirdPerson(props.storyId, abortController.signal)
+    const stream = storiesAPI.rewriteThirdPerson(props.storyId, abortController.signal);
 
     for await (const chunk of stream) {
       // Capture prompts
       if (chunk.prompts) {
         lastPrompts.value = {
           system: chunk.prompts.system || '',
-          user: chunk.prompts.user || ''
-        }
+          user: chunk.prompts.user || '',
+        };
       }
 
       // Handle queue status (AI Horde)
       if (chunk.queueStatus) {
-        const { position, waitTime, finished, faulted } = chunk.queueStatus
+        const { position, waitTime, finished, faulted } = chunk.queueStatus;
         if (faulted) {
-          generationStatus.value = 'Queue error'
+          generationStatus.value = 'Queue error';
         } else if (finished) {
-          generationStatus.value = 'Processing...'
+          generationStatus.value = 'Processing...';
         } else if (position === 0) {
-          generationStatus.value = `Generating... (ETA: ${waitTime}s)`
+          generationStatus.value = `Generating... (ETA: ${waitTime}s)`;
         } else {
-          generationStatus.value = `In queue: position ${position} (ETA: ${waitTime}s)`
+          generationStatus.value = `In queue: position ${position} (ETA: ${waitTime}s)`;
         }
       }
 
@@ -1226,93 +1206,97 @@ async function rewriteToThirdPerson(skipConfirm = false) {
       if (chunk.reasoning) {
         // Only open panel on first reasoning data if setting is enabled
         if (!showReasoningPanel.value && shouldShowReasoning.value) {
-          showReasoningPanel.value = true
+          showReasoningPanel.value = true;
         }
-        reasoningText += chunk.reasoning
-        reasoning.value = reasoningText
+        reasoningText += chunk.reasoning;
+        reasoning.value = reasoningText;
       }
 
       // Handle content
       if (chunk.content) {
-        if (generationStatus.value === 'Thinking...' || generationStatus.value.includes('queue') || generationStatus.value.includes('Processing')) {
-          generationStatus.value = 'Rewriting...'
+        if (
+          generationStatus.value === 'Thinking...' ||
+          generationStatus.value.includes('queue') ||
+          generationStatus.value.includes('Processing')
+        ) {
+          generationStatus.value = 'Rewriting...';
         }
 
-        rewrittenContent += chunk.content
-        content.value = rewrittenContent
+        rewrittenContent += chunk.content;
+        content.value = rewrittenContent;
 
         // Auto-scroll editor
-        await nextTick()
+        await nextTick();
         if (editorRef.value) {
-          editorRef.value.scrollTop = editorRef.value.scrollHeight
+          editorRef.value.scrollTop = editorRef.value.scrollHeight;
         }
       }
 
       // Handle server-side image restoration event
       if (chunk.imagesRestored && chunk.finalContent !== undefined) {
         // Server already restored images; use its final content directly
-        rewrittenContent = chunk.finalContent
-        content.value = rewrittenContent
-        await nextTick()
+        rewrittenContent = chunk.finalContent;
+        content.value = rewrittenContent;
+        await nextTick();
         if (editorRef.value) {
-          editorRef.value.scrollTop = editorRef.value.scrollHeight
+          editorRef.value.scrollTop = editorRef.value.scrollHeight;
         }
       }
 
       if (chunk.finished) {
-        break
+        break;
       }
     }
 
     // Add two line breaks and position cursor at end
     if (rewrittenContent) {
-      rewrittenContent += '\n\n'
-      content.value = rewrittenContent
+      rewrittenContent += '\n\n';
+      content.value = rewrittenContent;
 
       // Normalize trailing line breaks to prevent accumulation
-      normalizeTrailingLineBreaks()
+      normalizeTrailingLineBreaks();
 
       // Position cursor at end
-      const cursorPos = rewrittenContent.length
-      await nextTick()
+      const cursorPos = rewrittenContent.length;
+      await nextTick();
       if (editorRef.value) {
-        editorRef.value.selectionStart = cursorPos
-        editorRef.value.selectionEnd = cursorPos
-        editorRef.value.scrollTop = editorRef.value.scrollHeight
-        editorRef.value.focus()
+        editorRef.value.selectionStart = cursorPos;
+        editorRef.value.selectionEnd = cursorPos;
+        editorRef.value.scrollTop = editorRef.value.scrollHeight;
+        editorRef.value.focus();
       }
     }
 
     // Save
-    await saveStory(true)
-    toast.success('Rewrite complete')
+    await saveStory(true);
+    toast.success('Rewrite complete');
 
     // Scroll preview to end now that renderedContent has updated via RAF
-    await nextTick()
-    await new Promise(resolve => requestAnimationFrame(resolve))
+    await nextTick();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
     if (previewRef.value) {
-      previewRef.value.scrollTop = previewRef.value.scrollHeight
+      previewRef.value.scrollTop = previewRef.value.scrollHeight;
     }
   } catch (error) {
     // Check if it was a cancellation
     if (error.name === 'AbortError' || error.message === 'Generation cancelled') {
-      console.log('Rewrite was cancelled by user')
-      toast.info('Rewrite cancelled')
+      console.log('Rewrite was cancelled by user');
+      toast.info('Rewrite cancelled');
     } else {
-      console.error('Rewrite error:', error)
+      console.error('Rewrite error:', error);
 
       // Show error dialog
-      const errorMessage = error.message || 'Unknown error occurred'
+      const errorMessage = error.message || 'Unknown error occurred';
       await confirm({
         message: `Rewrite Failed\n\n${errorMessage}`,
         confirmText: 'OK',
         cancelText: 'Dismiss',
-        variant: 'danger'
-      })
+        variant: 'danger',
+      });
     }
   } finally {
-    generating.value = false
-    abortController = null
+    generating.value = false;
+    abortController = null;
   }
 }
 
@@ -1320,35 +1304,35 @@ async function clearStory() {
   const confirmed = await confirm({
     message: 'Clear all story content? This cannot be undone.',
     confirmText: 'Clear Content',
-    variant: 'warning'
-  })
+    variant: 'warning',
+  });
 
-  if (!confirmed) return
+  if (!confirmed) return;
 
-  content.value = ''
-  await saveStory()
-  toast.success('Story cleared')
+  content.value = '';
+  await saveStory();
+  toast.success('Story cleared');
 }
 
 function exportStory() {
-  const blob = new Blob([content.value], { type: 'text/plain' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${story.value?.title || 'story'}.txt`
-  a.click()
-  URL.revokeObjectURL(url)
-  toast.success('Story exported')
+  const blob = new Blob([content.value], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${story.value?.title || 'story'}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success('Story exported');
 }
 
 function goToSettings() {
-  router.push('/settings')
+  router.push('/settings');
 }
 
 async function handleStoryUpdated() {
   // Reload story data after changes from modals
-  await loadStory()
-  await loadCharacters()
+  await loadStory();
+  await loadCharacters();
   // Title will be updated by loadStory()
 }
 
@@ -1356,87 +1340,91 @@ async function deleteStory() {
   const confirmed = await confirm({
     message: `Are you sure you want to delete "${story.value?.title}"? This cannot be undone.`,
     confirmText: 'Delete Story',
-    variant: 'danger'
-  })
+    variant: 'danger',
+  });
 
-  if (!confirmed) return
+  if (!confirmed) return;
 
   try {
-    await storiesAPI.delete(props.storyId)
-    toast.success('Story deleted successfully')
-    router.push('/')
+    await storiesAPI.delete(props.storyId);
+    toast.success('Story deleted successfully');
+    router.push('/');
   } catch (error) {
-    console.error('Failed to delete story:', error)
-    toast.error('Failed to delete story: ' + error.message)
+    console.error('Failed to delete story:', error);
+    toast.error('Failed to delete story: ' + error.message);
   }
 }
 
 async function handleIdeate() {
-  if (generating.value || ideateLoading.value) return
+  if (generating.value || ideateLoading.value) return;
 
   // Open modal immediately
-  showIdeateModal.value = true
-  ideateLoading.value = true
-  ideateStatus.value = 'Thinking...'
-  ideateResponse.value = ''
+  showIdeateModal.value = true;
+  ideateLoading.value = true;
+  ideateStatus.value = 'Thinking...';
+  ideateResponse.value = '';
 
   // Create abort controller for cancellation
-  const ideateAbortController = new AbortController()
+  const ideateAbortController = new AbortController();
 
   try {
-    let responseText = ''
+    let responseText = '';
 
     // Stream ideation with abort signal
-    const stream = storiesAPI.ideate(props.storyId, ideateAbortController.signal)
+    const stream = storiesAPI.ideate(props.storyId, ideateAbortController.signal);
 
     for await (const chunk of stream) {
       // Handle queue status (AI Horde)
       if (chunk.queueStatus) {
-        const { position, waitTime, finished, faulted } = chunk.queueStatus
+        const { position, waitTime, finished, faulted } = chunk.queueStatus;
         if (faulted) {
-          ideateStatus.value = 'Queue error'
+          ideateStatus.value = 'Queue error';
         } else if (finished) {
-          ideateStatus.value = 'Processing...'
+          ideateStatus.value = 'Processing...';
         } else if (position === 0) {
-          ideateStatus.value = `Generating... (ETA: ${waitTime}s)`
+          ideateStatus.value = `Generating... (ETA: ${waitTime}s)`;
         } else {
-          ideateStatus.value = `In queue: position ${position} (ETA: ${waitTime}s)`
+          ideateStatus.value = `In queue: position ${position} (ETA: ${waitTime}s)`;
         }
       }
 
       // Handle content
       if (chunk.content) {
-        if (ideateStatus.value === 'Thinking...' || ideateStatus.value.includes('queue') || ideateStatus.value.includes('Processing')) {
-          ideateStatus.value = 'Writing...'
+        if (
+          ideateStatus.value === 'Thinking...' ||
+          ideateStatus.value.includes('queue') ||
+          ideateStatus.value.includes('Processing')
+        ) {
+          ideateStatus.value = 'Writing...';
         }
 
-        responseText += chunk.content
-        ideateResponse.value = responseText
+        responseText += chunk.content;
+        ideateResponse.value = responseText;
       }
 
       // Server restores [WG_IMAGE_n] markers back to image markup on the final
       // chunk. Without this the placeholder stays visible in the response.
       if (chunk.imagesRestored && chunk.finalContent !== undefined) {
-        responseText = chunk.finalContent
-        ideateResponse.value = responseText
+        responseText = chunk.finalContent;
+        ideateResponse.value = responseText;
       }
 
       if (chunk.finished) {
-        break
+        break;
       }
     }
 
-    ideateLoading.value = false
+    ideateLoading.value = false;
   } catch (error) {
     // Check if it was a cancellation
     if (error.name === 'AbortError' || error.message === 'Generation cancelled') {
-      console.log('Ideation was cancelled')
-      toast.info('Ideation cancelled')
-      showIdeateModal.value = false
+      console.log('Ideation was cancelled');
+      toast.info('Ideation cancelled');
+      showIdeateModal.value = false;
     } else {
-      console.error('Ideation error:', error)
-      ideateLoading.value = false
-      ideateResponse.value = `Error: ${error.message}`
+      console.error('Ideation error:', error);
+      ideateLoading.value = false;
+      ideateResponse.value = `Error: ${error.message}`;
     }
   }
 }
@@ -1444,62 +1432,62 @@ async function handleIdeate() {
 // Generate a unique ID for avatar windows
 function generateWindowId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `avatar-${crypto.randomUUID()}`
+    return `avatar-${crypto.randomUUID()}`;
   }
-  return `avatar-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+  return `avatar-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 // Find next available position that doesn't overlap with existing windows
 function findNextWindowPosition() {
-  const baseX = 20
-  const baseY = 100
-  const offset = 30
+  const baseX = 20;
+  const baseY = 100;
+  const offset = 30;
 
   // Find the maximum offset index used by existing windows
-  let maxOffsetIndex = -1
+  let maxOffsetIndex = -1;
   for (const win of avatarWindows.value) {
     // Calculate which offset index this window might be at
-    const offsetIndex = Math.round((win.x - baseX) / offset)
+    const offsetIndex = Math.round((win.x - baseX) / offset);
     if (offsetIndex > maxOffsetIndex) {
-      maxOffsetIndex = offsetIndex
+      maxOffsetIndex = offsetIndex;
     }
   }
 
   // Use the next offset index
-  const nextIndex = maxOffsetIndex + 1
+  const nextIndex = maxOffsetIndex + 1;
   return {
-    x: baseX + (nextIndex * offset),
-    y: baseY + (nextIndex * offset)
-  }
+    x: baseX + nextIndex * offset,
+    y: baseY + nextIndex * offset,
+  };
 }
 
 // Add a new avatar window
 function handleAddAvatarWindow() {
-  if (storyCharacters.value.length === 0) return
+  if (storyCharacters.value.length === 0) return;
 
-  const position = findNextWindowPosition()
+  const position = findNextWindowPosition();
   const newWindow = {
     id: generateWindowId(),
     characterId: storyCharacters.value[0].id,
     x: position.x,
     y: position.y,
     width: 300,
-    height: 400
-  }
+    height: 400,
+  };
 
-  avatarWindows.value.push(newWindow)
-  saveAvatarWindows()
+  avatarWindows.value.push(newWindow);
+  saveAvatarWindows();
 }
 
 // Handle window close
 function handleAvatarWindowClose(windowId) {
-  avatarWindows.value = avatarWindows.value.filter(w => w.id !== windowId)
-  saveAvatarWindows()
+  avatarWindows.value = avatarWindows.value.filter((w) => w.id !== windowId);
+  saveAvatarWindows();
 }
 
 // Handle window update (position, size, or character change)
 function handleAvatarWindowUpdate(update) {
-  const index = avatarWindows.value.findIndex(w => w.id === update.windowId)
+  const index = avatarWindows.value.findIndex((w) => w.id === update.windowId);
   if (index >= 0) {
     avatarWindows.value[index] = {
       id: update.windowId,
@@ -1507,32 +1495,32 @@ function handleAvatarWindowUpdate(update) {
       x: update.x,
       y: update.y,
       width: update.width,
-      height: update.height
-    }
-    saveAvatarWindows()
+      height: update.height,
+    };
+    saveAvatarWindows();
   }
 }
 
 // Debounced save to server - use ref to avoid race conditions
-const isMounted = ref(true)
-const saveAvatarTimeoutRef = ref(null)
+const isMounted = ref(true);
+const saveAvatarTimeoutRef = ref(null);
 
 function saveAvatarWindows() {
   if (saveAvatarTimeoutRef.value) {
-    clearTimeout(saveAvatarTimeoutRef.value)
+    clearTimeout(saveAvatarTimeoutRef.value);
   }
   saveAvatarTimeoutRef.value = setTimeout(async () => {
     // Check if component is still mounted before making API call
-    if (!isMounted.value) return
+    if (!isMounted.value) return;
     try {
-      await storiesAPI.updateAvatarWindows(props.storyId, avatarWindows.value)
+      await storiesAPI.updateAvatarWindows(props.storyId, avatarWindows.value);
     } catch (error) {
-      console.error('Failed to save avatar windows:', error)
+      console.error('Failed to save avatar windows:', error);
       if (isMounted.value) {
-        toast.error('Failed to save avatar window positions')
+        toast.error('Failed to save avatar window positions');
       }
     }
-  }, 500) // Debounce 500ms
+  }, 500); // Debounce 500ms
 }
 </script>
 
@@ -1608,7 +1596,8 @@ function saveAvatarWindows() {
   padding-bottom: 2rem;
   padding-left: max(2rem, calc((100% - 700px) / 2));
   padding-right: max(2rem, calc((100% - 700px) / 2));
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 1rem;
   line-height: 1.8;
   border: 0;
@@ -1706,7 +1695,9 @@ function saveAvatarWindows() {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .stop-button {
@@ -1730,7 +1721,8 @@ function saveAvatarWindows() {
   padding-bottom: 2rem;
   padding-left: max(2rem, calc((100% - 700px) / 2));
   padding-right: max(2rem, calc((100% - 700px) / 2));
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 1rem;
   line-height: 1.8;
   background-color: var(--bg-primary);

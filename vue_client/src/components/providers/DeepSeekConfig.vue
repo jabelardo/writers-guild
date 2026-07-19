@@ -43,7 +43,9 @@
             Enable thinking mode
           </label>
           <small class="help-text">
-            When enabled, the model produces a chain-of-thought before its answer. Reasoning consumes output tokens — if responses come back empty, raise Max Tokens. Sampling parameters (temperature, top_p, etc.) are ignored while thinking is on.
+            When enabled, the model produces a chain-of-thought before its answer. Reasoning
+            consumes output tokens — if responses come back empty, raise Max Tokens. Sampling
+            parameters (temperature, top_p, etc.) are ignored while thinking is on.
           </small>
         </div>
 
@@ -58,9 +60,7 @@
             <option value="high">High (default)</option>
             <option value="max">Max (longer reasoning, slower, more expensive)</option>
           </select>
-          <small class="help-text">
-            Controls how much the model reasons before answering.
-          </small>
+          <small class="help-text"> Controls how much the model reasons before answering. </small>
         </div>
       </div>
     </template>
@@ -68,42 +68,42 @@
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue'
-import BaseProviderConfig from './shared/BaseProviderConfig.vue'
-import ApiConfigSection from './shared/ApiConfigSection.vue'
-import ModelSelector from './shared/ModelSelector.vue'
-import { presetsAPI } from '../../services/api'
-import { useModelSelector } from '../../composables/useModelSelector'
+import { computed, onMounted, watch } from 'vue';
+import BaseProviderConfig from './shared/BaseProviderConfig.vue';
+import ApiConfigSection from './shared/ApiConfigSection.vue';
+import ModelSelector from './shared/ModelSelector.vue';
+import { presetsAPI } from '../../services/api';
+import { useModelSelector } from '../../composables/useModelSelector';
 
 const props = defineProps({
   config: {
     type: Object,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const emit = defineEmits(['update:config'])
+const emit = defineEmits(['update:config']);
 
 // Local computed for API config
 const localApiConfig = computed({
   get() {
-    return props.config.apiConfig || {}
+    return props.config.apiConfig || {};
   },
   set(value) {
-    emit('update:config', { ...props.config, apiConfig: value })
-  }
-})
+    emit('update:config', { ...props.config, apiConfig: value });
+  },
+});
 
-const localGenerationSettings = computed(() => props.config.generationSettings || {})
+const localGenerationSettings = computed(() => props.config.generationSettings || {});
 
 function updateThinking(enabled) {
   emit('update:config', {
     ...props.config,
     generationSettings: {
       ...localGenerationSettings.value,
-      thinking: enabled
-    }
-  })
+      thinking: enabled,
+    },
+  });
 }
 
 function updateReasoningEffort(value) {
@@ -111,9 +111,9 @@ function updateReasoningEffort(value) {
     ...props.config,
     generationSettings: {
       ...localGenerationSettings.value,
-      reasoningEffort: value
-    }
-  })
+      reasoningEffort: value,
+    },
+  });
 }
 
 // Use the shared model selector composable
@@ -123,7 +123,7 @@ const {
   modelsError,
   fetchAvailableModels,
   selectModel: baseSelectModel,
-  formatContextLength
+  formatContextLength,
 } = useModelSelector({
   apiConfig: localApiConfig,
   fetchModels: presetsAPI.getDeepSeekModels,
@@ -133,41 +133,44 @@ const {
       ...props.config,
       apiConfig: {
         ...localApiConfig.value,
-        model: updates.model
+        model: updates.model,
       },
       generationSettings: {
         ...props.config.generationSettings,
-        maxContextTokens: updates.contextLength
-      }
-    })
-  }
-})
+        maxContextTokens: updates.contextLength,
+      },
+    });
+  },
+});
 
 // Wrapper to handle model selection
 function selectModel(model) {
-  baseSelectModel(model)
+  baseSelectModel(model);
 }
 
 // Wrapper for fetch to make it simpler
 function fetchModels() {
-  fetchAvailableModels()
+  fetchAvailableModels();
 }
 
 // Auto-fetch models on mount if API key is present
 onMounted(() => {
   if (localApiConfig.value.apiKey) {
-    fetchAvailableModels(true) // silent fetch on mount
+    fetchAvailableModels(true); // silent fetch on mount
   }
-})
+});
 
 // Watch for API key changes and auto-fetch
-let hasAutoFetched = false
-watch(() => localApiConfig.value.apiKey, (newKey) => {
-  if (newKey && !hasAutoFetched && availableModels.value.length === 0) {
-    hasAutoFetched = true
-    fetchAvailableModels(true)
-  }
-})
+let hasAutoFetched = false;
+watch(
+  () => localApiConfig.value.apiKey,
+  (newKey) => {
+    if (newKey && !hasAutoFetched && availableModels.value.length === 0) {
+      hasAutoFetched = true;
+      fetchAvailableModels(true);
+    }
+  },
+);
 </script>
 
 <style scoped>
@@ -199,7 +202,7 @@ watch(() => localApiConfig.value.apiKey, (newKey) => {
   font-weight: normal;
 }
 
-.checkbox-group input[type="checkbox"] {
+.checkbox-group input[type='checkbox'] {
   width: auto;
   margin: 0;
 }

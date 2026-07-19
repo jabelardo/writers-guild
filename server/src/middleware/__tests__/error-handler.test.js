@@ -41,7 +41,7 @@ describe('Error Handler Middleware', () => {
       mockReq = {};
       mockRes = {
         status: vi.fn().mockReturnThis(),
-        json: vi.fn()
+        json: vi.fn(),
       };
       mockNext = vi.fn();
 
@@ -56,7 +56,7 @@ describe('Error Handler Middleware', () => {
 
       expect(mockRes.status).toHaveBeenCalledWith(404);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Not found'
+        error: 'Not found',
       });
     });
 
@@ -67,7 +67,7 @@ describe('Error Handler Middleware', () => {
 
       expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Server error'
+        error: 'Server error',
       });
     });
 
@@ -78,7 +78,7 @@ describe('Error Handler Middleware', () => {
 
       expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Regular error'
+        error: 'Regular error',
       });
     });
 
@@ -89,7 +89,7 @@ describe('Error Handler Middleware', () => {
 
       expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Internal server error'
+        error: 'Internal server error',
       });
     });
 
@@ -104,8 +104,8 @@ describe('Error Handler Middleware', () => {
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
           error: 'Dev error',
-          stack: expect.any(String)
-        })
+          stack: expect.any(String),
+        }),
       );
 
       process.env.NODE_ENV = originalEnv;
@@ -143,7 +143,7 @@ describe('Error Handler Middleware', () => {
       mockReq = {};
       mockRes = {
         status: vi.fn().mockReturnThis(),
-        json: vi.fn()
+        json: vi.fn(),
       };
       mockNext = vi.fn();
     });

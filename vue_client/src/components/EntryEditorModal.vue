@@ -44,7 +44,7 @@
           rows="8"
         ></textarea>
         <p class="field-help" v-pre>
-          Supports macros: {{random:a,b,c}}, {{pick:x,y,z}}, {{roll:d20}}, {{user}}, {{char}}
+          Supports macros: {{random:a,b,c}}, {{pick:x,y,z}}, {{roll:d20}}, {{ user }}, {{ char }}
         </p>
       </div>
 
@@ -60,7 +60,8 @@
           max="1000"
         />
         <p class="field-help">
-          Higher values = more influence. Lower priority entries discarded first if token budget exceeded. (0-1000, default: 100)
+          Higher values = more influence. Lower priority entries discarded first if token budget
+          exceeded. (0-1000, default: 100)
         </p>
       </div>
 
@@ -159,9 +160,7 @@
               class="text-input"
               placeholder="e.g., 'weather', 'combat'"
             />
-            <p class="field-help">
-              Entries with same group name: only ONE will activate randomly.
-            </p>
+            <p class="field-help">Entries with same group name: only ONE will activate randomly.</p>
           </div>
         </div>
       </details>
@@ -169,22 +168,12 @@
 
     <template #footer>
       <div class="footer-content">
-        <button
-          v-if="!isNewEntry"
-          class="btn btn-danger"
-          @click="deleteEntry"
-        >
+        <button v-if="!isNewEntry" class="btn btn-danger" @click="deleteEntry">
           <i class="fas fa-trash"></i> Delete
         </button>
         <div class="footer-right">
-          <button class="btn btn-secondary" @click="$emit('close')">
-            Cancel
-          </button>
-          <button
-            class="btn btn-primary"
-            :disabled="!canSave || saving"
-            @click="saveEntry"
-          >
+          <button class="btn btn-secondary" @click="$emit('close')">Cancel</button>
+          <button class="btn btn-primary" :disabled="!canSave || saving" @click="saveEntry">
             <i class="fas fa-save"></i>
             {{ saving ? 'Saving...' : 'Save Entry' }}
           </button>
@@ -195,29 +184,29 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import Modal from './Modal.vue'
-import { lorebooksAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
-import { useConfirm } from '../composables/useConfirm'
+import { ref, computed, onMounted } from 'vue';
+import Modal from './Modal.vue';
+import { lorebooksAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
+import { useConfirm } from '../composables/useConfirm';
 
 const props = defineProps({
   lorebookId: {
     type: String,
-    required: true
+    required: true,
   },
   entry: {
     type: Object,
-    default: null
-  }
-})
+    default: null,
+  },
+});
 
-const emit = defineEmits(['close', 'saved'])
-const toast = useToast()
-const { confirm } = useConfirm()
+const emit = defineEmits(['close', 'saved']);
+const toast = useToast();
+const { confirm } = useConfirm();
 
-const commentInput = ref(null)
-const saving = ref(false)
+const commentInput = ref(null);
+const saving = ref(false);
 
 // Form data with defaults
 const formData = ref({
@@ -233,18 +222,18 @@ const formData = ref({
   selectiveLogic: 0,
   probability: 100,
   useProbability: false,
-  group: ''
-})
+  group: '',
+});
 
 // Comma-separated string inputs
-const keysInput = ref('')
-const secondaryKeysInput = ref('')
+const keysInput = ref('');
+const secondaryKeysInput = ref('');
 
-const isNewEntry = computed(() => !props.entry)
+const isNewEntry = computed(() => !props.entry);
 
 const canSave = computed(() => {
-  return keysInput.value.trim() !== '' && formData.value.content.trim() !== ''
-})
+  return keysInput.value.trim() !== '' && formData.value.content.trim() !== '';
+});
 
 onMounted(() => {
   if (props.entry) {
@@ -262,31 +251,34 @@ onMounted(() => {
       selectiveLogic: props.entry.selectiveLogic ?? 0,
       probability: props.entry.probability ?? 100,
       useProbability: props.entry.useProbability ?? false,
-      group: props.entry.group || ''
-    }
-    keysInput.value = (props.entry.keys || []).join(', ')
-    secondaryKeysInput.value = (props.entry.secondaryKeys || []).join(', ')
+      group: props.entry.group || '',
+    };
+    keysInput.value = (props.entry.keys || []).join(', ');
+    secondaryKeysInput.value = (props.entry.secondaryKeys || []).join(', ');
   }
 
   // Focus first input when modal opens
   if (commentInput.value) {
-    commentInput.value.focus()
+    commentInput.value.focus();
   }
-})
+});
 
 function parseKeywords(input) {
-  if (!input.trim()) return []
-  return input.split(',').map(k => k.trim()).filter(k => k.length > 0)
+  if (!input.trim()) return [];
+  return input
+    .split(',')
+    .map((k) => k.trim())
+    .filter((k) => k.length > 0);
 }
 
 async function saveEntry() {
-  if (!canSave.value || saving.value) return
+  if (!canSave.value || saving.value) return;
 
   try {
-    saving.value = true
+    saving.value = true;
 
-    const keys = parseKeywords(keysInput.value)
-    const secondaryKeys = parseKeywords(secondaryKeysInput.value)
+    const keys = parseKeywords(keysInput.value);
+    const secondaryKeys = parseKeywords(secondaryKeysInput.value);
 
     const entryData = {
       comment: formData.value.comment,
@@ -304,23 +296,23 @@ async function saveEntry() {
       selectiveLogic: formData.value.selectiveLogic,
       probability: formData.value.probability,
       useProbability: formData.value.useProbability,
-      group: formData.value.group
-    }
+      group: formData.value.group,
+    };
 
     if (isNewEntry.value) {
-      await lorebooksAPI.addEntry(props.lorebookId, entryData)
-      toast.success('Entry created successfully!')
+      await lorebooksAPI.addEntry(props.lorebookId, entryData);
+      toast.success('Entry created successfully!');
     } else {
-      await lorebooksAPI.updateEntry(props.lorebookId, props.entry.id, entryData)
-      toast.success('Entry updated successfully!')
+      await lorebooksAPI.updateEntry(props.lorebookId, props.entry.id, entryData);
+      toast.success('Entry updated successfully!');
     }
 
-    emit('saved')
+    emit('saved');
   } catch (error) {
-    console.error('Failed to save entry:', error)
-    toast.error('Failed to save entry: ' + error.message)
+    console.error('Failed to save entry:', error);
+    toast.error('Failed to save entry: ' + error.message);
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
 
@@ -328,18 +320,18 @@ async function deleteEntry() {
   const confirmed = await confirm({
     message: 'Delete this entry? This cannot be undone.',
     confirmText: 'Delete Entry',
-    variant: 'danger'
-  })
+    variant: 'danger',
+  });
 
-  if (!confirmed) return
+  if (!confirmed) return;
 
   try {
-    await lorebooksAPI.deleteEntry(props.lorebookId, props.entry.id)
-    toast.success('Entry deleted successfully!')
-    emit('saved')
+    await lorebooksAPI.deleteEntry(props.lorebookId, props.entry.id);
+    toast.success('Entry deleted successfully!');
+    emit('saved');
   } catch (error) {
-    console.error('Failed to delete entry:', error)
-    toast.error('Failed to delete entry: ' + error.message)
+    console.error('Failed to delete entry:', error);
+    toast.error('Failed to delete entry: ' + error.message);
   }
 }
 </script>
@@ -423,7 +415,7 @@ async function deleteEntry() {
   font-weight: normal;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   width: 18px;
   height: 18px;
   cursor: pointer;

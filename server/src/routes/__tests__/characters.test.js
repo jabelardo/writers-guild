@@ -4,7 +4,7 @@ import request from 'supertest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { createTestPng, createTestCharacterPng, PNG_SIGNATURE } from './test-helpers.js';
+import { createTestPng, createTestCharacterPng } from './test-helpers.js';
 
 // Import the routers
 import charactersRouter from '../characters.js';
@@ -42,18 +42,16 @@ describe('Characters API Routes', () => {
     app.use('/api/stories', storiesRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
 
   describe('GET / - List Characters', () => {
     it('should return characters array', async () => {
-      const response = await request(app)
-        .get('/api/characters')
-        .expect(200);
+      const response = await request(app).get('/api/characters').expect(200);
 
       expect(response.body).toHaveProperty('characters');
       expect(Array.isArray(response.body.characters)).toBe(true);
@@ -80,7 +78,7 @@ describe('Characters API Routes', () => {
           description: 'A detailed description',
           personality: 'Brave and kind',
           scenario: 'In a fantasy world',
-          first_mes: 'Hello there!'
+          first_mes: 'Hello there!',
         })
         .expect(201);
 
@@ -108,10 +106,7 @@ describe('Characters API Routes', () => {
     });
 
     it('should return 400 if name is empty', async () => {
-      const response = await request(app)
-        .post('/api/characters')
-        .send({ name: '   ' })
-        .expect(400);
+      const response = await request(app).post('/api/characters').send({ name: '   ' }).expect(400);
 
       expect(response.body.error).toContain('Character name is required');
     });
@@ -124,7 +119,7 @@ describe('Characters API Routes', () => {
         description: 'Has an image',
         personality: 'Cheerful',
         scenario: 'Modern day',
-        first_mes: 'Hi!'
+        first_mes: 'Hi!',
       };
 
       const response = await request(app)
@@ -137,9 +132,7 @@ describe('Characters API Routes', () => {
     });
 
     it('should return 400 if characterData is missing', async () => {
-      const response = await request(app)
-        .post('/api/characters/create')
-        .expect(400);
+      const response = await request(app).post('/api/characters/create').expect(400);
 
       expect(response.body.error).toContain('Character data is required');
     });
@@ -173,18 +166,14 @@ describe('Characters API Routes', () => {
 
       const charId = createResponse.body.id;
 
-      const response = await request(app)
-        .get(`/api/characters/${charId}/data`)
-        .expect(200);
+      const response = await request(app).get(`/api/characters/${charId}/data`).expect(200);
 
       expect(response.body.character.data.name).toBe('Test Char');
       expect(response.body.character.data.description).toBe('Test description');
     });
 
     it('should return 500 for non-existent character', async () => {
-      await request(app)
-        .get('/api/characters/non-existent-id/data')
-        .expect(500);
+      await request(app).get('/api/characters/non-existent-id/data').expect(500);
     });
   });
 
@@ -198,7 +187,7 @@ describe('Characters API Routes', () => {
         .send({
           name: 'Original Name',
           description: 'Original Desc',
-          personality: 'Original Personality'
+          personality: 'Original Personality',
         })
         .expect(201);
 
@@ -231,7 +220,7 @@ describe('Characters API Routes', () => {
           description: 'New Desc',
           personality: 'New Personality',
           scenario: 'New Scenario',
-          first_mes: 'New First Message'
+          first_mes: 'New First Message',
         })
         .expect(200);
 
@@ -241,15 +230,13 @@ describe('Characters API Routes', () => {
     it('should update alternate greetings', async () => {
       const alternateGreetings = ['Greeting 1', 'Greeting 2'];
 
-      const response = await request(app)
+      await request(app)
         .put(`/api/characters/${charId}`)
         .send({ alternate_greetings: alternateGreetings })
         .expect(200);
 
       // Verify by fetching character data
-      const dataResponse = await request(app)
-        .get(`/api/characters/${charId}/data`)
-        .expect(200);
+      const dataResponse = await request(app).get(`/api/characters/${charId}/data`).expect(200);
 
       expect(dataResponse.body.character.data.alternate_greetings).toEqual(alternateGreetings);
     });
@@ -257,15 +244,13 @@ describe('Characters API Routes', () => {
     it('should update lorebook association', async () => {
       const lorebookId = 'test-lorebook-id';
 
-      const response = await request(app)
+      await request(app)
         .put(`/api/characters/${charId}`)
         .send({ ursceal_lorebook_id: lorebookId })
         .expect(200);
 
       // Verify by fetching character data
-      const dataResponse = await request(app)
-        .get(`/api/characters/${charId}/data`)
-        .expect(200);
+      const dataResponse = await request(app).get(`/api/characters/${charId}/data`).expect(200);
 
       expect(dataResponse.body.character.data.extensions.ursceal_lorebook_id).toBe(lorebookId);
     });
@@ -283,9 +268,7 @@ describe('Characters API Routes', () => {
         .send({ ursceal_lorebook_id: null })
         .expect(200);
 
-      const dataResponse = await request(app)
-        .get(`/api/characters/${charId}/data`)
-        .expect(200);
+      const dataResponse = await request(app).get(`/api/characters/${charId}/data`).expect(200);
 
       expect(dataResponse.body.character.data.extensions.ursceal_lorebook_id).toBeNull();
     });
@@ -300,9 +283,7 @@ describe('Characters API Routes', () => {
 
       const charId = createResponse.body.id;
 
-      const response = await request(app)
-        .get(`/api/characters/${charId}/stories`)
-        .expect(200);
+      const response = await request(app).get(`/api/characters/${charId}/stories`).expect(200);
 
       expect(response.body.stories).toEqual([]);
     });
@@ -323,13 +304,11 @@ describe('Characters API Routes', () => {
       const story2 = await storage.createStory('Story Two', 'Second story');
       await storage.setStoryPersona(story2.id, charId);
 
-      const response = await request(app)
-        .get(`/api/characters/${charId}/stories`)
-        .expect(200);
+      const response = await request(app).get(`/api/characters/${charId}/stories`).expect(200);
 
       expect(response.body.stories.length).toBe(2);
-      expect(response.body.stories.map(s => s.title)).toContain('Story One');
-      expect(response.body.stories.map(s => s.title)).toContain('Story Two');
+      expect(response.body.stories.map((s) => s.title)).toContain('Story One');
+      expect(response.body.stories.map((s) => s.title)).toContain('Story Two');
     });
   });
 
@@ -342,16 +321,12 @@ describe('Characters API Routes', () => {
 
       const charId = createResponse.body.id;
 
-      const response = await request(app)
-        .delete(`/api/characters/${charId}`)
-        .expect(200);
+      const response = await request(app).delete(`/api/characters/${charId}`).expect(200);
 
       expect(response.body.success).toBe(true);
 
       // Verify character is deleted
-      await request(app)
-        .get(`/api/characters/${charId}/data`)
-        .expect(500);
+      await request(app).get(`/api/characters/${charId}/data`).expect(500);
     });
 
     it('should return 409 when character is used in a story', async () => {
@@ -368,9 +343,7 @@ describe('Characters API Routes', () => {
       await storage.addCharacterToStory(story.id, charId);
 
       // Try to delete character
-      const response = await request(app)
-        .delete(`/api/characters/${charId}`)
-        .expect(409);
+      const response = await request(app).delete(`/api/characters/${charId}`).expect(409);
 
       expect(response.body.error).toContain('Cannot delete character');
       expect(response.body.error).toContain('Used in 1 story');
@@ -386,9 +359,7 @@ describe('Characters API Routes', () => {
 
       const charId = createResponse.body.id;
 
-      const response = await request(app)
-        .get(`/api/characters/${charId}/image`)
-        .expect(404);
+      const response = await request(app).get(`/api/characters/${charId}/image`).expect(404);
 
       expect(response.body.error).toContain('no image');
     });
@@ -398,7 +369,7 @@ describe('Characters API Routes', () => {
       const testPng = createTestPng();
       const characterData = {
         name: 'Image Char',
-        description: 'Has image'
+        description: 'Has image',
       };
 
       const createResponse = await request(app)
@@ -406,15 +377,13 @@ describe('Characters API Routes', () => {
         .field('characterData', JSON.stringify(characterData))
         .attach('image', testPng, {
           filename: 'test.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(201);
 
       const charId = createResponse.body.id;
 
-      const response = await request(app)
-        .get(`/api/characters/${charId}/image`)
-        .expect(200);
+      const response = await request(app).get(`/api/characters/${charId}/image`).expect(200);
 
       expect(response.headers['content-type']).toBe('image/png');
       expect(response.headers['cache-control']).toBe('public, max-age=86400');
@@ -431,9 +400,7 @@ describe('Characters API Routes', () => {
 
       const charId = createResponse.body.id;
 
-      const response = await request(app)
-        .get(`/api/characters/${charId}/thumbnail`)
-        .expect(404);
+      const response = await request(app).get(`/api/characters/${charId}/thumbnail`).expect(404);
 
       expect(response.body.error).toContain('no thumbnail');
     });
@@ -443,7 +410,7 @@ describe('Characters API Routes', () => {
       const testPng = createTestPng();
       const characterData = {
         name: 'Thumb Char',
-        description: 'Has thumbnail'
+        description: 'Has thumbnail',
       };
 
       const createResponse = await request(app)
@@ -451,18 +418,16 @@ describe('Characters API Routes', () => {
         .field('characterData', JSON.stringify(characterData))
         .attach('image', testPng, {
           filename: 'test.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(201);
 
       const charId = createResponse.body.id;
-      
-      // Wait a bit for thumbnail generation
-      await new Promise(resolve => setTimeout(resolve, 100));
 
-      const response = await request(app)
-        .get(`/api/characters/${charId}/thumbnail`)
-        .expect(200);
+      // Wait a bit for thumbnail generation
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const response = await request(app).get(`/api/characters/${charId}/thumbnail`).expect(200);
 
       expect(response.headers['content-type']).toBe('image/png');
       expect(response.headers['cache-control']).toBe('public, max-age=86400');
@@ -490,7 +455,7 @@ describe('Characters API Routes', () => {
       const testPng = createTestPng();
       const characterData = {
         name: 'Medium Thumb Char',
-        description: 'Has medium thumbnail'
+        description: 'Has medium thumbnail',
       };
 
       const createResponse = await request(app)
@@ -498,14 +463,14 @@ describe('Characters API Routes', () => {
         .field('characterData', JSON.stringify(characterData))
         .attach('image', testPng, {
           filename: 'test.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(201);
 
       const charId = createResponse.body.id;
-      
+
       // Wait a bit for thumbnail generation
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const response = await request(app)
         .get(`/api/characters/${charId}/thumbnail-medium`)
@@ -518,10 +483,7 @@ describe('Characters API Routes', () => {
 
   describe('POST /import-url - Import from URL', () => {
     it('should return 400 if URL is missing', async () => {
-      const response = await request(app)
-        .post('/api/characters/import-url')
-        .send({})
-        .expect(400);
+      const response = await request(app).post('/api/characters/import-url').send({}).expect(400);
 
       expect(response.body.error).toContain('URL is required');
     });
@@ -548,16 +510,17 @@ describe('Characters API Routes', () => {
       const characterPng = await createTestCharacterPng({
         name: 'URL Image Char',
         description: 'Imported from image URL',
-        first_mes: 'Hello from URL!'
+        first_mes: 'Hello from URL!',
       });
 
       const mockResponse = {
         ok: true,
         statusText: 'OK',
-        arrayBuffer: async () => characterPng.buffer.slice(
-          characterPng.byteOffset,
-          characterPng.byteOffset + characterPng.byteLength
-        ),
+        arrayBuffer: async () =>
+          characterPng.buffer.slice(
+            characterPng.byteOffset,
+            characterPng.byteOffset + characterPng.byteLength,
+          ),
       };
       vi.stubGlobal('fetch', async () => mockResponse);
 
@@ -579,16 +542,17 @@ describe('Characters API Routes', () => {
 
     it('should import character from JPEG image URL', async () => {
       const characterPng = await createTestCharacterPng({
-        name: 'JPEG URL Char'
+        name: 'JPEG URL Char',
       });
 
       const mockResponse = {
         ok: true,
         statusText: 'OK',
-        arrayBuffer: async () => characterPng.buffer.slice(
-          characterPng.byteOffset,
-          characterPng.byteOffset + characterPng.byteLength
-        ),
+        arrayBuffer: async () =>
+          characterPng.buffer.slice(
+            characterPng.byteOffset,
+            characterPng.byteOffset + characterPng.byteLength,
+          ),
       };
       vi.stubGlobal('fetch', async () => mockResponse);
 
@@ -607,16 +571,17 @@ describe('Characters API Routes', () => {
 
     it('should import character from WebP image URL', async () => {
       const characterPng = await createTestCharacterPng({
-        name: 'WebP URL Char'
+        name: 'WebP URL Char',
       });
 
       const mockResponse = {
         ok: true,
         statusText: 'OK',
-        arrayBuffer: async () => characterPng.buffer.slice(
-          characterPng.byteOffset,
-          characterPng.byteOffset + characterPng.byteLength
-        ),
+        arrayBuffer: async () =>
+          characterPng.buffer.slice(
+            characterPng.byteOffset,
+            characterPng.byteOffset + characterPng.byteLength,
+          ),
       };
       vi.stubGlobal('fetch', async () => mockResponse);
 
@@ -634,16 +599,17 @@ describe('Characters API Routes', () => {
 
     it('should import character from image URL with query parameters', async () => {
       const characterPng = await createTestCharacterPng({
-        name: 'Query URL Char'
+        name: 'Query URL Char',
       });
 
       const mockResponse = {
         ok: true,
         statusText: 'OK',
-        arrayBuffer: async () => characterPng.buffer.slice(
-          characterPng.byteOffset,
-          characterPng.byteOffset + characterPng.byteLength
-        ),
+        arrayBuffer: async () =>
+          characterPng.buffer.slice(
+            characterPng.byteOffset,
+            characterPng.byteOffset + characterPng.byteLength,
+          ),
       };
       vi.stubGlobal('fetch', async () => mockResponse);
 
@@ -682,10 +648,8 @@ describe('Characters API Routes', () => {
       vi.stubGlobal('fetch', async () => ({
         ok: true,
         statusText: 'OK',
-        arrayBuffer: async () => notPng.buffer.slice(
-          notPng.byteOffset,
-          notPng.byteOffset + notPng.byteLength
-        ),
+        arrayBuffer: async () =>
+          notPng.buffer.slice(notPng.byteOffset, notPng.byteOffset + notPng.byteLength),
       }));
 
       try {
@@ -704,16 +668,17 @@ describe('Characters API Routes', () => {
       // Verifies that a successful image URL import returns 201 and does NOT
       // fall through to the CHUB URL check (which would throw a 400 error).
       const characterPng = await createTestCharacterPng({
-        name: 'No Fallthrough Char'
+        name: 'No Fallthrough Char',
       });
 
       const mockResponse = {
         ok: true,
         statusText: 'OK',
-        arrayBuffer: async () => characterPng.buffer.slice(
-          characterPng.byteOffset,
-          characterPng.byteOffset + characterPng.byteLength
-        ),
+        arrayBuffer: async () =>
+          characterPng.buffer.slice(
+            characterPng.byteOffset,
+            characterPng.byteOffset + characterPng.byteLength,
+          ),
       };
       vi.stubGlobal('fetch', async () => mockResponse);
 
@@ -731,14 +696,11 @@ describe('Characters API Routes', () => {
         vi.unstubAllGlobals();
       }
     });
-
   });
 
   describe('POST /import - Import PNG', () => {
     it('should return 400 if no file uploaded', async () => {
-      const response = await request(app)
-        .post('/api/characters/import')
-        .expect(400);
+      const response = await request(app).post('/api/characters/import').expect(400);
 
       expect(response.body.error).toContain('No file uploaded');
     });
@@ -748,7 +710,7 @@ describe('Characters API Routes', () => {
         .post('/api/characters/import')
         .attach('character', Buffer.from('not an image'), {
           filename: 'test.txt',
-          contentType: 'text/plain'
+          contentType: 'text/plain',
         })
         .expect(400);
 
@@ -757,12 +719,12 @@ describe('Characters API Routes', () => {
 
     it('should reject files larger than 10MB', async () => {
       const largeBuffer = Buffer.alloc(11 * 1024 * 1024); // 11MB
-      
+
       const response = await request(app)
         .post('/api/characters/import')
         .attach('character', largeBuffer, {
           filename: 'large.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(500); // multer might throw 500 for size limits
 
@@ -776,14 +738,14 @@ describe('Characters API Routes', () => {
         name: 'Imported Char',
         description: 'From JSON',
         personality: 'Friendly',
-        first_mes: 'Hello from JSON!'
+        first_mes: 'Hello from JSON!',
       };
 
       const response = await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from(JSON.stringify(characterJson)), {
           filename: 'character.json',
-          contentType: 'application/json'
+          contentType: 'application/json',
         })
         .expect(201);
 
@@ -797,13 +759,13 @@ describe('Characters API Routes', () => {
       const flatCharacter = {
         name: 'Flat Char',
         description: 'Flat format',
-        first_mes: 'Hi'
+        first_mes: 'Hi',
       };
 
       const response = await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from(JSON.stringify(flatCharacter)), {
-          filename: 'character.json'
+          filename: 'character.json',
         })
         .expect(201);
 
@@ -818,9 +780,7 @@ describe('Characters API Routes', () => {
     });
 
     it('should return 400 if no file provided', async () => {
-      const response = await request(app)
-        .post('/api/characters/import-json')
-        .expect(400);
+      const response = await request(app).post('/api/characters/import-json').expect(400);
 
       expect(response.body.error).toContain('No character file provided');
     });
@@ -829,7 +789,7 @@ describe('Characters API Routes', () => {
       const response = await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from('not valid json'), {
-          filename: 'bad.json'
+          filename: 'bad.json',
         })
         .expect(400);
 
@@ -838,13 +798,13 @@ describe('Characters API Routes', () => {
 
     it('should return 400 for missing name in character data', async () => {
       const invalidChar = {
-        description: 'No name field'
+        description: 'No name field',
       };
 
       const response = await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from(JSON.stringify(invalidChar)), {
-          filename: 'bad.json'
+          filename: 'bad.json',
         })
         .expect(400);
 
@@ -862,16 +822,16 @@ describe('Characters API Routes', () => {
               uid: 1,
               key: ['magic'],
               content: 'Magic lore content',
-              comment: 'Magic entry'
-            }
-          ]
-        }
+              comment: 'Magic entry',
+            },
+          ],
+        },
       };
 
       const response = await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from(JSON.stringify(characterWithLorebook)), {
-          filename: 'char.json'
+          filename: 'char.json',
         })
         .expect(201);
 
@@ -912,7 +872,7 @@ describe('Characters API Routes', () => {
     it('should update character with valid JSON data', async () => {
       const updateData = {
         name: 'Updated Name',
-        description: 'Updated Description'
+        description: 'Updated Description',
       };
 
       const response = await request(app)
@@ -929,31 +889,29 @@ describe('Characters API Routes', () => {
     it('should list characters sorted alphabetically', async () => {
       // Clean up any existing characters by using a fresh temp dir
       // Create characters in non-alphabetical order
-      const char1 = await request(app)
+      await request(app)
         .post('/api/characters')
         .send({ name: 'Zebra Char', description: 'Z' })
         .expect(201);
 
-      const char2 = await request(app)
+      await request(app)
         .post('/api/characters')
         .send({ name: 'Apple Char', description: 'A' })
         .expect(201);
 
-      const char3 = await request(app)
+      await request(app)
         .post('/api/characters')
         .send({ name: 'Mango Char', description: 'M' })
         .expect(201);
 
-      const response = await request(app)
-        .get('/api/characters')
-        .expect(200);
+      const response = await request(app).get('/api/characters').expect(200);
 
       // Find our test characters in the list
-      const testChars = response.body.characters.filter(c => 
-        ['Zebra Char', 'Apple Char', 'Mango Char'].includes(c.name)
+      const testChars = response.body.characters.filter((c) =>
+        ['Zebra Char', 'Apple Char', 'Mango Char'].includes(c.name),
       );
-      
-      const names = testChars.map(c => c.name);
+
+      const names = testChars.map((c) => c.name);
       expect(names[0]).toBe('Apple Char');
       expect(names[1]).toBe('Mango Char');
       expect(names[2]).toBe('Zebra Char');
@@ -964,7 +922,7 @@ describe('Characters API Routes', () => {
       const testPng = createTestPng();
       const characterData = {
         name: 'Image List Char',
-        description: 'Has image'
+        description: 'Has image',
       };
 
       const createResponse = await request(app)
@@ -972,17 +930,15 @@ describe('Characters API Routes', () => {
         .field('characterData', JSON.stringify(characterData))
         .attach('image', testPng, {
           filename: 'test.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(201);
 
       const charId = createResponse.body.id;
 
-      const response = await request(app)
-        .get('/api/characters')
-        .expect(200);
+      const response = await request(app).get('/api/characters').expect(200);
 
-      const char = response.body.characters.find(c => c.id === charId);
+      const char = response.body.characters.find((c) => c.id === charId);
       expect(char).toBeDefined();
       expect(char.imageUrl).toBe(`/api/characters/${charId}/image`);
       expect(char.thumbnailUrl).toBe(`/api/characters/${charId}/thumbnail`);
@@ -1001,18 +957,15 @@ describe('Characters API Routes', () => {
       const story1 = await storage.createStory('Story 1', 'First');
       await storage.addCharacterToStory(story1.id, charId);
       // Update word count
-      const story1Data = await storage.getStory(story1.id);
       await storage.stmts.updateStoryContent.run('', 1000, new Date().toISOString(), story1.id);
 
       const story2 = await storage.createStory('Story 2', 'Second');
       await storage.setStoryPersona(story2.id, charId);
       await storage.stmts.updateStoryContent.run('', 500, new Date().toISOString(), story2.id);
 
-      const response = await request(app)
-        .get('/api/characters')
-        .expect(200);
+      const response = await request(app).get('/api/characters').expect(200);
 
-      const char = response.body.characters.find(c => c.id === charId);
+      const char = response.body.characters.find((c) => c.id === charId);
       expect(char.totalWords).toBe(1500);
     });
   });
@@ -1025,7 +978,7 @@ describe('Characters API Routes', () => {
         description: 'Has an image',
         personality: 'Cheerful',
         scenario: 'Modern day',
-        first_mes: 'Hi!'
+        first_mes: 'Hi!',
       };
 
       const response = await request(app)
@@ -1033,7 +986,7 @@ describe('Characters API Routes', () => {
         .field('characterData', JSON.stringify(characterData))
         .attach('image', testPng, {
           filename: 'test.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(201);
 
@@ -1044,10 +997,7 @@ describe('Characters API Routes', () => {
 
   describe('POST /import-url - Import from URL', () => {
     it('should return 400 if URL is missing', async () => {
-      const response = await request(app)
-        .post('/api/characters/import-url')
-        .send({})
-        .expect(400);
+      const response = await request(app).post('/api/characters/import-url').send({}).expect(400);
 
       expect(response.body.error).toContain('URL is required');
     });
@@ -1100,7 +1050,7 @@ describe('Characters API Routes', () => {
         .send({
           name: 'Original Name',
           description: 'Original Desc',
-          personality: 'Original Personality'
+          personality: 'Original Personality',
         })
         .expect(201);
 
@@ -1108,29 +1058,25 @@ describe('Characters API Routes', () => {
     });
 
     it('should update system_prompt field', async () => {
-      const response = await request(app)
+      await request(app)
         .put(`/api/characters/${charId}`)
         .send({ system_prompt: 'New system prompt' })
         .expect(200);
 
       // Verify by fetching character data
-      const dataResponse = await request(app)
-        .get(`/api/characters/${charId}/data`)
-        .expect(200);
+      const dataResponse = await request(app).get(`/api/characters/${charId}/data`).expect(200);
 
       expect(dataResponse.body.character.data.system_prompt).toBe('New system prompt');
     });
 
     it('should update mes_example field', async () => {
-      const response = await request(app)
+      await request(app)
         .put(`/api/characters/${charId}`)
         .send({ mes_example: 'Example dialogue' })
         .expect(200);
 
       // Verify by fetching character data
-      const dataResponse = await request(app)
-        .get(`/api/characters/${charId}/data`)
-        .expect(200);
+      const dataResponse = await request(app).get(`/api/characters/${charId}/data`).expect(200);
 
       expect(dataResponse.body.character.data.mes_example).toBe('Example dialogue');
     });
@@ -1142,10 +1088,11 @@ describe('Characters API Routes', () => {
     beforeEach(() => {
       const pngBuffer = createTestPng();
       origFetch = globalThis.fetch;
-      globalThis.fetch = async () => new Response(pngBuffer, {
-        status: 200,
-        headers: { 'Content-Type': 'image/png' },
-      });
+      globalThis.fetch = async () =>
+        new Response(pngBuffer, {
+          status: 200,
+          headers: { 'Content-Type': 'image/png' },
+        });
     });
 
     afterEach(() => {
@@ -1156,16 +1103,18 @@ describe('Characters API Routes', () => {
     function parseEvents(text) {
       return text
         .split('\n\n')
-        .filter(block => block.startsWith('data: '))
-        .map(block => JSON.parse(block.slice('data: '.length)));
+        .filter((block) => block.startsWith('data: '))
+        .map((block) => JSON.parse(block.slice('data: '.length)));
     }
 
     function cardWithImages(name) {
-      return Buffer.from(JSON.stringify({
-        name,
-        description: 'One ![a](https://example.com/one.png)',
-        first_mes: 'Two ![b](https://example.com/two.png)',
-      }));
+      return Buffer.from(
+        JSON.stringify({
+          name,
+          description: 'One ![a](https://example.com/one.png)',
+          first_mes: 'Two ![b](https://example.com/two.png)',
+        }),
+      );
     }
 
     it('streams per-image progress and a terminal done event', async () => {
@@ -1178,15 +1127,15 @@ describe('Characters API Routes', () => {
       expect(response.headers['content-type']).toContain('text/event-stream');
 
       const events = parseEvents(response.text);
-      const start = events.find(e => e.phase === 'start');
-      const images = events.filter(e => e.phase === 'image');
-      const done = events.find(e => e.type === 'done');
+      const start = events.find((e) => e.phase === 'start');
+      const images = events.filter((e) => e.phase === 'image');
+      const done = events.find((e) => e.type === 'done');
 
       expect(start.total).toBe(2);
       expect(images).toHaveLength(2);
       // Progress is monotonic and terminates at the total.
-      expect(images.map(e => e.completed)).toEqual([1, 2]);
-      expect(images.every(e => e.ok)).toBe(true);
+      expect(images.map((e) => e.completed)).toEqual([1, 2]);
+      expect(images.every((e) => e.ok)).toBe(true);
 
       // The done event carries the same payload the JSON response would.
       expect(done.id).toBeTruthy();
@@ -1203,10 +1152,10 @@ describe('Characters API Routes', () => {
         .expect(200);
 
       const events = parseEvents(response.text);
-      const images = events.filter(e => e.phase === 'image');
-      const done = events.find(e => e.type === 'done');
+      const images = events.filter((e) => e.phase === 'image');
+      const done = events.find((e) => e.type === 'done');
 
-      expect(images.every(e => e.ok === false)).toBe(true);
+      expect(images.every((e) => e.ok === false)).toBe(true);
       // Import still succeeds — caching is non-fatal by design.
       expect(done.id).toBeTruthy();
       expect(done.name).toBe('Partial');
@@ -1215,17 +1164,19 @@ describe('Characters API Routes', () => {
     it('streams the embedded lorebook images as a second stage', async () => {
       // A CHUB character with an embedded lorebook caches two sets: the card,
       // then the lorebook — often the larger of the two. Both must report.
-      const card = Buffer.from(JSON.stringify({
-        name: 'With Lore',
-        description: 'Card image ![a](https://example.com/card.png)',
-        character_book: {
-          name: 'Embedded',
-          entries: [
-            { keys: ['k'], content: 'Lore one ![b](https://example.com/lore1.png)' },
-            { keys: ['j'], content: 'Lore two ![c](https://example.com/lore2.png)' },
-          ],
-        },
-      }));
+      const card = Buffer.from(
+        JSON.stringify({
+          name: 'With Lore',
+          description: 'Card image ![a](https://example.com/card.png)',
+          character_book: {
+            name: 'Embedded',
+            entries: [
+              { keys: ['k'], content: 'Lore one ![b](https://example.com/lore1.png)' },
+              { keys: ['j'], content: 'Lore two ![c](https://example.com/lore2.png)' },
+            ],
+          },
+        }),
+      );
 
       const response = await request(app)
         .post('/api/characters/import-json')
@@ -1234,7 +1185,7 @@ describe('Characters API Routes', () => {
         .expect(200);
 
       const events = parseEvents(response.text);
-      const starts = events.filter(e => e.phase === 'start');
+      const starts = events.filter((e) => e.phase === 'start');
 
       // Two distinct stages, tagged by entity type.
       expect(starts).toHaveLength(2);
@@ -1243,10 +1194,12 @@ describe('Characters API Routes', () => {
       expect(starts[1].entityType).toBe('lorebooks');
       expect(starts[1].total).toBe(2);
 
-      const lorebookImages = events.filter(e => e.phase === 'image' && e.entityType === 'lorebooks');
+      const lorebookImages = events.filter(
+        (e) => e.phase === 'image' && e.entityType === 'lorebooks',
+      );
       expect(lorebookImages).toHaveLength(2);
 
-      const done = events.find(e => e.type === 'done');
+      const done = events.find((e) => e.type === 'done');
       expect(done.embeddedLorebook).toBeTruthy();
       expect(done.embeddedLorebook.entryCount).toBe(2);
     });
@@ -1255,7 +1208,8 @@ describe('Characters API Routes', () => {
       // Once progress events have flushed headers the status line is already
       // sent. A throw after that point must still reach the client as a
       // terminal event, or the reader waits forever for a done that never comes.
-      const spy = vi.spyOn(SqliteStorageService.prototype, 'saveCharacter')
+      const spy = vi
+        .spyOn(SqliteStorageService.prototype, 'saveCharacter')
         .mockRejectedValueOnce(new Error('disk on fire'));
 
       try {
@@ -1266,12 +1220,12 @@ describe('Characters API Routes', () => {
           .expect(200);
 
         const events = parseEvents(response.text);
-        const error = events.find(e => e.type === 'error');
+        const error = events.find((e) => e.type === 'error');
 
         expect(error).toBeTruthy();
         expect(error.error).toContain('disk on fire');
         // And no bogus success terminator.
-        expect(events.find(e => e.type === 'done')).toBeUndefined();
+        expect(events.find((e) => e.type === 'done')).toBeUndefined();
       } finally {
         spy.mockRestore();
       }
@@ -1298,10 +1252,11 @@ describe('Characters API Routes', () => {
     beforeEach(() => {
       const pngBuffer = createTestPng();
       origFetch = globalThis.fetch;
-      globalThis.fetch = async () => new Response(pngBuffer, {
-        status: 200,
-        headers: { 'Content-Type': 'image/png' },
-      });
+      globalThis.fetch = async () =>
+        new Response(pngBuffer, {
+          status: 200,
+          headers: { 'Content-Type': 'image/png' },
+        });
     });
 
     afterEach(() => {
@@ -1341,9 +1296,7 @@ describe('Characters API Routes', () => {
         })
         .expect(200);
 
-      const dataResponse = await request(app)
-        .get(`/api/characters/${charId}/data`)
-        .expect(200);
+      const dataResponse = await request(app).get(`/api/characters/${charId}/data`).expect(200);
 
       const { description } = dataResponse.body.character.data;
       expect(description).toContain('/api/assets/characters/');
@@ -1365,7 +1318,7 @@ describe('Characters API Routes', () => {
 
       // Pull the rewritten local path back out and fetch it end-to-end.
       const match = dataResponse.body.character.data.description.match(
-        /\/api\/assets\/characters\/[^)\s]+/
+        /\/api\/assets\/characters\/[^)\s]+/,
       );
       expect(match).not.toBeNull();
 
@@ -1380,14 +1333,14 @@ describe('Characters API Routes', () => {
         description: 'Has empty lorebook',
         character_book: {
           name: 'Empty',
-          entries: []
-        }
+          entries: [],
+        },
       };
 
       const response = await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from(JSON.stringify(characterWithEmptyLorebook)), {
-          filename: 'char.json'
+          filename: 'char.json',
         })
         .expect(201);
 
@@ -1408,17 +1361,17 @@ describe('Characters API Routes', () => {
       const charId = createResponse.body.id;
 
       // Update with only ursceal_lorebook_id (covers extensions init path)
-      const response = await request(app)
+      await request(app)
         .put(`/api/characters/${charId}`)
         .send({ ursceal_lorebook_id: 'some-lorebook-id' })
         .expect(200);
 
       // Verify via data endpoint
-      const dataResponse = await request(app)
-        .get(`/api/characters/${charId}/data`)
-        .expect(200);
+      const dataResponse = await request(app).get(`/api/characters/${charId}/data`).expect(200);
 
-      expect(dataResponse.body.character.data.extensions.ursceal_lorebook_id).toBe('some-lorebook-id');
+      expect(dataResponse.body.character.data.extensions.ursceal_lorebook_id).toBe(
+        'some-lorebook-id',
+      );
     });
   });
 
@@ -1433,20 +1386,23 @@ describe('Characters API Routes', () => {
       const charId = createResponse.body.id;
 
       // Update with lorebook_id (covers extensions init in update-with-image)
-      const response = await request(app)
+      await request(app)
         .put(`/api/characters/${charId}/update-with-image`)
-        .field('characterData', JSON.stringify({
-          name: 'Lorebook Updated',
-          ursceal_lorebook_id: 'test-lorebook-id'
-        }))
+        .field(
+          'characterData',
+          JSON.stringify({
+            name: 'Lorebook Updated',
+            ursceal_lorebook_id: 'test-lorebook-id',
+          }),
+        )
         .expect(200);
 
       // Verify via data endpoint
-      const dataResponse = await request(app)
-        .get(`/api/characters/${charId}/data`)
-        .expect(200);
+      const dataResponse = await request(app).get(`/api/characters/${charId}/data`).expect(200);
 
-      expect(dataResponse.body.character.data.extensions.ursceal_lorebook_id).toBe('test-lorebook-id');
+      expect(dataResponse.body.character.data.extensions.ursceal_lorebook_id).toBe(
+        'test-lorebook-id',
+      );
     });
 
     it('should accept image with character update', async () => {
@@ -1465,7 +1421,7 @@ describe('Characters API Routes', () => {
         .field('characterData', JSON.stringify({ name: 'Updated Img', description: 'With image' }))
         .attach('image', testPng, {
           filename: 'avatar.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(200);
 

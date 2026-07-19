@@ -18,7 +18,9 @@
           class="text-input"
           placeholder="0000000000 for anonymous"
         />
-        <small class="help-text">Use "0000000000" for anonymous access, or get an API key from https://aihorde.net</small>
+        <small class="help-text"
+          >Use "0000000000" for anonymous access, or get an API key from https://aihorde.net</small
+        >
       </div>
 
       <div v-if="showAdvancedApiConfig" class="form-group">
@@ -36,7 +38,8 @@
       <div class="form-group">
         <h4 class="subsection-title">Model Selection</h4>
         <p class="section-description">
-          Select which models to use from the AI Horde. Multiple models can be selected to increase availability and reduce queue times.
+          Select which models to use from the AI Horde. Multiple models can be selected to increase
+          availability and reduce queue times.
         </p>
 
         <div class="horde-actions">
@@ -66,8 +69,12 @@
 
         <div v-if="availableHordeModels.length > 0" class="models-list">
           <div class="models-header">
-            <span>{{ selectedModelsCount }} of {{ availableHordeModels.length }} models selected</span>
-            <button type="button" class="btn-link-small" @click="clearSelectedModels">Clear All</button>
+            <span
+              >{{ selectedModelsCount }} of {{ availableHordeModels.length }} models selected</span
+            >
+            <button type="button" class="btn-link-small" @click="clearSelectedModels">
+              Clear All
+            </button>
           </div>
 
           <div class="models-grid">
@@ -77,16 +84,14 @@
               class="model-item"
               :class="{ 'model-selected': isModelSelected(model.name) }"
             >
-              <input
-                type="checkbox"
-                :value="model.name"
-                v-model="localModels"
-              />
+              <input type="checkbox" :value="model.name" v-model="localModels" />
               <div class="model-info">
                 <span class="model-name">{{ model.name }}</span>
                 <span class="model-meta">
                   <span class="model-badge">{{ model.count }} workers</span>
-                  <span v-if="model.queued > 0" class="model-badge queue">{{ model.queued }} queued</span>
+                  <span v-if="model.queued > 0" class="model-badge queue"
+                    >{{ model.queued }} queued</span
+                  >
                 </span>
               </div>
             </label>
@@ -110,97 +115,97 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import BaseProviderConfig from './shared/BaseProviderConfig.vue'
-import { presetsAPI } from '../../services/api'
-import { useToast } from '../../composables/useToast'
+import { ref, computed, onMounted } from 'vue';
+import BaseProviderConfig from './shared/BaseProviderConfig.vue';
+import { presetsAPI } from '../../services/api';
+import { useToast } from '../../composables/useToast';
 
 const props = defineProps({
   config: {
     type: Object,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const emit = defineEmits(['update:config'])
+const emit = defineEmits(['update:config']);
 
-const toast = useToast()
+const toast = useToast();
 
-const showAdvancedApiConfig = ref(false)
+const showAdvancedApiConfig = ref(false);
 
 // AI Horde model selection state
-const availableHordeModels = ref([])
-const loadingHordeModels = ref(false)
-const hordeModelsError = ref(null)
-const recommendedHordeModels = ref([])
+const availableHordeModels = ref([]);
+const loadingHordeModels = ref(false);
+const hordeModelsError = ref(null);
+const recommendedHordeModels = ref([]);
 
 // Local computed for API config
 const localApiConfig = computed({
   get() {
-    return props.config.apiConfig || {}
+    return props.config.apiConfig || {};
   },
   set(value) {
-    emit('update:config', { ...props.config, apiConfig: value })
-  }
-})
+    emit('update:config', { ...props.config, apiConfig: value });
+  },
+});
 
 // Local models array that syncs with apiConfig.models
 const localModels = computed({
   get() {
-    return localApiConfig.value.models || []
+    return localApiConfig.value.models || [];
   },
   set(value) {
     localApiConfig.value = {
       ...localApiConfig.value,
-      models: value
-    }
-  }
-})
+      models: value,
+    };
+  },
+});
 
 const selectedModelsCount = computed(() => {
-  return localModels.value.length
-})
+  return localModels.value.length;
+});
 
 // AI Horde model selection methods
 async function fetchHordeModels() {
   try {
-    loadingHordeModels.value = true
-    hordeModelsError.value = null
+    loadingHordeModels.value = true;
+    hordeModelsError.value = null;
 
-    const response = await presetsAPI.getAIHordeModels()
-    availableHordeModels.value = response.models || []
-    recommendedHordeModels.value = response.autoSelected || []
+    const response = await presetsAPI.getAIHordeModels();
+    availableHordeModels.value = response.models || [];
+    recommendedHordeModels.value = response.autoSelected || [];
 
     if (availableHordeModels.value.length === 0) {
-      hordeModelsError.value = 'No models available at this time'
+      hordeModelsError.value = 'No models available at this time';
     }
   } catch (error) {
-    console.error('Failed to fetch AI Horde models:', error)
-    hordeModelsError.value = 'Failed to fetch models: ' + error.message
+    console.error('Failed to fetch AI Horde models:', error);
+    hordeModelsError.value = 'Failed to fetch models: ' + error.message;
   } finally {
-    loadingHordeModels.value = false
+    loadingHordeModels.value = false;
   }
 }
 
 function autoSelectHordeModels() {
   if (recommendedHordeModels.value.length > 0) {
-    localModels.value = [...recommendedHordeModels.value]
-    toast.success(`Selected ${recommendedHordeModels.value.length} recommended models`)
+    localModels.value = [...recommendedHordeModels.value];
+    toast.success(`Selected ${recommendedHordeModels.value.length} recommended models`);
   }
 }
 
 function clearSelectedModels() {
-  localModels.value = []
+  localModels.value = [];
 }
 
 function isModelSelected(modelName) {
-  return localModels.value.includes(modelName)
+  return localModels.value.includes(modelName);
 }
 
 // Auto-fetch models when component mounts
 onMounted(() => {
-  fetchHordeModels()
-})
+  fetchHordeModels();
+});
 </script>
 
 <style scoped>
@@ -382,7 +387,7 @@ onMounted(() => {
   box-shadow: 0 0 0 1px var(--accent-primary);
 }
 
-.model-item input[type="checkbox"] {
+.model-item input[type='checkbox'] {
   margin-top: 0.2rem;
   flex-shrink: 0;
   width: 16px;
@@ -433,7 +438,11 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

@@ -3,29 +3,26 @@
     <section class="form-section">
       <h3 class="section-title">Prompt Templates</h3>
       <p class="section-description">
-        Customize the prompts sent to the AI. Use placeholders like <code v-text="'{{char}}'"></code>,
-        <code v-text="'{{instruction}}'"></code>, <code v-text="'{{storyContent}}'"></code>, etc.
-        Toggle each prompt to customize or use system defaults.
+        Customize the prompts sent to the AI. Use placeholders like
+        <code v-text="'{{char}}'"></code>, <code v-text="'{{instruction}}'"></code>,
+        <code v-text="'{{storyContent}}'"></code>, etc. Toggle each prompt to customize or use
+        system defaults.
       </p>
 
       <!-- System Prompt -->
       <div class="form-group">
         <div class="label-row">
           <label for="templateSystemPrompt">System Prompt Template</label>
-          <button
-            type="button"
-            class="btn-toggle"
-            @click="toggleCustomization('systemPrompt')"
-          >
+          <button type="button" class="btn-toggle" @click="toggleCustomization('systemPrompt')">
             {{ isCustomized('systemPrompt') ? 'Use Default' : 'Customize' }}
           </button>
         </div>
         <p class="field-description">
-          Granular template with full control. Variables: <code v-text="'{{character.name}}'"></code>,
-          <code v-text="'{{persona.description}}'"></code>, etc.
-          Conditionals: <code v-text="'{{#if variable}}...{{/if}}'"></code>.
-          Loops: <code v-text="'{{#each array}}...{{/each}}'"></code>.
-          See default for complete reference.
+          Granular template with full control. Variables:
+          <code v-text="'{{character.name}}'"></code>,
+          <code v-text="'{{persona.description}}'"></code>, etc. Conditionals:
+          <code v-text="'{{#if variable}}...{{/if}}'"></code>. Loops:
+          <code v-text="'{{#each array}}...{{/each}}'"></code>. See default for complete reference.
         </p>
         <textarea
           v-if="isCustomized('systemPrompt')"
@@ -45,11 +42,7 @@
       <div class="form-group">
         <div class="label-row">
           <label for="templateContinue">Continue Template</label>
-          <button
-            type="button"
-            class="btn-toggle"
-            @click="toggleCustomization('continue')"
-          >
+          <button type="button" class="btn-toggle" @click="toggleCustomization('continue')">
             {{ isCustomized('continue') ? 'Use Default' : 'Customize' }}
           </button>
         </div>
@@ -71,11 +64,7 @@
       <div class="form-group">
         <div class="label-row">
           <label for="templateCharacter">Character Response Template</label>
-          <button
-            type="button"
-            class="btn-toggle"
-            @click="toggleCustomization('character')"
-          >
+          <button type="button" class="btn-toggle" @click="toggleCustomization('character')">
             {{ isCustomized('character') ? 'Use Default' : 'Customize' }}
           </button>
         </div>
@@ -97,11 +86,7 @@
       <div class="form-group">
         <div class="label-row">
           <label for="templateInstruction">Custom Instruction Template</label>
-          <button
-            type="button"
-            class="btn-toggle"
-            @click="toggleCustomization('instruction')"
-          >
+          <button type="button" class="btn-toggle" @click="toggleCustomization('instruction')">
             {{ isCustomized('instruction') ? 'Use Default' : 'Customize' }}
           </button>
         </div>
@@ -149,11 +134,7 @@
       <div class="form-group">
         <div class="label-row">
           <label for="templateIdeate">Ideate Template</label>
-          <button
-            type="button"
-            class="btn-toggle"
-            @click="toggleCustomization('ideate')"
-          >
+          <button type="button" class="btn-toggle" @click="toggleCustomization('ideate')">
             {{ isCustomized('ideate') ? 'Use Default' : 'Customize' }}
           </button>
         </div>
@@ -175,16 +156,13 @@
       <div class="form-group">
         <div class="label-row">
           <label for="templateStoryStarter">Story Starter Template</label>
-          <button
-            type="button"
-            class="btn-toggle"
-            @click="toggleCustomization('storyStarter')"
-          >
+          <button type="button" class="btn-toggle" @click="toggleCustomization('storyStarter')">
             {{ isCustomized('storyStarter') ? 'Use Default' : 'Customize' }}
           </button>
         </div>
         <p class="field-description">
-          Used when starting a fresh story. Available placeholders: <code v-text="'{{char}}'"></code>, <code v-text="'{{user}}'"></code>.
+          Used when starting a fresh story. Available placeholders:
+          <code v-text="'{{char}}'"></code>, <code v-text="'{{user}}'"></code>.
         </p>
         <textarea
           v-if="isCustomized('storyStarter')"
@@ -204,8 +182,8 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, onMounted } from 'vue'
-import { presetsAPI } from '../../../services/api'
+import { computed, reactive, ref, onMounted } from 'vue';
+import { presetsAPI } from '../../../services/api';
 
 // Default templates fetched from server (single source of truth)
 // These are placeholder defaults that get replaced by server values on mount
@@ -216,39 +194,39 @@ const DEFAULT_TEMPLATES = ref({
   instruction: '',
   rewriteThirdPerson: '',
   ideate: '',
-  storyStarter: ''
-})
+  storyStarter: '',
+});
 
-const isLoading = ref(true)
+const isLoading = ref(true);
 
 // Fetch default templates from server on mount
 onMounted(async () => {
   try {
-    const templates = await presetsAPI.getDefaultTemplates()
+    const templates = await presetsAPI.getDefaultTemplates();
     // Merge with existing defaults to ensure new fields are preserved
     DEFAULT_TEMPLATES.value = {
       ...DEFAULT_TEMPLATES.value,
-      ...templates
-    }
+      ...templates,
+    };
   } catch (error) {
-    console.error('Failed to load default templates:', error)
+    console.error('Failed to load default templates:', error);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-})
+});
 
 const props = defineProps({
   modelValue: {
     type: Object,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue']);
 
 // Helper to get templates object with defaults
 const getTemplates = () => {
-  const templates = props.modelValue || {}
+  const templates = props.modelValue || {};
   return {
     systemPrompt: templates.systemPrompt ?? null,
     continue: templates.continue ?? null,
@@ -256,68 +234,68 @@ const getTemplates = () => {
     instruction: templates.instruction ?? null,
     rewriteThirdPerson: templates.rewriteThirdPerson ?? null,
     ideate: templates.ideate ?? null,
-    storyStarter: templates.storyStarter ?? null
-  }
-}
+    storyStarter: templates.storyStarter ?? null,
+  };
+};
 
 // Helper to update a single template field
 const updateTemplate = (key, value) => {
   emit('update:modelValue', {
     ...getTemplates(),
-    [key]: value
-  })
-}
+    [key]: value,
+  });
+};
 
 // Create a reactive object with individual computed properties for each template
 // Using reactive() auto-unwraps nested computed refs in templates
 const localTemplates = reactive({
   systemPrompt: computed({
     get: () => getTemplates().systemPrompt,
-    set: (value) => updateTemplate('systemPrompt', value)
+    set: (value) => updateTemplate('systemPrompt', value),
   }),
   continue: computed({
     get: () => getTemplates().continue,
-    set: (value) => updateTemplate('continue', value)
+    set: (value) => updateTemplate('continue', value),
   }),
   character: computed({
     get: () => getTemplates().character,
-    set: (value) => updateTemplate('character', value)
+    set: (value) => updateTemplate('character', value),
   }),
   instruction: computed({
     get: () => getTemplates().instruction,
-    set: (value) => updateTemplate('instruction', value)
+    set: (value) => updateTemplate('instruction', value),
   }),
   rewriteThirdPerson: computed({
     get: () => getTemplates().rewriteThirdPerson,
-    set: (value) => updateTemplate('rewriteThirdPerson', value)
+    set: (value) => updateTemplate('rewriteThirdPerson', value),
   }),
   ideate: computed({
     get: () => getTemplates().ideate,
-    set: (value) => updateTemplate('ideate', value)
+    set: (value) => updateTemplate('ideate', value),
   }),
   storyStarter: computed({
     get: () => getTemplates().storyStarter,
-    set: (value) => updateTemplate('storyStarter', value)
-  })
-})
+    set: (value) => updateTemplate('storyStarter', value),
+  }),
+});
 
 // Check if a prompt is customized (not null)
 const isCustomized = (key) => {
-  return getTemplates()[key] !== null
-}
+  return getTemplates()[key] !== null;
+};
 
 // Toggle customization for a prompt
 const toggleCustomization = (key) => {
-  const current = getTemplates()[key]
+  const current = getTemplates()[key];
 
   if (current === null) {
     // Switching to customize: load the default template
-    updateTemplate(key, DEFAULT_TEMPLATES.value[key])
+    updateTemplate(key, DEFAULT_TEMPLATES.value[key]);
   } else {
     // Switching to use default: set to null
-    updateTemplate(key, null)
+    updateTemplate(key, null);
   }
-}
+};
 </script>
 
 <style scoped>

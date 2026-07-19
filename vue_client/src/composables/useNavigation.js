@@ -1,5 +1,5 @@
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 /**
  * Navigation composable for handling back button behavior
@@ -10,7 +10,7 @@ import { useRouter } from 'vue-router'
  * - Handles edge cases like direct URL access and page refresh
  */
 export function useNavigation() {
-  const router = useRouter()
+  const router = useRouter();
 
   /**
    * Check if there's a valid previous page in the router history
@@ -18,8 +18,8 @@ export function useNavigation() {
    */
   const hasPreviousPage = computed(() => {
     // Check if history.state.back exists (Vue Router tracks this)
-    return router.options.history.state.back !== null
-  })
+    return router.options.history.state.back !== null;
+  });
 
   /**
    * Smart back navigation function
@@ -32,19 +32,19 @@ export function useNavigation() {
   function goBack(fallback = '/') {
     if (hasPreviousPage.value) {
       // There's history, go back
-      router.back()
+      router.back();
     } else {
       // No history, use fallback
       // Handle both string and object formats
       if (typeof fallback === 'string') {
         // If it starts with '/', treat as path, otherwise as route name
         if (fallback.startsWith('/')) {
-          router.push(fallback)
+          router.push(fallback);
         } else {
-          router.push({ name: fallback })
+          router.push({ name: fallback });
         }
       } else {
-        router.push(fallback)
+        router.push(fallback);
       }
     }
   }
@@ -54,12 +54,12 @@ export function useNavigation() {
    * Useful for conditional UI or logging
    */
   const previousRoute = computed(() => {
-    return router.options.history.state.back || null
-  })
+    return router.options.history.state.back || null;
+  });
 
   return {
     goBack,
     hasPreviousPage,
-    previousRoute
-  }
+    previousRoute,
+  };
 }

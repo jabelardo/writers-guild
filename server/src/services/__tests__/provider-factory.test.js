@@ -3,7 +3,7 @@ import {
   getProvider,
   getAvailableProviders,
   getProviderCapabilities,
-  isValidProvider
+  isValidProvider,
 } from '../provider-factory.js';
 
 describe('Provider Factory', () => {
@@ -11,7 +11,7 @@ describe('Provider Factory', () => {
     it('should create a DeepSeek provider', () => {
       const preset = {
         provider: 'deepseek',
-        apiConfig: { apiKey: 'sk-test-key-12345' }
+        apiConfig: { apiKey: 'sk-test-key-12345' },
       };
 
       const provider = getProvider(preset);
@@ -23,7 +23,7 @@ describe('Provider Factory', () => {
     it('should create an OpenAI provider', () => {
       const preset = {
         provider: 'openai',
-        apiConfig: { apiKey: 'sk-test-key-12345' }
+        apiConfig: { apiKey: 'sk-test-key-12345' },
       };
 
       const provider = getProvider(preset);
@@ -35,7 +35,7 @@ describe('Provider Factory', () => {
     it('should create an Anthropic provider', () => {
       const preset = {
         provider: 'anthropic',
-        apiConfig: { apiKey: 'sk-ant-api-test-key-12345' }
+        apiConfig: { apiKey: 'sk-ant-api-test-key-12345' },
       };
 
       const provider = getProvider(preset);
@@ -47,7 +47,7 @@ describe('Provider Factory', () => {
     it('should create an OpenRouter provider', () => {
       const preset = {
         provider: 'openrouter',
-        apiConfig: { apiKey: 'sk-or-test-key-12345' }
+        apiConfig: { apiKey: 'sk-or-test-key-12345' },
       };
 
       const provider = getProvider(preset);
@@ -59,7 +59,7 @@ describe('Provider Factory', () => {
     it('should create an AI Horde provider', () => {
       const preset = {
         provider: 'aihorde',
-        apiConfig: { apiKey: '0000000000' } // AI Horde uses this for anonymous access
+        apiConfig: { apiKey: '0000000000' }, // AI Horde uses this for anonymous access
       };
 
       const provider = getProvider(preset);
@@ -71,7 +71,7 @@ describe('Provider Factory', () => {
     it('should handle case-insensitive provider names', () => {
       const preset = {
         provider: 'DEEPSEEK',
-        apiConfig: { apiKey: 'sk-test-key-12345' }
+        apiConfig: { apiKey: 'sk-test-key-12345' },
       };
 
       const provider = getProvider(preset);
@@ -79,49 +79,50 @@ describe('Provider Factory', () => {
     });
 
     it('should throw error for null preset', () => {
-      expect(() => getProvider(null))
-        .toThrow('Preset configuration is required');
+      expect(() => getProvider(null)).toThrow('Preset configuration is required');
     });
 
     it('should throw error for undefined preset', () => {
-      expect(() => getProvider(undefined))
-        .toThrow('Preset configuration is required');
+      expect(() => getProvider(undefined)).toThrow('Preset configuration is required');
     });
 
     it('should throw error for missing provider', () => {
-      expect(() => getProvider({ apiConfig: { apiKey: 'test' } }))
-        .toThrow('Provider type is required in preset');
+      expect(() => getProvider({ apiConfig: { apiKey: 'test' } })).toThrow(
+        'Provider type is required in preset',
+      );
     });
 
     it('should throw error for unknown provider', () => {
-      expect(() => getProvider({ provider: 'unknown-provider', apiConfig: {} }))
-        .toThrow('Unknown provider: unknown-provider');
+      expect(() => getProvider({ provider: 'unknown-provider', apiConfig: {} })).toThrow(
+        'Unknown provider: unknown-provider',
+      );
     });
 
     it('should include available providers in error message', () => {
+      let error;
       try {
         getProvider({ provider: 'invalid', apiConfig: {} });
-      } catch (error) {
-        expect(error.message).toContain('deepseek');
-        expect(error.message).toContain('openai');
-        expect(error.message).toContain('anthropic');
+      } catch (e) {
+        error = e;
       }
+      expect(error.message).toContain('deepseek');
+      expect(error.message).toContain('openai');
+      expect(error.message).toContain('anthropic');
     });
 
     it('should throw error for invalid configuration', () => {
       const preset = {
         provider: 'openai',
-        apiConfig: { apiKey: '' } // Empty API key is invalid
+        apiConfig: { apiKey: '' }, // Empty API key is invalid
       };
 
-      expect(() => getProvider(preset))
-        .toThrow('Provider configuration invalid');
+      expect(() => getProvider(preset)).toThrow('Provider configuration invalid');
     });
 
     it('should handle preset with API key in apiConfig', () => {
       const preset = {
         provider: 'deepseek',
-        apiConfig: { apiKey: 'test-key-12345' }
+        apiConfig: { apiKey: 'test-key-12345' },
       };
 
       const provider = getProvider(preset);
@@ -183,8 +184,7 @@ describe('Provider Factory', () => {
     });
 
     it('should throw error for unknown provider', () => {
-      expect(() => getProviderCapabilities('unknown'))
-        .toThrow('Unknown provider: unknown');
+      expect(() => getProviderCapabilities('unknown')).toThrow('Unknown provider: unknown');
     });
   });
 

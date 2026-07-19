@@ -12,7 +12,7 @@ describe('AnthropicProvider', () => {
 
     provider = new AnthropicProvider({
       apiKey: 'test-api-key',
-      model: 'claude-3-5-sonnet-20241022'
+      model: 'claude-3-5-sonnet-20241022',
     });
   });
 
@@ -26,7 +26,7 @@ describe('AnthropicProvider', () => {
     it('should allow custom base URL', () => {
       const customProvider = new AnthropicProvider({
         apiKey: 'test-key',
-        baseURL: 'https://custom-api.com/v1'
+        baseURL: 'https://custom-api.com/v1',
       });
       expect(customProvider.baseURL).toBe('https://custom-api.com/v1');
     });
@@ -34,7 +34,7 @@ describe('AnthropicProvider', () => {
     it('should allow custom model', () => {
       const customProvider = new AnthropicProvider({
         apiKey: 'test-key',
-        model: 'claude-3-opus-20240229'
+        model: 'claude-3-opus-20240229',
       });
       expect(customProvider.model).toBe('claude-3-opus-20240229');
     });
@@ -42,7 +42,7 @@ describe('AnthropicProvider', () => {
     it('should allow custom anthropic version', () => {
       const customProvider = new AnthropicProvider({
         apiKey: 'test-key',
-        anthropicVersion: '2024-01-01'
+        anthropicVersion: '2024-01-01',
       });
       expect(customProvider.anthropicVersion).toBe('2024-01-01');
     });
@@ -92,20 +92,15 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [
-            { type: 'text', text: 'Generated response' }
-          ],
+          content: [{ type: 'text', text: 'Generated response' }],
           usage: {
             input_tokens: 100,
-            output_tokens: 50
-          }
-        })
+            output_tokens: 50,
+          },
+        }),
       });
 
-      const result = await provider.generate(
-        'You are a helpful assistant',
-        'Hello, how are you?'
-      );
+      const result = await provider.generate('You are a helpful assistant', 'Hello, how are you?');
 
       expect(result.content).toBe('Generated response');
       expect(result.reasoning).toBe('');
@@ -116,13 +111,13 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [{ type: 'text', text: 'Response' }]
-        })
+          content: [{ type: 'text', text: 'Response' }],
+        }),
       });
 
       await provider.generate('System prompt', 'User prompt', {
         maxTokens: 2000,
-        temperature: 0.7
+        temperature: 0.7,
       });
 
       const callArgs = mockFetch.mock.calls[0];
@@ -130,9 +125,7 @@ describe('AnthropicProvider', () => {
 
       expect(requestBody.model).toBe('claude-3-5-sonnet-20241022');
       expect(requestBody.system).toBe('System prompt');
-      expect(requestBody.messages).toEqual([
-        { role: 'user', content: 'User prompt' }
-      ]);
+      expect(requestBody.messages).toEqual([{ role: 'user', content: 'User prompt' }]);
       expect(requestBody.max_tokens).toBe(2000);
       expect(requestBody.temperature).toBe(0.7);
     });
@@ -143,8 +136,8 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [{ type: 'text', text: 'Response' }]
-        })
+          content: [{ type: 'text', text: 'Response' }],
+        }),
       });
 
       await provider.generate('System', 'User', { temperature: 2.0 });
@@ -152,7 +145,7 @@ describe('AnthropicProvider', () => {
       const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(requestBody.temperature).toBe(1.0);
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Temperature 2 exceeds max 1.0')
+        expect.stringContaining('Temperature 2 exceeds max 1.0'),
       );
 
       consoleSpy.mockRestore();
@@ -162,14 +155,14 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [{ type: 'text', text: 'Response' }]
-        })
+          content: [{ type: 'text', text: 'Response' }],
+        }),
       });
 
       await provider.generate('System', 'User', {
         top_p: 0.9,
         top_k: 40,
-        stop_sequences: ['STOP']
+        stop_sequences: ['STOP'],
       });
 
       const requestBody = JSON.parse(mockFetch.mock.calls[0][1].body);
@@ -184,9 +177,9 @@ describe('AnthropicProvider', () => {
         json: async () => ({
           content: [
             { type: 'text', text: 'Part 1' },
-            { type: 'text', text: ' Part 2' }
-          ]
-        })
+            { type: 'text', text: ' Part 2' },
+          ],
+        }),
       });
 
       const result = await provider.generate('System', 'User');
@@ -200,9 +193,9 @@ describe('AnthropicProvider', () => {
           content: [
             { type: 'text', text: 'Text content' },
             { type: 'image', data: 'base64...' },
-            { type: 'text', text: ' More text' }
-          ]
-        })
+            { type: 'text', text: ' More text' },
+          ],
+        }),
       });
 
       const result = await provider.generate('System', 'User');
@@ -212,9 +205,7 @@ describe('AnthropicProvider', () => {
     it('should throw error when API key is missing', async () => {
       const noKeyProvider = new AnthropicProvider({ apiKey: '' });
 
-      await expect(
-        noKeyProvider.generate('System', 'User')
-      ).rejects.toThrow('API key not set');
+      await expect(noKeyProvider.generate('System', 'User')).rejects.toThrow('API key not set');
     });
 
     it('should handle API errors', async () => {
@@ -222,25 +213,23 @@ describe('AnthropicProvider', () => {
         ok: false,
         statusText: 'Bad Request',
         json: async () => ({
-          error: { message: 'Invalid request' }
-        })
+          error: { message: 'Invalid request' },
+        }),
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('Invalid request');
+      await expect(provider.generate('System', 'User')).rejects.toThrow('Invalid request');
     });
 
     it('should handle API errors without error message', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         statusText: 'Internal Server Error',
-        json: async () => ({})
+        json: async () => ({}),
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('API request failed: Internal Server Error');
+      await expect(provider.generate('System', 'User')).rejects.toThrow(
+        'API request failed: Internal Server Error',
+      );
     });
 
     it('should handle malformed error response', async () => {
@@ -249,20 +238,20 @@ describe('AnthropicProvider', () => {
         statusText: 'Bad Request',
         json: async () => {
           throw new Error('Invalid JSON');
-        }
+        },
       });
 
-      await expect(
-        provider.generate('System', 'User')
-      ).rejects.toThrow('API request failed: Bad Request');
+      await expect(provider.generate('System', 'User')).rejects.toThrow(
+        'API request failed: Bad Request',
+      );
     });
 
     it('should pass abort signal to fetch', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [{ type: 'text', text: 'Response' }]
-        })
+          content: [{ type: 'text', text: 'Response' }],
+        }),
       });
 
       const controller = new AbortController();
@@ -277,8 +266,8 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [{ type: 'text', text: 'Response' }]
-        })
+          content: [{ type: 'text', text: 'Response' }],
+        }),
       });
 
       await provider.generate('System', 'User');
@@ -291,8 +280,8 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [{ type: 'text', text: 'Response' }]
-        })
+          content: [{ type: 'text', text: 'Response' }],
+        }),
       });
 
       await provider.generate('System', 'User');
@@ -305,8 +294,8 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [{ type: 'text', text: 'Response' }]
-        })
+          content: [{ type: 'text', text: 'Response' }],
+        }),
       });
 
       await provider.generate('System', 'User');
@@ -323,8 +312,8 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: []
-        })
+          content: [],
+        }),
       });
 
       const result = await provider.generate('System', 'User');
@@ -335,10 +324,8 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [
-            { type: 'image', data: 'base64...' }
-          ]
-        })
+          content: [{ type: 'image', data: 'base64...' }],
+        }),
       });
 
       const result = await provider.generate('System', 'User');
@@ -349,8 +336,8 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [{ type: 'text', text: 'Response' }]
-        })
+          content: [{ type: 'text', text: 'Response' }],
+        }),
       });
 
       await provider.generate('System', 'User', { temperature: 0 });
@@ -363,8 +350,8 @@ describe('AnthropicProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          content: [{ type: 'text', text: 'Response' }]
-        })
+          content: [{ type: 'text', text: 'Response' }],
+        }),
       });
 
       await provider.generate('System', 'User', { temperature: 1.0 });

@@ -27,9 +27,7 @@
           <div class="locked-provider">
             <i :class="`fas ${providerIcon}`"></i>
             <span>{{ providerDisplayName }}</span>
-            <span class="locked-badge">
-              <i class="fas fa-lock"></i> Locked
-            </span>
+            <span class="locked-badge"> <i class="fas fa-lock"></i> Locked </span>
           </div>
           <small class="help-text">Provider is locked for this preset</small>
         </div>
@@ -44,45 +42,39 @@
     </div>
 
     <template #footer>
-      <button class="btn btn-secondary" @click="$emit('close')">
-        Cancel
-      </button>
-      <button
-        class="btn btn-primary"
-        :disabled="!canSave || saving"
-        @click="savePreset"
-      >
+      <button class="btn btn-secondary" @click="$emit('close')">Cancel</button>
+      <button class="btn btn-primary" :disabled="!canSave || saving" @click="savePreset">
         <i class="fas fa-save"></i>
-        {{ saving ? 'Saving...' : (preset ? 'Save Changes' : 'Create Preset') }}
+        {{ saving ? 'Saving...' : preset ? 'Save Changes' : 'Create Preset' }}
       </button>
     </template>
   </Modal>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import Modal from './Modal.vue'
-import { presetsAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
-import { getProviderComponent } from './providers'
-import { getProviderDefaults, PROVIDER_INFO } from '../config/providerDefaults'
+import { ref, computed, onMounted } from 'vue';
+import Modal from './Modal.vue';
+import { presetsAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
+import { getProviderComponent } from './providers';
+import { getProviderDefaults, PROVIDER_INFO } from '../config/providerDefaults';
 
 const props = defineProps({
   preset: {
     type: Object,
-    default: null
+    default: null,
   },
   provider: {
     type: String,
-    default: null
-  }
-})
+    default: null,
+  },
+});
 
-const emit = defineEmits(['close', 'saved'])
+const emit = defineEmits(['close', 'saved']);
 
-const toast = useToast()
-const saving = ref(false)
-const nameInput = ref(null)
+const toast = useToast();
+const saving = ref(false);
+const nameInput = ref(null);
 
 // Form data - will be initialized in onMounted with provider-specific defaults
 const formData = ref({
@@ -92,18 +84,18 @@ const formData = ref({
     apiKey: '',
     baseURL: '',
     model: '',
-    models: []
+    models: [],
   },
   generationSettings: {
     maxTokens: 4000,
     temperature: 1.5,
-    includeDialogueExamples: false
+    includeDialogueExamples: false,
   },
   lorebookSettings: {
     scanDepth: 2000,
     tokenBudget: 1800,
     recursionDepth: 3,
-    enableRecursion: true
+    enableRecursion: true,
   },
   promptTemplates: {
     systemPrompt: null,
@@ -111,106 +103,106 @@ const formData = ref({
     character: null,
     instruction: null,
     rewriteThirdPerson: null,
-    ideate: null
-  }
-})
+    ideate: null,
+  },
+});
 
 // Get the dynamic provider component based on the selected provider
 const currentProviderComponent = computed(() => {
-  return getProviderComponent(formData.value.provider)
-})
+  return getProviderComponent(formData.value.provider);
+});
 
 // Provider display information
 const providerDisplayName = computed(() => {
-  return PROVIDER_INFO[formData.value.provider]?.name || formData.value.provider
-})
+  return PROVIDER_INFO[formData.value.provider]?.name || formData.value.provider;
+});
 
 const providerIcon = computed(() => {
-  return PROVIDER_INFO[formData.value.provider]?.icon || 'fa-robot'
-})
+  return PROVIDER_INFO[formData.value.provider]?.icon || 'fa-robot';
+});
 
 onMounted(async () => {
   // If editing existing preset, load its data
   if (props.preset) {
     try {
-      const { preset } = await presetsAPI.get(props.preset.id)
+      const { preset } = await presetsAPI.get(props.preset.id);
 
       // Ensure promptTemplates has all required fields (null = use system defaults)
-      const presetTemplates = preset.promptTemplates || {}
+      const presetTemplates = preset.promptTemplates || {};
       const promptTemplates = {
         systemPrompt: presetTemplates.systemPrompt ?? null,
         continue: presetTemplates.continue ?? null,
         character: presetTemplates.character ?? null,
         instruction: presetTemplates.instruction ?? null,
         rewriteThirdPerson: presetTemplates.rewriteThirdPerson ?? null,
-        ideate: presetTemplates.ideate ?? null
-      }
+        ideate: presetTemplates.ideate ?? null,
+      };
 
       formData.value = {
         ...preset,
         apiConfig: {
           ...(preset.apiConfig || formData.value.apiConfig),
-          models: Array.isArray(preset.apiConfig?.models) ? preset.apiConfig.models : []
+          models: Array.isArray(preset.apiConfig?.models) ? preset.apiConfig.models : [],
         },
         generationSettings: preset.generationSettings || formData.value.generationSettings,
         lorebookSettings: preset.lorebookSettings || formData.value.lorebookSettings,
-        promptTemplates
-      }
+        promptTemplates,
+      };
     } catch (error) {
-      console.error('Failed to load preset:', error)
-      toast.error('Failed to load preset: ' + error.message)
+      console.error('Failed to load preset:', error);
+      toast.error('Failed to load preset: ' + error.message);
     }
   } else if (props.provider) {
     // Creating new preset with a specific provider - load provider defaults
-    const defaults = getProviderDefaults(props.provider)
+    const defaults = getProviderDefaults(props.provider);
     formData.value = {
       ...defaults,
-      name: '' // Keep name empty for user to fill
-    }
+      name: '', // Keep name empty for user to fill
+    };
   }
 
   // Focus name input
   if (nameInput.value) {
-    nameInput.value.focus()
+    nameInput.value.focus();
   }
-})
+});
 
 const canSave = computed(() => {
-  const apiConfig = formData.value.apiConfig || {}
+  const apiConfig = formData.value.apiConfig || {};
   // Local providers authenticate with a URL (+ optional token), not a required API key
   if (['koboldcpp', 'ollama', 'openaicompatible'].includes(formData.value.provider)) {
-    return formData.value.name.trim() && (apiConfig.baseURL || '').trim() !== ''
+    return formData.value.name.trim() && (apiConfig.baseURL || '').trim() !== '';
   }
   // AI Horde uses "0000000000" as default anonymous key, so it's always valid
-  const hasValidApiKey = (apiConfig.apiKey || '').trim() !== ''
-  return formData.value.name.trim() && hasValidApiKey
-})
+  const hasValidApiKey = (apiConfig.apiKey || '').trim() !== '';
+  return formData.value.name.trim() && hasValidApiKey;
+});
 
 async function savePreset() {
-  if (!canSave.value) return
+  if (!canSave.value) return;
 
   try {
-    saving.value = true
+    saving.value = true;
 
     // Prepare data - provider defaults already include baseURL and model
     const presetData = {
-      ...formData.value
-    }
+      ...formData.value,
+    };
 
     if (props.preset) {
       // Update existing preset
-      await presetsAPI.update(props.preset.id, presetData)
+      await presetsAPI.update(props.preset.id, presetData);
     } else {
       // Create new preset
-      await presetsAPI.create(presetData)
+      await presetsAPI.create(presetData);
     }
 
-    emit('saved')
+    emit('saved');
   } catch (error) {
-    console.error('Failed to save preset:', error)
-    toast.error('Failed to save preset: ' + error.message)
+    console.error('Failed to save preset:', error);
+    toast.error('Failed to save preset: ' + error.message);
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
 </script>

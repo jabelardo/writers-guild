@@ -8,7 +8,7 @@ export class MacroProcessor {
     this.context = {
       userName: context.userName || 'User',
       charName: context.charName || 'Character',
-      ...context
+      ...context,
     };
   }
 
@@ -71,10 +71,15 @@ export class MacroProcessor {
 
         if (delimiter === '::') {
           // Double colon: split by '::'
-          options = args.split('::').map(opt => opt.trim()).filter(opt => opt);
+          options = args
+            .split('::')
+            .map((opt) => opt.trim())
+            .filter((opt) => opt);
         } else {
           // Single colon: split by ',' but handle escaped commas
-          options = this.splitByComma(args).map(opt => opt.trim()).filter(opt => opt);
+          options = this.splitByComma(args)
+            .map((opt) => opt.trim())
+            .filter((opt) => opt);
         }
 
         if (options.length === 0) {
@@ -143,7 +148,7 @@ export class MacroProcessor {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return hash;

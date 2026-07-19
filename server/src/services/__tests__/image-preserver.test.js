@@ -34,7 +34,7 @@ describe('ImagePreserver', () => {
         original: '![world](https://example.com/img.png)',
         placeholder: '[WG_IMAGE_0]',
         type: 'markdown',
-        source: 'context'
+        source: 'context',
       });
     });
 
@@ -67,7 +67,7 @@ describe('ImagePreserver', () => {
         original: '<img src="photo.jpg" alt="A photo">',
         placeholder: '[WG_IMAGE_0]',
         type: 'html',
-        source: 'context'
+        source: 'context',
       });
     });
 
@@ -152,7 +152,7 @@ describe('ImagePreserver', () => {
     });
 
     it('should restore a single placeholder', () => {
-      const text = preserver.preserve('Hello ![img](photo.png) world.');
+      preserver.preserve('Hello ![img](photo.png) world.');
       const result = preserver.restore('LLM kept [WG_IMAGE_0] in response.');
       expect(result.text).toBe('LLM kept ![img](photo.png) in response.');
       expect(result.missing).toHaveLength(0);
@@ -335,7 +335,9 @@ describe('ImagePreserver', () => {
       // would write a literal "[WG_IMAGE_99]" into the user's story.
       preserver.preserve('![a](1.png)', 'story');
 
-      const result = preserver.restoreImages('Text [WG_IMAGE_0] more [WG_IMAGE_99] end.', { appendMissing: false });
+      const result = preserver.restoreImages('Text [WG_IMAGE_0] more [WG_IMAGE_99] end.', {
+        appendMissing: false,
+      });
 
       expect(result.finalContent).toContain('![a](1.png)');
       expect(result.finalContent).not.toContain('[WG_IMAGE_99]');
@@ -375,15 +377,15 @@ describe('ImagePreserver', () => {
       // A continue returns new prose; the card and lorebook images were never
       // expected back. Counting them reported every healthy generation as
       // having lost its entire gallery.
-      preserver.preserve('![card](portrait.png)', 'context')
-      preserver.preserve('![lore](map.png)', 'context')
-      preserver.preserve('![story](scene.png)', 'story')
+      preserver.preserve('![card](portrait.png)', 'context');
+      preserver.preserve('![lore](map.png)', 'context');
+      preserver.preserve('![story](scene.png)', 'story');
 
-      const result = preserver.restoreImages('New prose.', { appendMissing: false })
+      const result = preserver.restoreImages('New prose.', { appendMissing: false });
 
-      expect(result.imagesPreserved).toBe(3)
-      expect(result.imagesMissing).toBe(1) // only the story image
-    })
+      expect(result.imagesPreserved).toBe(3);
+      expect(result.imagesMissing).toBe(1); // only the story image
+    });
 
     it('should never append context images the model dropped', () => {
       // Card and lorebook images are context, not part of the story being
@@ -429,7 +431,7 @@ describe('ImagePreserver', () => {
       preserver.preserve('![a](1.png) ![b](2.png)', 'story');
       preserver.restoreImages('[WG_IMAGE_0] only');
       expect(consoleSpy).toHaveBeenCalledWith(
-        '[ImagePreserver] Restored 2 image(s), 1 story image(s) missing'
+        '[ImagePreserver] Restored 2 image(s), 1 story image(s) missing',
       );
       consoleSpy.mockRestore();
     });

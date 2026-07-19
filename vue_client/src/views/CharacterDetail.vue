@@ -40,7 +40,11 @@
 
           <div class="info-note">
             <i class="fas fa-info-circle"></i>
-            <p>Writers Guild uses Name, Description, and Personality by default for character response generation. Scenario is used if the story has only one character in it. Example messages can be included optionally from the settings menu.</p>
+            <p>
+              Writers Guild uses Name, Description, and Personality by default for character
+              response generation. Scenario is used if the story has only one character in it.
+              Example messages can be included optionally from the settings menu.
+            </p>
           </div>
         </div>
 
@@ -60,25 +64,14 @@
             </div>
             <div v-if="editingImage" class="section-content editing">
               <div class="image-upload">
-                <input
-                  type="file"
-                  ref="imageInput"
-                  accept="image/*"
-                  @change="handleImageChange"
-                />
+                <input type="file" ref="imageInput" accept="image/*" @change="handleImageChange" />
                 <div v-if="imagePreview" class="image-preview">
                   <img :src="imagePreview" alt="Preview" />
                 </div>
               </div>
               <div class="section-actions">
-                <button class="btn btn-secondary" @click="cancelImageEdit">
-                  Cancel
-                </button>
-                <button
-                  class="btn btn-primary"
-                  :disabled="!newImage"
-                  @click="saveImage"
-                >
+                <button class="btn btn-secondary" @click="cancelImageEdit">Cancel</button>
+                <button class="btn btn-primary" :disabled="!newImage" @click="saveImage">
                   <i class="fas fa-save"></i> Save
                 </button>
               </div>
@@ -110,14 +103,8 @@
                 placeholder="Character name..."
               />
               <div class="section-actions">
-                <button class="btn btn-secondary" @click="cancelEdit('name')">
-                  Cancel
-                </button>
-                <button
-                  class="btn btn-primary"
-                  :disabled="!editedName.trim()"
-                  @click="saveName"
-                >
+                <button class="btn btn-secondary" @click="cancelEdit('name')">Cancel</button>
+                <button class="btn btn-primary" :disabled="!editedName.trim()" @click="saveName">
                   <i class="fas fa-save"></i> Save
                 </button>
               </div>
@@ -147,9 +134,7 @@
                 rows="8"
               ></textarea>
               <div class="section-actions">
-                <button class="btn btn-secondary" @click="cancelEdit('description')">
-                  Cancel
-                </button>
+                <button class="btn btn-secondary" @click="cancelEdit('description')">Cancel</button>
                 <button class="btn btn-primary" @click="saveDescription">
                   <i class="fas fa-save"></i> Save
                 </button>
@@ -175,13 +160,8 @@
               </button>
             </div>
             <div v-if="editingLorebook" class="section-content editing">
-              <p class="help-text">
-                Auto-add this lorebook when using the character in stories
-              </p>
-              <select
-                v-model="editedLorebookId"
-                class="select-input"
-              >
+              <p class="help-text">Auto-add this lorebook when using the character in stories</p>
+              <select v-model="editedLorebookId" class="select-input">
                 <option :value="null">No lorebook</option>
                 <option
                   v-for="lorebook in availableLorebooks"
@@ -192,9 +172,7 @@
                 </option>
               </select>
               <div class="section-actions">
-                <button class="btn btn-secondary" @click="cancelEdit('lorebook')">
-                  Cancel
-                </button>
+                <button class="btn btn-secondary" @click="cancelEdit('lorebook')">Cancel</button>
                 <button class="btn btn-primary" @click="saveLorebook">
                   <i class="fas fa-save"></i> Save
                 </button>
@@ -227,9 +205,7 @@
                 rows="8"
               ></textarea>
               <div class="section-actions">
-                <button class="btn btn-secondary" @click="cancelEdit('personality')">
-                  Cancel
-                </button>
+                <button class="btn btn-secondary" @click="cancelEdit('personality')">Cancel</button>
                 <button class="btn btn-primary" @click="savePersonality">
                   <i class="fas fa-save"></i> Save
                 </button>
@@ -262,9 +238,7 @@
                 rows="6"
               ></textarea>
               <div class="section-actions">
-                <button class="btn btn-secondary" @click="cancelEdit('scenario')">
-                  Cancel
-                </button>
+                <button class="btn btn-secondary" @click="cancelEdit('scenario')">Cancel</button>
                 <button class="btn btn-primary" @click="saveScenario">
                   <i class="fas fa-save"></i> Save
                 </button>
@@ -351,19 +325,20 @@
           <section class="edit-section">
             <div class="section-header">
               <h2>Alternate Greetings</h2>
-              <button
-                class="btn btn-small btn-primary"
-                @click="addAlternateGreeting"
-              >
+              <button class="btn btn-small btn-primary" @click="addAlternateGreeting">
                 <i class="fas fa-plus"></i> Add
               </button>
             </div>
             <div class="section-content">
               <p class="help-text">
-                Alternate greetings provide different starting points when adding this character to a story.
+                Alternate greetings provide different starting points when adding this character to
+                a story.
               </p>
 
-              <div v-if="!character.alternate_greetings || character.alternate_greetings.length === 0" class="empty-greetings">
+              <div
+                v-if="!character.alternate_greetings || character.alternate_greetings.length === 0"
+                class="empty-greetings"
+              >
                 <p>No alternate greetings yet. Add one to get started!</p>
               </div>
 
@@ -371,7 +346,11 @@
                 <div
                   v-for="(greeting, index) in character.alternate_greetings"
                   :key="index"
-                  :ref="el => { if (el) greetingRefs[index] = el }"
+                  :ref="
+                    (el) => {
+                      if (el) greetingRefs[index] = el;
+                    }
+                  "
                   class="greeting-item"
                 >
                   <div class="greeting-header">
@@ -403,9 +382,7 @@
                       rows="6"
                     ></textarea>
                     <div class="greeting-edit-actions">
-                      <button class="btn btn-secondary" @click="cancelEditGreeting">
-                        Cancel
-                      </button>
+                      <button class="btn btn-secondary" @click="cancelEditGreeting">Cancel</button>
                       <button class="btn btn-primary" @click="saveAlternateGreeting">
                         <i class="fas fa-save"></i> Save
                       </button>
@@ -440,87 +417,87 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
-import { charactersAPI, lorebooksAPI, storiesAPI, settingsAPI } from '../services/api'
-import { useToast } from '../composables/useToast'
-import { useNavigation } from '../composables/useNavigation'
-import { useConfirm } from '../composables/useConfirm'
-import { setPageTitle } from '../router'
-import CharacterCard from '../components/CharacterCard.vue'
-import GreetingSelectorModal from '../components/GreetingSelectorModal.vue'
+import { ref, computed, onMounted, nextTick } from 'vue';
+import { useRouter } from 'vue-router';
+import { charactersAPI, lorebooksAPI, storiesAPI, settingsAPI } from '../services/api';
+import { useToast } from '../composables/useToast';
+import { useNavigation } from '../composables/useNavigation';
+import { useConfirm } from '../composables/useConfirm';
+import { setPageTitle } from '../router';
+import CharacterCard from '../components/CharacterCard.vue';
+import GreetingSelectorModal from '../components/GreetingSelectorModal.vue';
 
 const props = defineProps({
   characterId: {
     type: String,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const router = useRouter()
-const toast = useToast()
-const { goBack } = useNavigation()
-const { confirm } = useConfirm()
+const router = useRouter();
+const toast = useToast();
+const { goBack } = useNavigation();
+const { confirm } = useConfirm();
 
 // State
-const loading = ref(true)
-const character = ref(null)
-const availableLorebooks = ref([])
+const loading = ref(true);
+const character = ref(null);
+const availableLorebooks = ref([]);
 
 // Greeting selector state for new story flow
-const showGreetingSelector = ref(false)
-const createdStoryId = ref(null)
-const createdStoryForModal = ref(null)
-const editingName = ref(false)
-const editingDescription = ref(false)
-const editingLorebook = ref(false)
-const editingPersonality = ref(false)
-const editingScenario = ref(false)
-const editingDialogueExamples = ref(false)
-const editingFirstMessage = ref(false)
-const editingImage = ref(false)
+const showGreetingSelector = ref(false);
+const createdStoryId = ref(null);
+const createdStoryForModal = ref(null);
+const editingName = ref(false);
+const editingDescription = ref(false);
+const editingLorebook = ref(false);
+const editingPersonality = ref(false);
+const editingScenario = ref(false);
+const editingDialogueExamples = ref(false);
+const editingFirstMessage = ref(false);
+const editingImage = ref(false);
 
 // Edited values
-const editedName = ref('')
-const editedDescription = ref('')
-const editedLorebookId = ref(null)
-const editedPersonality = ref('')
-const editedScenario = ref('')
-const editedDialogueExamples = ref('')
-const editedFirstMessage = ref('')
-const newImage = ref(null)
-const imagePreview = ref(null)
-const imageInput = ref(null)
+const editedName = ref('');
+const editedDescription = ref('');
+const editedLorebookId = ref(null);
+const editedPersonality = ref('');
+const editedScenario = ref('');
+const editedDialogueExamples = ref('');
+const editedFirstMessage = ref('');
+const newImage = ref(null);
+const imagePreview = ref(null);
+const imageInput = ref(null);
 
 // Alternate greetings editing
-const editingGreetingIndex = ref(null)
-const editedGreeting = ref('')
-const greetingRefs = ref({})
-const greetingTextarea = ref(null)
+const editingGreetingIndex = ref(null);
+const editedGreeting = ref('');
+const greetingRefs = ref({});
+const greetingTextarea = ref(null);
 
 // Load character data
 onMounted(async () => {
-  await Promise.all([loadCharacter(), loadLorebooks()])
-})
+  await Promise.all([loadCharacter(), loadLorebooks()]);
+});
 
 async function loadLorebooks() {
   try {
-    const { lorebooks } = await lorebooksAPI.list()
-    availableLorebooks.value = lorebooks || []
+    const { lorebooks } = await lorebooksAPI.list();
+    availableLorebooks.value = lorebooks || [];
   } catch (error) {
-    console.error('Failed to load lorebooks:', error)
+    console.error('Failed to load lorebooks:', error);
   }
 }
 
 async function loadCharacter() {
   try {
-    loading.value = true
-    const response = await charactersAPI.get(props.characterId)
+    loading.value = true;
+    const response = await charactersAPI.get(props.characterId);
     // API returns { character: { data: {...}, spec: ..., metadata: ... } }
     // We need to flatten this for easier access
 
     // Always set image URL - CharacterCard will handle if it doesn't exist
-    const imageUrl = `/api/characters/${props.characterId}/image?t=${Date.now()}`
+    const imageUrl = `/api/characters/${props.characterId}/image?t=${Date.now()}`;
 
     character.value = {
       id: props.characterId,
@@ -535,239 +512,242 @@ async function loadCharacter() {
       imageUrl: imageUrl,
       hasImage: false, // Will be set by checkImageExists
       // Store the full data in case we need it
-      _fullData: response.character
-    }
+      _fullData: response.character,
+    };
 
     // Check if image actually exists by trying to load it
-    await checkImageExists()
+    await checkImageExists();
 
     // Update page title with character name
-    setPageTitle(character.value.name || 'Character')
+    setPageTitle(character.value.name || 'Character');
   } catch (error) {
-    console.error('Failed to load character:', error)
-    toast.error('Failed to load character: ' + error.message)
+    console.error('Failed to load character:', error);
+    toast.error('Failed to load character: ' + error.message);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 async function checkImageExists() {
   try {
     const response = await fetch(`/api/characters/${props.characterId}/image`, {
-      method: 'HEAD'
-    })
-    character.value.hasImage = response.ok
+      method: 'HEAD',
+    });
+    character.value.hasImage = response.ok;
   } catch (error) {
-    character.value.hasImage = false
+    character.value.hasImage = false;
   }
 }
 
 function startEdit(section) {
   if (section === 'name') {
-    editedName.value = character.value.name || ''
-    editingName.value = true
+    editedName.value = character.value.name || '';
+    editingName.value = true;
   } else if (section === 'description') {
-    editedDescription.value = character.value.description || ''
-    editingDescription.value = true
+    editedDescription.value = character.value.description || '';
+    editingDescription.value = true;
   } else if (section === 'lorebook') {
-    editedLorebookId.value = character.value.ursceal_lorebook_id
-    editingLorebook.value = true
+    editedLorebookId.value = character.value.ursceal_lorebook_id;
+    editingLorebook.value = true;
   } else if (section === 'personality') {
-    editedPersonality.value = character.value.personality || ''
-    editingPersonality.value = true
+    editedPersonality.value = character.value.personality || '';
+    editingPersonality.value = true;
   } else if (section === 'scenario') {
-    editedScenario.value = character.value.scenario || ''
-    editingScenario.value = true
+    editedScenario.value = character.value.scenario || '';
+    editingScenario.value = true;
   } else if (section === 'dialogueExamples') {
-    editedDialogueExamples.value = character.value.mes_example || ''
-    editingDialogueExamples.value = true
+    editedDialogueExamples.value = character.value.mes_example || '';
+    editingDialogueExamples.value = true;
   } else if (section === 'firstMessage') {
-    editedFirstMessage.value = character.value.first_mes || ''
-    editingFirstMessage.value = true
+    editedFirstMessage.value = character.value.first_mes || '';
+    editingFirstMessage.value = true;
   }
 }
 
 function cancelEdit(section) {
   if (section === 'name') {
-    editingName.value = false
-    editedName.value = ''
+    editingName.value = false;
+    editedName.value = '';
   } else if (section === 'description') {
-    editingDescription.value = false
-    editedDescription.value = ''
+    editingDescription.value = false;
+    editedDescription.value = '';
   } else if (section === 'lorebook') {
-    editingLorebook.value = false
-    editedLorebookId.value = null
+    editingLorebook.value = false;
+    editedLorebookId.value = null;
   } else if (section === 'personality') {
-    editingPersonality.value = false
-    editedPersonality.value = ''
+    editingPersonality.value = false;
+    editedPersonality.value = '';
   } else if (section === 'scenario') {
-    editingScenario.value = false
-    editedScenario.value = ''
+    editingScenario.value = false;
+    editedScenario.value = '';
   } else if (section === 'dialogueExamples') {
-    editingDialogueExamples.value = false
-    editedDialogueExamples.value = ''
+    editingDialogueExamples.value = false;
+    editedDialogueExamples.value = '';
   } else if (section === 'firstMessage') {
-    editingFirstMessage.value = false
-    editedFirstMessage.value = ''
+    editingFirstMessage.value = false;
+    editedFirstMessage.value = '';
   }
 }
 
 async function saveName() {
   try {
     await charactersAPI.update(props.characterId, {
-      name: editedName.value.trim()
-    })
-    character.value.name = editedName.value.trim()
-    editingName.value = false
-    editedName.value = ''
+      name: editedName.value.trim(),
+    });
+    character.value.name = editedName.value.trim();
+    editingName.value = false;
+    editedName.value = '';
     // Update page title with new name
-    setPageTitle(character.value.name)
+    setPageTitle(character.value.name);
   } catch (error) {
-    console.error('Failed to update name:', error)
-    toast.error('Failed to update name: ' + error.message)
+    console.error('Failed to update name:', error);
+    toast.error('Failed to update name: ' + error.message);
   }
 }
 
 async function saveDescription() {
   try {
     await charactersAPI.update(props.characterId, {
-      description: editedDescription.value
-    })
-    character.value.description = editedDescription.value
-    editingDescription.value = false
-    editedDescription.value = ''
+      description: editedDescription.value,
+    });
+    character.value.description = editedDescription.value;
+    editingDescription.value = false;
+    editedDescription.value = '';
   } catch (error) {
-    console.error('Failed to update description:', error)
-    toast.error('Failed to update description: ' + error.message)
+    console.error('Failed to update description:', error);
+    toast.error('Failed to update description: ' + error.message);
   }
 }
 
 async function saveLorebook() {
   try {
     await charactersAPI.update(props.characterId, {
-      ursceal_lorebook_id: editedLorebookId.value
-    })
-    character.value.ursceal_lorebook_id = editedLorebookId.value
-    editingLorebook.value = false
-    editedLorebookId.value = null
+      ursceal_lorebook_id: editedLorebookId.value,
+    });
+    character.value.ursceal_lorebook_id = editedLorebookId.value;
+    editingLorebook.value = false;
+    editedLorebookId.value = null;
   } catch (error) {
-    console.error('Failed to update lorebook association:', error)
-    toast.error('Failed to update lorebook association: ' + error.message)
+    console.error('Failed to update lorebook association:', error);
+    toast.error('Failed to update lorebook association: ' + error.message);
   }
 }
 
 async function savePersonality() {
   try {
     await charactersAPI.update(props.characterId, {
-      personality: editedPersonality.value
-    })
-    character.value.personality = editedPersonality.value
-    editingPersonality.value = false
-    editedPersonality.value = ''
+      personality: editedPersonality.value,
+    });
+    character.value.personality = editedPersonality.value;
+    editingPersonality.value = false;
+    editedPersonality.value = '';
   } catch (error) {
-    console.error('Failed to update personality:', error)
-    toast.error('Failed to update personality: ' + error.message)
+    console.error('Failed to update personality:', error);
+    toast.error('Failed to update personality: ' + error.message);
   }
 }
 
 async function saveScenario() {
   try {
     await charactersAPI.update(props.characterId, {
-      scenario: editedScenario.value
-    })
-    character.value.scenario = editedScenario.value
-    editingScenario.value = false
-    editedScenario.value = ''
+      scenario: editedScenario.value,
+    });
+    character.value.scenario = editedScenario.value;
+    editingScenario.value = false;
+    editedScenario.value = '';
   } catch (error) {
-    console.error('Failed to update scenario:', error)
-    toast.error('Failed to update scenario: ' + error.message)
+    console.error('Failed to update scenario:', error);
+    toast.error('Failed to update scenario: ' + error.message);
   }
 }
 
 async function saveDialogueExamples() {
   try {
     await charactersAPI.update(props.characterId, {
-      mes_example: editedDialogueExamples.value
-    })
-    character.value.mes_example = editedDialogueExamples.value
-    editingDialogueExamples.value = false
-    editedDialogueExamples.value = ''
+      mes_example: editedDialogueExamples.value,
+    });
+    character.value.mes_example = editedDialogueExamples.value;
+    editingDialogueExamples.value = false;
+    editedDialogueExamples.value = '';
   } catch (error) {
-    console.error('Failed to update dialogue examples:', error)
-    toast.error('Failed to update dialogue examples: ' + error.message)
+    console.error('Failed to update dialogue examples:', error);
+    toast.error('Failed to update dialogue examples: ' + error.message);
   }
 }
 
 async function saveFirstMessage() {
   try {
     await charactersAPI.update(props.characterId, {
-      first_mes: editedFirstMessage.value
-    })
-    character.value.first_mes = editedFirstMessage.value
-    editingFirstMessage.value = false
-    editedFirstMessage.value = ''
+      first_mes: editedFirstMessage.value,
+    });
+    character.value.first_mes = editedFirstMessage.value;
+    editingFirstMessage.value = false;
+    editedFirstMessage.value = '';
   } catch (error) {
-    console.error('Failed to update first message:', error)
-    toast.error('Failed to update first message: ' + error.message)
+    console.error('Failed to update first message:', error);
+    toast.error('Failed to update first message: ' + error.message);
   }
 }
 
 function handleImageChange(event) {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    newImage.value = file
-    const reader = new FileReader()
+    newImage.value = file;
+    const reader = new FileReader();
     reader.onload = (e) => {
-      imagePreview.value = e.target.result
-    }
-    reader.readAsDataURL(file)
+      imagePreview.value = e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
 }
 
 async function saveImage() {
-  if (!newImage.value) return
+  if (!newImage.value) return;
 
   try {
-    const formData = new FormData()
-    formData.append('image', newImage.value)
+    const formData = new FormData();
+    formData.append('image', newImage.value);
 
     // The server expects characterData as a JSON string
-    formData.append('characterData', JSON.stringify({
-      name: character.value.name,
-      description: character.value.description || '',
-      personality: character.value.personality || '',
-      scenario: character.value.scenario || '',
-      mes_example: character.value.mes_example || '',
-      first_mes: character.value.first_mes || '',
-      alternate_greetings: character.value.alternate_greetings || [],
-      ursceal_lorebook_id: character.value.ursceal_lorebook_id || null
-    }))
+    formData.append(
+      'characterData',
+      JSON.stringify({
+        name: character.value.name,
+        description: character.value.description || '',
+        personality: character.value.personality || '',
+        scenario: character.value.scenario || '',
+        mes_example: character.value.mes_example || '',
+        first_mes: character.value.first_mes || '',
+        alternate_greetings: character.value.alternate_greetings || [],
+        ursceal_lorebook_id: character.value.ursceal_lorebook_id || null,
+      }),
+    );
 
-    const updated = await charactersAPI.updateWithImage(props.characterId, formData)
+    const updated = await charactersAPI.updateWithImage(props.characterId, formData);
 
     // Update character with new image URL - add cache buster to force reload
-    character.value.imageUrl = updated.imageUrl + '?t=' + Date.now()
-    character.value.hasImage = true
+    character.value.imageUrl = updated.imageUrl + '?t=' + Date.now();
+    character.value.hasImage = true;
 
     // Reset image editing state
-    editingImage.value = false
-    newImage.value = null
-    imagePreview.value = null
+    editingImage.value = false;
+    newImage.value = null;
+    imagePreview.value = null;
     if (imageInput.value) {
-      imageInput.value.value = ''
+      imageInput.value.value = '';
     }
   } catch (error) {
-    console.error('Failed to update image:', error)
-    toast.error('Failed to update image: ' + error.message)
+    console.error('Failed to update image:', error);
+    toast.error('Failed to update image: ' + error.message);
   }
 }
 
 function cancelImageEdit() {
-  editingImage.value = false
-  newImage.value = null
-  imagePreview.value = null
+  editingImage.value = false;
+  newImage.value = null;
+  imagePreview.value = null;
   if (imageInput.value) {
-    imageInput.value.value = ''
+    imageInput.value.value = '';
   }
 }
 
@@ -775,89 +755,92 @@ async function deleteCharacter() {
   const confirmed = await confirm({
     message: `Are you sure you want to delete "${character.value.name}"? This cannot be undone.`,
     confirmText: 'Delete Character',
-    variant: 'danger'
-  })
+    variant: 'danger',
+  });
 
-  if (!confirmed) return
+  if (!confirmed) return;
 
   try {
-    await charactersAPI.delete(props.characterId)
-    toast.success('Character deleted successfully')
-    router.push('/')
+    await charactersAPI.delete(props.characterId);
+    toast.success('Character deleted successfully');
+    router.push('/');
   } catch (error) {
-    console.error('Failed to delete character:', error)
-    toast.error('Failed to delete character: ' + error.message)
+    console.error('Failed to delete character:', error);
+    toast.error('Failed to delete character: ' + error.message);
   }
 }
 
 function getLorebookName(lorebookId) {
-  if (!lorebookId) return null
-  const lorebook = availableLorebooks.value.find(lb => lb.id === lorebookId)
-  return lorebook?.name || null
+  if (!lorebookId) return null;
+  const lorebook = availableLorebooks.value.find((lb) => lb.id === lorebookId);
+  return lorebook?.name || null;
 }
 
 // Alternate greetings management
 async function addAlternateGreeting() {
   if (!character.value.alternate_greetings) {
-    character.value.alternate_greetings = []
+    character.value.alternate_greetings = [];
   }
-  character.value.alternate_greetings.push('')
-  const newIndex = character.value.alternate_greetings.length - 1
-  startEditGreeting(newIndex)
+  character.value.alternate_greetings.push('');
+  const newIndex = character.value.alternate_greetings.length - 1;
+  startEditGreeting(newIndex);
 
   // Wait for DOM to update, then scroll to the new greeting and focus textarea
-  await nextTick()
-  const newGreetingElement = greetingRefs.value[newIndex]
+  await nextTick();
+  const newGreetingElement = greetingRefs.value[newIndex];
   if (newGreetingElement) {
     newGreetingElement.scrollIntoView({
       behavior: 'smooth',
-      block: 'center'
-    })
+      block: 'center',
+    });
   }
 
   // Wait another tick and focus the textarea
-  await nextTick()
+  await nextTick();
   if (greetingTextarea.value && typeof greetingTextarea.value.focus === 'function') {
-    greetingTextarea.value.focus()
+    greetingTextarea.value.focus();
   } else {
     // Fallback: query the textarea directly
-    const textarea = newGreetingElement?.querySelector('textarea')
+    const textarea = newGreetingElement?.querySelector('textarea');
     if (textarea) {
-      textarea.focus()
+      textarea.focus();
     }
   }
 }
 
 function startEditGreeting(index) {
-  editingGreetingIndex.value = index
-  editedGreeting.value = character.value.alternate_greetings[index]
+  editingGreetingIndex.value = index;
+  editedGreeting.value = character.value.alternate_greetings[index];
 }
 
 function cancelEditGreeting() {
   // If this was a newly added empty greeting, remove it
-  if (editedGreeting.value === '' && character.value.alternate_greetings[editingGreetingIndex.value] === '') {
-    character.value.alternate_greetings.splice(editingGreetingIndex.value, 1)
+  if (
+    editedGreeting.value === '' &&
+    character.value.alternate_greetings[editingGreetingIndex.value] === ''
+  ) {
+    character.value.alternate_greetings.splice(editingGreetingIndex.value, 1);
   }
-  editingGreetingIndex.value = null
-  editedGreeting.value = ''
+  editingGreetingIndex.value = null;
+  editedGreeting.value = '';
 }
 
 async function saveAlternateGreeting() {
   try {
     // Update the greeting in the array
-    character.value.alternate_greetings[editingGreetingIndex.value] = editedGreeting.value
+    character.value.alternate_greetings[editingGreetingIndex.value] = editedGreeting.value;
 
     // Save to server
     await charactersAPI.update(props.characterId, {
-      alternate_greetings: character.value.alternate_greetings
-    })
+      alternate_greetings: character.value.alternate_greetings,
+    });
 
     // Reset editing state
-    editingGreetingIndex.value = null
-    editedGreeting.value = ''
+    editingGreetingIndex.value = null;
+    editedGreeting.value = '';
   } catch (error) {
-    console.error('Failed to save alternate greeting:', error)
-    toast.error('Failed to save alternate greeting: ' + error.message)
+    console.error('Failed to save alternate greeting:', error);
+    toast.error('Failed to save alternate greeting: ' + error.message);
   }
 }
 
@@ -865,78 +848,78 @@ async function deleteAlternateGreeting(index) {
   const confirmed = await confirm({
     message: 'Delete this alternate greeting?',
     confirmText: 'Delete',
-    variant: 'danger'
-  })
+    variant: 'danger',
+  });
 
-  if (!confirmed) return
+  if (!confirmed) return;
 
   try {
     // Remove from array
-    character.value.alternate_greetings.splice(index, 1)
+    character.value.alternate_greetings.splice(index, 1);
 
     // Save to server
     await charactersAPI.update(props.characterId, {
-      alternate_greetings: character.value.alternate_greetings
-    })
+      alternate_greetings: character.value.alternate_greetings,
+    });
   } catch (error) {
-    console.error('Failed to delete alternate greeting:', error)
-    toast.error('Failed to delete alternate greeting: ' + error.message)
+    console.error('Failed to delete alternate greeting:', error);
+    toast.error('Failed to delete alternate greeting: ' + error.message);
   }
 }
 
 async function createNewStory() {
   try {
     // Create new story
-    const { story } = await storiesAPI.create(`Story with ${character.value.name}`)
+    const { story } = await storiesAPI.create(`Story with ${character.value.name}`);
 
     // Add character to story
-    const response = await charactersAPI.addToStory(story.id, props.characterId)
+    const response = await charactersAPI.addToStory(story.id, props.characterId);
 
     // Store story info for greeting selector
-    createdStoryId.value = story.id
+    createdStoryId.value = story.id;
     createdStoryForModal.value = {
       id: story.id,
-      characterIds: [props.characterId]
-    }
+      characterIds: [props.characterId],
+    };
 
     // Show greeting selector instead of navigating immediately
-    showGreetingSelector.value = true
+    showGreetingSelector.value = true;
   } catch (error) {
-    console.error('Failed to create story:', error)
-    toast.error('Failed to create story: ' + error.message)
+    console.error('Failed to create story:', error);
+    toast.error('Failed to create story: ' + error.message);
   }
 }
 
 async function handleGreetingSelect(greeting) {
   try {
     // Add selected greeting to story
-    await storiesAPI.updateContent(createdStoryId.value, greeting + '\n\n')
-    toast.success('Story created with greeting!')
+    await storiesAPI.updateContent(createdStoryId.value, greeting + '\n\n');
+    toast.success('Story created with greeting!');
   } catch (error) {
-    console.error('Failed to add greeting to story:', error)
+    console.error('Failed to add greeting to story:', error);
     // Continue anyway - story is created, just navigate
   }
 
   // Navigate to the new story
-  showGreetingSelector.value = false
-  router.push(`/story/${createdStoryId.value}`)
+  showGreetingSelector.value = false;
+  router.push(`/story/${createdStoryId.value}`);
 }
 
 function handleGreetingModalClose() {
   // User closed without selecting - navigate to story anyway
-  showGreetingSelector.value = false
+  showGreetingSelector.value = false;
   if (createdStoryId.value) {
-    router.push(`/story/${createdStoryId.value}`)
+    router.push(`/story/${createdStoryId.value}`);
   }
 }
 
 async function setAsDefaultPersona() {
   try {
-    await settingsAPI.update({ defaultPersonaId: props.characterId })
-    toast.success(`${character.value.name} set as default persona`)
+    await settingsAPI.update({ defaultPersonaId: props.characterId });
+    toast.success(`${character.value.name} set as default persona`);
   } catch (error) {
-    console.error('Failed to set default persona:', error)
-    toast.error('Failed to set default persona: ' + error.message)
+    console.error('Failed to set default persona:', error);
+    toast.error('Failed to set default persona: ' + error.message);
   }
 }
 </script>
@@ -999,7 +982,9 @@ async function setAsDefaultPersona() {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-container i {
@@ -1170,7 +1155,7 @@ async function setAsDefaultPersona() {
   margin-bottom: 1rem;
 }
 
-.image-upload input[type="file"] {
+.image-upload input[type='file'] {
   padding: 0.5rem;
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border-color);

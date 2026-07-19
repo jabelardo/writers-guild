@@ -19,9 +19,9 @@ describe('LorebookParser', () => {
             comment: 'Dragon entry',
             disable: false,
             constant: false,
-            order: 100
-          }
-        }
+            order: 100,
+          },
+        },
       };
 
       const result = LorebookParser.parseStandaloneLorebook(JSON.stringify(lorebookJson));
@@ -39,8 +39,8 @@ describe('LorebookParser', () => {
       const lorebookJson = {
         name: 'Buffer Test',
         entries: {
-          0: { uid: 0, key: 'test', content: 'Test content' }
-        }
+          0: { uid: 0, key: 'test', content: 'Test content' },
+        },
       };
 
       const buffer = Buffer.from(JSON.stringify(lorebookJson));
@@ -52,15 +52,16 @@ describe('LorebookParser', () => {
     it('should throw error for missing entries', () => {
       const invalidJson = { name: 'No entries' };
 
-      expect(() => LorebookParser.parseStandaloneLorebook(JSON.stringify(invalidJson)))
-        .toThrow('Invalid lorebook format: missing entries');
+      expect(() => LorebookParser.parseStandaloneLorebook(JSON.stringify(invalidJson))).toThrow(
+        'Invalid lorebook format: missing entries',
+      );
     });
 
     it('should use defaults for missing fields', () => {
       const minimalJson = {
         entries: {
-          0: { uid: 0, key: 'test', content: 'Content' }
-        }
+          0: { uid: 0, key: 'test', content: 'Content' },
+        },
       };
 
       const result = LorebookParser.parseStandaloneLorebook(JSON.stringify(minimalJson));
@@ -73,8 +74,8 @@ describe('LorebookParser', () => {
     it('should handle disabled entries', () => {
       const lorebookJson = {
         entries: {
-          0: { uid: 0, key: 'test', content: 'Content', disable: true }
-        }
+          0: { uid: 0, key: 'test', content: 'Content', disable: true },
+        },
       };
 
       const result = LorebookParser.parseStandaloneLorebook(JSON.stringify(lorebookJson));
@@ -95,9 +96,9 @@ describe('LorebookParser', () => {
             content: 'Magic is real',
             enabled: true,
             insertion_order: 50,
-            position: 'after_char'
-          }
-        ]
+            position: 'after_char',
+          },
+        ],
       };
 
       const result = LorebookParser.parseEmbeddedLorebook(characterBook);
@@ -110,18 +111,18 @@ describe('LorebookParser', () => {
     });
 
     it('should throw error for null input', () => {
-      expect(() => LorebookParser.parseEmbeddedLorebook(null))
-        .toThrow('Invalid embedded lorebook');
+      expect(() => LorebookParser.parseEmbeddedLorebook(null)).toThrow('Invalid embedded lorebook');
     });
 
     it('should throw error for missing entries', () => {
-      expect(() => LorebookParser.parseEmbeddedLorebook({ name: 'No entries' }))
-        .toThrow('Invalid embedded lorebook');
+      expect(() => LorebookParser.parseEmbeddedLorebook({ name: 'No entries' })).toThrow(
+        'Invalid embedded lorebook',
+      );
     });
 
     it('should use default name for embedded lorebook', () => {
       const characterBook = {
-        entries: [{ id: 0, keys: ['test'], content: 'Test' }]
+        entries: [{ id: 0, keys: ['test'], content: 'Test' }],
       };
 
       const result = LorebookParser.parseEmbeddedLorebook(characterBook);
@@ -150,7 +151,7 @@ describe('LorebookParser', () => {
           probability: 80,
           useProbability: true,
           depth: 3,
-          group: 'creatures'
+          group: 'creatures',
         };
 
         const result = LorebookParser.normalizeEntry(entry, 'standalone');
@@ -195,7 +196,7 @@ describe('LorebookParser', () => {
           probability: 100,
           use_probability: false,
           depth: 4,
-          group: 'locations'
+          group: 'locations',
         };
 
         const result = LorebookParser.normalizeEntry(entry, 'v2');
@@ -214,7 +215,7 @@ describe('LorebookParser', () => {
           id: 0,
           keys: ['test'],
           content: 'Test',
-          priority: 50
+          priority: 50,
         };
 
         const result = LorebookParser.normalizeEntry(entry, 'v2');
@@ -277,9 +278,9 @@ describe('LorebookParser', () => {
             preventRecursion: false,
             delayUntilRecursion: false,
             displayIndex: 0,
-            extensions: {}
-          }
-        ]
+            extensions: {},
+          },
+        ],
       };
 
       const result = LorebookParser.toStandaloneFormat(internal);
@@ -304,8 +305,8 @@ describe('LorebookParser', () => {
         name: 'Multi Entry',
         entries: [
           { id: 0, keys: ['first'], content: 'First', enabled: true },
-          { id: 1, keys: ['second'], content: 'Second', enabled: false }
-        ]
+          { id: 1, keys: ['second'], content: 'Second', enabled: false },
+        ],
       };
 
       const result = LorebookParser.toStandaloneFormat(internal);

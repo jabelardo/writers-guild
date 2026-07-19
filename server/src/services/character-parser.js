@@ -17,7 +17,7 @@ export class CharacterParser {
 
     // Extract chunks
     const chunks = this.extractChunks(dataView);
-    const textChunks = chunks.filter(chunk => chunk.type === 'tEXt');
+    const textChunks = chunks.filter((chunk) => chunk.type === 'tEXt');
 
     // Look for character data in tEXt chunks
     for (const chunk of textChunks) {
@@ -57,7 +57,7 @@ export class CharacterParser {
     const textData = Buffer.concat([
       keywordBytes,
       Buffer.from([0]), // Null separator
-      textBytes
+      textBytes,
     ]);
 
     // Calculate CRC for tEXt chunk
@@ -69,7 +69,7 @@ export class CharacterParser {
       this.uint32ToBuffer(textData.length),
       textType,
       textData,
-      this.uint32ToBuffer(textCRC)
+      this.uint32ToBuffer(textCRC),
     ]);
 
     // Minimal 1x1 transparent PNG
@@ -77,13 +77,19 @@ export class CharacterParser {
 
     // IHDR chunk (1x1, RGBA, 8-bit)
     const ihdrData = Buffer.from([
-      0, 0, 0, 1, // Width: 1
-      0, 0, 0, 1, // Height: 1
-      8,          // Bit depth: 8
-      6,          // Color type: RGBA
-      0,          // Compression: deflate
-      0,          // Filter: adaptive
-      0           // Interlace: none
+      0,
+      0,
+      0,
+      1, // Width: 1
+      0,
+      0,
+      0,
+      1, // Height: 1
+      8, // Bit depth: 8
+      6, // Color type: RGBA
+      0, // Compression: deflate
+      0, // Filter: adaptive
+      0, // Interlace: none
     ]);
     const ihdrType = Buffer.from('IHDR', 'latin1');
     const ihdrCRC = this.calculateCRC(Buffer.concat([ihdrType, ihdrData]));
@@ -91,7 +97,7 @@ export class CharacterParser {
       this.uint32ToBuffer(ihdrData.length),
       ihdrType,
       ihdrData,
-      this.uint32ToBuffer(ihdrCRC)
+      this.uint32ToBuffer(ihdrCRC),
     ]);
 
     // IDAT chunk (1x1 transparent pixel)
@@ -102,7 +108,7 @@ export class CharacterParser {
       this.uint32ToBuffer(idatData.length),
       idatType,
       idatData,
-      this.uint32ToBuffer(idatCRC)
+      this.uint32ToBuffer(idatCRC),
     ]);
 
     // IEND chunk
@@ -111,17 +117,11 @@ export class CharacterParser {
     const iendChunk = Buffer.concat([
       this.uint32ToBuffer(0),
       iendType,
-      this.uint32ToBuffer(iendCRC)
+      this.uint32ToBuffer(iendCRC),
     ]);
 
     // Combine all chunks
-    return Buffer.concat([
-      pngSignature,
-      ihdrChunk,
-      textChunk,
-      idatChunk,
-      iendChunk
-    ]);
+    return Buffer.concat([pngSignature, ihdrChunk, textChunk, idatChunk, iendChunk]);
   }
 
   /**
@@ -137,16 +137,16 @@ export class CharacterParser {
    * Calculate CRC-32 checksum
    */
   static calculateCRC(buffer) {
-    let crc = 0xFFFFFFFF;
+    let crc = 0xffffffff;
 
     for (let i = 0; i < buffer.length; i++) {
       crc ^= buffer[i];
       for (let j = 0; j < 8; j++) {
-        crc = (crc & 1) ? ((crc >>> 1) ^ 0xEDB88320) : (crc >>> 1);
+        crc = crc & 1 ? (crc >>> 1) ^ 0xedb88320 : crc >>> 1;
       }
     }
 
-    return (crc ^ 0xFFFFFFFF) >>> 0;
+    return (crc ^ 0xffffffff) >>> 0;
   }
 
   /**
@@ -177,7 +177,7 @@ export class CharacterParser {
         dataView.getUint8(offset),
         dataView.getUint8(offset + 1),
         dataView.getUint8(offset + 2),
-        dataView.getUint8(offset + 3)
+        dataView.getUint8(offset + 3),
       );
       offset += 4;
 
@@ -224,7 +224,7 @@ export class CharacterParser {
    */
   static arrayBufferToString(buffer) {
     return Array.from(buffer)
-      .map(byte => String.fromCharCode(byte))
+      .map((byte) => String.fromCharCode(byte))
       .join('');
   }
 
@@ -248,10 +248,10 @@ export class CharacterParser {
       return {
         spec: 'chara_card_v2',
         spec_version: '2.0',
-        data: rawData
+        data: rawData,
       };
     }
-    
+
     return rawData;
   }
 }

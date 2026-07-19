@@ -6,10 +6,7 @@
           <th
             v-for="column in columns"
             :key="column.key"
-            :class="[
-              column.headerClass,
-              { sortable: column.sortable }
-            ]"
+            :class="[column.headerClass, { sortable: column.sortable }]"
             @click="column.sortable ? sortBy(column.key) : null"
           >
             <slot :name="`header-${column.key}`" :column="column">
@@ -22,21 +19,9 @@
         </tr>
       </thead>
       <tbody>
-        <tr
-          v-for="row in sortedData"
-          :key="row[rowKey]"
-          class="data-row"
-        >
-          <td
-            v-for="column in columns"
-            :key="column.key"
-            :class="column.cellClass"
-          >
-            <slot
-              :name="`cell-${column.key}`"
-              :row="row"
-              :value="getCellValue(row, column.key)"
-            >
+        <tr v-for="row in sortedData" :key="row[rowKey]" class="data-row">
+          <td v-for="column in columns" :key="column.key" :class="column.cellClass">
+            <slot :name="`cell-${column.key}`" :row="row" :value="getCellValue(row, column.key)">
               {{ formatCell(row, column) }}
             </slot>
           </td>
@@ -47,12 +32,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue';
 
 const props = defineProps({
   columns: {
     type: Array,
-    required: true
+    required: true,
     // columns: [
     //   { key: 'name', label: 'Name', sortable: true },
     //   { key: 'actions', label: 'Actions', sortable: false }
@@ -60,127 +45,131 @@ const props = defineProps({
   },
   data: {
     type: Array,
-    required: true
+    required: true,
   },
   rowKey: {
     type: String,
-    default: 'id'
+    default: 'id',
   },
   defaultSort: {
     type: String,
-    default: null
+    default: null,
   },
   defaultSortAsc: {
     type: Boolean,
-    default: false
-  }
-})
+    default: false,
+  },
+});
 
-const sortColumn = ref(props.defaultSort || props.columns.find(c => c.sortable)?.key)
-const sortAsc = ref(props.defaultSortAsc)
+const sortColumn = ref(props.defaultSort || props.columns.find((c) => c.sortable)?.key);
+const sortAsc = ref(props.defaultSortAsc);
 
 // Cache for sort values to avoid recomputation during sorting
-let sortValueCache = new WeakMap()
-let lastSortColumn = null
+let sortValueCache = new WeakMap();
+let lastSortColumn = null;
 
 // Invalidate cache when data changes
-watch(() => props.data, () => {
-  sortValueCache = new WeakMap()
-}, { flush: 'sync' })
+watch(
+  () => props.data,
+  () => {
+    sortValueCache = new WeakMap();
+  },
+  { flush: 'sync' },
+);
 
 // Get cached sort value for a row
 function getCachedSortValue(row, key) {
   if (!sortValueCache.has(row)) {
-    sortValueCache.set(row, {})
+    sortValueCache.set(row, {});
   }
-  const cache = sortValueCache.get(row)
+  const cache = sortValueCache.get(row);
   if (!(key in cache)) {
-    cache[key] = getCellValue(row, key)
+    cache[key] = getCellValue(row, key);
   }
-  return cache[key]
+  return cache[key];
 }
 
 const sortedData = computed(() => {
-  if (!sortColumn.value) return props.data
+  if (!sortColumn.value) return props.data;
 
   // Clear value cache if sort column changed
   if (lastSortColumn !== sortColumn.value) {
-    sortValueCache = new WeakMap()
-    lastSortColumn = sortColumn.value
+    sortValueCache = new WeakMap();
+    lastSortColumn = sortColumn.value;
   }
 
-  const sorted = [...props.data]
-  const column = props.columns.find(c => c.key === sortColumn.value)
-  const currentSortCol = sortColumn.value
-  const ascending = sortAsc.value
+  const sorted = [...props.data];
+  const column = props.columns.find((c) => c.key === sortColumn.value);
+  const currentSortCol = sortColumn.value;
+  const ascending = sortAsc.value;
 
   sorted.sort((a, b) => {
     // Use custom sort function if provided
     if (column?.sortFn) {
-      return column.sortFn(a, b, ascending)
+      return column.sortFn(a, b, ascending);
     }
 
-    let aVal = getCachedSortValue(a, currentSortCol)
-    let bVal = getCachedSortValue(b, currentSortCol)
+    let aVal = getCachedSortValue(a, currentSortCol);
+    let bVal = getCachedSortValue(b, currentSortCol);
 
     // Handle null/undefined - push to end
-    if (aVal == null && bVal == null) return 0
-    if (aVal == null) return 1
-    if (bVal == null) return -1
+    if (aVal == null && bVal == null) return 0;
+    if (aVal == null) return 1;
+    if (bVal == null) return -1;
 
     // Default sorting logic
     if (typeof aVal === 'string') {
-      aVal = aVal.toLowerCase()
-      bVal = (bVal || '').toLowerCase()
-      return ascending ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)
+      aVal = aVal.toLowerCase();
+      bVal = (bVal || '').toLowerCase();
+      return ascending ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
     }
 
     // Handle dates
     if (aVal instanceof Date || (typeof aVal === 'string' && !isNaN(Date.parse(aVal)))) {
-      aVal = new Date(aVal).getTime()
-      bVal = new Date(bVal).getTime()
-      return ascending ? aVal - bVal : bVal - aVal
+      aVal = new Date(aVal).getTime();
+      bVal = new Date(bVal).getTime();
+      return ascending ? aVal - bVal : bVal - aVal;
     }
 
     // Handle numbers
     if (typeof aVal === 'number') {
-      return ascending ? aVal - bVal : bVal - aVal
+      return ascending ? aVal - bVal : bVal - aVal;
     }
 
-    return 0
-  })
+    return 0;
+  });
 
-  return sorted
-})
+  return sorted;
+});
 
 function sortBy(columnKey) {
   if (sortColumn.value === columnKey) {
-    sortAsc.value = !sortAsc.value
+    sortAsc.value = !sortAsc.value;
   } else {
-    sortColumn.value = columnKey
-    sortAsc.value = false
+    sortColumn.value = columnKey;
+    sortAsc.value = false;
   }
 }
 
 function getCellValue(row, key) {
   // Support nested keys like 'user.name'
-  return key.split('.').reduce((obj, k) => obj?.[k], row)
+  return key.split('.').reduce((obj, k) => obj?.[k], row);
 }
 
 function formatCell(row, column) {
-  const value = getCellValue(row, column.key)
+  const value = getCellValue(row, column.key);
 
   // Use custom formatter if provided
   if (column.format) {
-    return column.format(value, row)
+    return column.format(value, row);
   }
 
   // Default formatting
   if (value === null || value === undefined) {
-    return column.defaultValue || ''
+    return column.defaultValue || '';
   }
 
-  return value
+  return value;
 }
 </script>
 
@@ -281,5 +270,4 @@ function formatCell(row, column) {
 .actions-col {
   min-width: 200px;
 }
-
 </style>

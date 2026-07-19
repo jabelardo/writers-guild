@@ -3,9 +3,7 @@
     <h3 class="section-title">Generation Settings</h3>
 
     <div class="form-group">
-      <label for="maxTokens">
-        Max Tokens: {{ localSettings.maxTokens }}
-      </label>
+      <label for="maxTokens"> Max Tokens: {{ localSettings.maxTokens }} </label>
       <input
         id="maxTokens"
         v-model.number="localSettings.maxTokens"
@@ -19,9 +17,7 @@
     </div>
 
     <div class="form-group">
-      <label for="temperature">
-        Temperature: {{ localSettings.temperature.toFixed(2) }}
-      </label>
+      <label for="temperature"> Temperature: {{ localSettings.temperature.toFixed(2) }} </label>
       <input
         id="temperature"
         v-model.number="localSettings.temperature"
@@ -33,9 +29,7 @@
       />
       <small class="help-text">
         Creativity/randomness (0 = focused, {{ temperatureMax }} = creative)
-        <span v-if="provider === 'anthropic'" class="provider-note">
-          (Anthropic max: 1.0)
-        </span>
+        <span v-if="provider === 'anthropic'" class="provider-note"> (Anthropic max: 1.0) </span>
         <span v-if="provider === 'deepseek' && localSettings.thinking" class="warning-note">
           ⚠️ Temperature is ignored when thinking mode is enabled
         </span>
@@ -63,10 +57,7 @@
 
     <div class="form-group checkbox-group">
       <label>
-        <input
-          type="checkbox"
-          v-model="localSettings.includeDialogueExamples"
-        />
+        <input type="checkbox" v-model="localSettings.includeDialogueExamples" />
         Include dialogue examples from character cards
       </label>
     </div>
@@ -74,53 +65,53 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed } from 'vue';
 
 const props = defineProps({
   modelValue: {
     type: Object,
-    required: true
+    required: true,
   },
   showMaxContext: {
     type: Boolean,
-    default: true
+    default: true,
   },
   contextRange: {
     type: Object,
-    default: () => ({ min: 32000, max: 128000 })
+    default: () => ({ min: 32000, max: 128000 }),
   },
   contextHelpText: {
     type: String,
-    default: 'Context window size (32k-128k tokens). Larger = more story content but higher costs.'
+    default: 'Context window size (32k-128k tokens). Larger = more story content but higher costs.',
   },
   provider: {
     type: String,
-    default: ''
+    default: '',
   },
   model: {
     type: String,
-    default: ''
-  }
-})
+    default: '',
+  },
+});
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue']);
 
 // Provider-specific temperature max
 const temperatureMax = computed(() => {
   if (props.provider === 'anthropic') {
-    return 1.0
+    return 1.0;
   }
-  return 2.0
-})
+  return 2.0;
+});
 
 const localSettings = computed({
   get() {
-    return props.modelValue || {}
+    return props.modelValue || {};
   },
   set(value) {
-    emit('update:modelValue', value)
-  }
-})
+    emit('update:modelValue', value);
+  },
+});
 </script>
 
 <style scoped>
@@ -159,7 +150,7 @@ const localSettings = computed({
   font-weight: normal;
 }
 
-.checkbox-group input[type="checkbox"] {
+.checkbox-group input[type='checkbox'] {
   width: auto;
   margin: 0;
 }

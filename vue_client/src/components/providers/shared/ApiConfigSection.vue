@@ -2,9 +2,7 @@
   <div class="api-config-section">
     <!-- API Key Input -->
     <div class="form-group">
-      <label :for="`apiKey-${providerId}`">
-        API Key {{ required ? '*' : '' }}
-      </label>
+      <label :for="`apiKey-${providerId}`"> API Key {{ required ? '*' : '' }} </label>
       <input
         :id="`apiKey-${providerId}`"
         :value="modelValue.apiKey"
@@ -34,66 +32,62 @@
     <slot name="additional-config"></slot>
 
     <!-- Advanced Toggle Button -->
-    <button
-      type="button"
-      class="btn-link"
-      @click="toggleAdvanced"
-    >
+    <button type="button" class="btn-link" @click="toggleAdvanced">
       {{ showAdvanced ? 'Hide' : 'Show' }} Advanced API Options
     </button>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 const props = defineProps({
   modelValue: {
     type: Object,
-    required: true
+    required: true,
   },
   providerId: {
     type: String,
-    required: true
+    required: true,
   },
   placeholder: {
     type: String,
-    default: ''
+    default: '',
   },
   helpText: {
     type: String,
-    default: ''
+    default: '',
   },
   baseURLPlaceholder: {
     type: String,
-    required: true
+    required: true,
   },
   required: {
     type: Boolean,
-    default: true
-  }
-})
+    default: true,
+  },
+});
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue']);
 
-const showAdvanced = ref(false)
+const showAdvanced = ref(false);
 
 function updateApiKey(event) {
   emit('update:modelValue', {
     ...props.modelValue,
-    apiKey: event.target.value
-  })
+    apiKey: event.target.value,
+  });
 }
 
 function updateBaseURL(event) {
   emit('update:modelValue', {
     ...props.modelValue,
-    baseURL: event.target.value
-  })
+    baseURL: event.target.value,
+  });
 }
 
 function toggleAdvanced() {
-  showAdvanced.value = !showAdvanced.value
+  showAdvanced.value = !showAdvanced.value;
 }
 </script>
 

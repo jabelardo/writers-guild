@@ -10,17 +10,17 @@ describe('CharacterParser', () => {
         data: {
           name: 'Test Character',
           description: 'A test character',
-          personality: 'Friendly'
-        }
+          personality: 'Friendly',
+        },
       };
 
       const pngBuffer = CharacterParser.createPNGWithCharacterData(characterData);
 
       // Verify it's a valid PNG
       expect(pngBuffer[0]).toBe(137); // PNG signature
-      expect(pngBuffer[1]).toBe(80);  // P
-      expect(pngBuffer[2]).toBe(78);  // N
-      expect(pngBuffer[3]).toBe(71);  // G
+      expect(pngBuffer[1]).toBe(80); // P
+      expect(pngBuffer[2]).toBe(78); // N
+      expect(pngBuffer[3]).toBe(71); // G
     });
 
     it('should create PNG that can be parsed back', async () => {
@@ -30,8 +30,8 @@ describe('CharacterParser', () => {
         data: {
           name: 'Roundtrip Test',
           description: 'Testing roundtrip',
-          first_mes: 'Hello!'
-        }
+          first_mes: 'Hello!',
+        },
       };
 
       const pngBuffer = CharacterParser.createPNGWithCharacterData(originalData);
@@ -47,8 +47,7 @@ describe('CharacterParser', () => {
     it('should throw error for non-PNG buffer', async () => {
       const notPNG = Buffer.from('Not a PNG file');
 
-      await expect(CharacterParser.parseCard(notPNG))
-        .rejects.toThrow('File is not a valid PNG');
+      await expect(CharacterParser.parseCard(notPNG)).rejects.toThrow('File is not a valid PNG');
     });
 
     it('should throw error when no character data found', async () => {
@@ -63,7 +62,7 @@ describe('CharacterParser', () => {
         CharacterParser.uint32ToBuffer(ihdrData.length),
         ihdrType,
         ihdrData,
-        CharacterParser.uint32ToBuffer(ihdrCRC)
+        CharacterParser.uint32ToBuffer(ihdrCRC),
       ]);
 
       // IEND chunk
@@ -72,13 +71,14 @@ describe('CharacterParser', () => {
       const iendChunk = Buffer.concat([
         CharacterParser.uint32ToBuffer(0),
         iendType,
-        CharacterParser.uint32ToBuffer(iendCRC)
+        CharacterParser.uint32ToBuffer(iendCRC),
       ]);
 
       const minimalPNG = Buffer.concat([pngSignature, ihdrChunk, iendChunk]);
 
-      await expect(CharacterParser.parseCard(minimalPNG))
-        .rejects.toThrow('No character data found');
+      await expect(CharacterParser.parseCard(minimalPNG)).rejects.toThrow(
+        'No character data found',
+      );
     });
   });
 
@@ -97,7 +97,11 @@ describe('CharacterParser', () => {
 
     it('should return false for JPEG signature', () => {
       const jpegBuffer = Buffer.from([255, 216, 255, 224, 0, 16, 74, 70]);
-      const dataView = new DataView(jpegBuffer.buffer, jpegBuffer.byteOffset, jpegBuffer.byteLength);
+      const dataView = new DataView(
+        jpegBuffer.buffer,
+        jpegBuffer.byteOffset,
+        jpegBuffer.byteLength,
+      );
       expect(CharacterParser.isPNG(dataView)).toBe(false);
     });
   });
@@ -159,7 +163,7 @@ describe('CharacterParser', () => {
     });
 
     it('should convert max uint32 correctly', () => {
-      const buffer = CharacterParser.uint32ToBuffer(0xFFFFFFFF);
+      const buffer = CharacterParser.uint32ToBuffer(0xffffffff);
       expect(buffer[0]).toBe(255);
       expect(buffer[1]).toBe(255);
       expect(buffer[2]).toBe(255);
@@ -192,8 +196,7 @@ describe('CharacterParser', () => {
 
     it('should throw error for chunk without null separator', () => {
       const data = new Uint8Array([99, 104, 97, 114, 97, 116, 101, 115, 116]);
-      expect(() => CharacterParser.decodeTextChunk(data))
-        .toThrow('Invalid tEXt chunk');
+      expect(() => CharacterParser.decodeTextChunk(data)).toThrow('Invalid tEXt chunk');
     });
   });
 
@@ -209,7 +212,7 @@ describe('CharacterParser', () => {
       // Should have at least IHDR, tEXt, IDAT, IEND
       expect(chunks.length).toBeGreaterThanOrEqual(4);
 
-      const chunkTypes = chunks.map(c => c.type);
+      const chunkTypes = chunks.map((c) => c.type);
       expect(chunkTypes).toContain('IHDR');
       expect(chunkTypes).toContain('tEXt');
       expect(chunkTypes).toContain('IEND');

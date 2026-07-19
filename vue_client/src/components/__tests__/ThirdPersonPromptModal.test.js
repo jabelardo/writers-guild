@@ -17,12 +17,12 @@ const localStorageMock = (() => {
     }),
     clear: vi.fn(() => {
       store = {};
-    })
+    }),
   };
 })();
 
 Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock
+  value: localStorageMock,
 });
 
 describe('ThirdPersonPromptModal', () => {
@@ -42,19 +42,15 @@ describe('ThirdPersonPromptModal', () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
       expect(wrapper.find('.prompt-message').text()).toBe(
-        'Would you like to rewrite this text to third-person narrative style?'
+        'Would you like to rewrite this text to third-person narrative style?',
       );
     });
 
     it('should display the description', () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      expect(wrapper.find('.prompt-description').text()).toContain(
-        'third-person past tense'
-      );
-      expect(wrapper.find('.prompt-description').text()).toContain(
-        'recommended format'
-      );
+      expect(wrapper.find('.prompt-description').text()).toContain('third-person past tense');
+      expect(wrapper.find('.prompt-description').text()).toContain('recommended format');
     });
 
     it('should render the checkbox with proper accessibility attributes', () => {
@@ -72,7 +68,7 @@ describe('ThirdPersonPromptModal', () => {
     it('should render Skip button', () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      const skipButton = wrapper.findAll('button').find(b => b.text() === 'Skip');
+      const skipButton = wrapper.findAll('button').find((b) => b.text() === 'Skip');
       expect(skipButton).toBeTruthy();
       expect(skipButton.classes()).toContain('btn-secondary');
     });
@@ -80,7 +76,7 @@ describe('ThirdPersonPromptModal', () => {
     it('should render Rewrite button with icon', () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      const rewriteButton = wrapper.findAll('button').find(b => b.text().includes('Rewrite'));
+      const rewriteButton = wrapper.findAll('button').find((b) => b.text().includes('Rewrite'));
       expect(rewriteButton).toBeTruthy();
       expect(rewriteButton.classes()).toContain('btn-primary');
       expect(rewriteButton.find('i.fa-repeat').exists()).toBe(true);
@@ -113,7 +109,7 @@ describe('ThirdPersonPromptModal', () => {
     it('should emit skip and close events when Skip button clicked', async () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      const skipButton = wrapper.findAll('button').find(b => b.text() === 'Skip');
+      const skipButton = wrapper.findAll('button').find((b) => b.text() === 'Skip');
       await skipButton.trigger('click');
 
       expect(wrapper.emitted('skip')).toBeTruthy();
@@ -125,7 +121,7 @@ describe('ThirdPersonPromptModal', () => {
     it('should not emit rewrite event when Skip clicked', async () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      const skipButton = wrapper.findAll('button').find(b => b.text() === 'Skip');
+      const skipButton = wrapper.findAll('button').find((b) => b.text() === 'Skip');
       await skipButton.trigger('click');
 
       expect(wrapper.emitted('rewrite')).toBeFalsy();
@@ -134,7 +130,7 @@ describe('ThirdPersonPromptModal', () => {
     it('should not save preference when Skip clicked with checkbox unchecked', async () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      const skipButton = wrapper.findAll('button').find(b => b.text() === 'Skip');
+      const skipButton = wrapper.findAll('button').find((b) => b.text() === 'Skip');
       await skipButton.trigger('click');
 
       expect(localStorageMock.setItem).not.toHaveBeenCalled();
@@ -146,13 +142,10 @@ describe('ThirdPersonPromptModal', () => {
       const checkbox = wrapper.find('input[type="checkbox"]');
       await checkbox.setValue(true);
 
-      const skipButton = wrapper.findAll('button').find(b => b.text() === 'Skip');
+      const skipButton = wrapper.findAll('button').find((b) => b.text() === 'Skip');
       await skipButton.trigger('click');
 
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        SKIP_THIRD_PERSON_PROMPT_KEY,
-        'true'
-      );
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(SKIP_THIRD_PERSON_PROMPT_KEY, 'true');
     });
   });
 
@@ -160,7 +153,7 @@ describe('ThirdPersonPromptModal', () => {
     it('should emit rewrite and close events when Rewrite button clicked', async () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      const rewriteButton = wrapper.findAll('button').find(b => b.text().includes('Rewrite'));
+      const rewriteButton = wrapper.findAll('button').find((b) => b.text().includes('Rewrite'));
       await rewriteButton.trigger('click');
 
       expect(wrapper.emitted('rewrite')).toBeTruthy();
@@ -172,7 +165,7 @@ describe('ThirdPersonPromptModal', () => {
     it('should not emit skip event when Rewrite clicked', async () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      const rewriteButton = wrapper.findAll('button').find(b => b.text().includes('Rewrite'));
+      const rewriteButton = wrapper.findAll('button').find((b) => b.text().includes('Rewrite'));
       await rewriteButton.trigger('click');
 
       expect(wrapper.emitted('skip')).toBeFalsy();
@@ -181,7 +174,7 @@ describe('ThirdPersonPromptModal', () => {
     it('should not save preference when Rewrite clicked with checkbox unchecked', async () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      const rewriteButton = wrapper.findAll('button').find(b => b.text().includes('Rewrite'));
+      const rewriteButton = wrapper.findAll('button').find((b) => b.text().includes('Rewrite'));
       await rewriteButton.trigger('click');
 
       expect(localStorageMock.setItem).not.toHaveBeenCalled();
@@ -193,13 +186,10 @@ describe('ThirdPersonPromptModal', () => {
       const checkbox = wrapper.find('input[type="checkbox"]');
       await checkbox.setValue(true);
 
-      const rewriteButton = wrapper.findAll('button').find(b => b.text().includes('Rewrite'));
+      const rewriteButton = wrapper.findAll('button').find((b) => b.text().includes('Rewrite'));
       await rewriteButton.trigger('click');
 
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        SKIP_THIRD_PERSON_PROMPT_KEY,
-        'true'
-      );
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(SKIP_THIRD_PERSON_PROMPT_KEY, 'true');
     });
   });
 
@@ -222,13 +212,10 @@ describe('ThirdPersonPromptModal', () => {
       const checkbox = wrapper.find('input[type="checkbox"]');
       await checkbox.setValue(true);
 
-      const skipButton = wrapper.findAll('button').find(b => b.text() === 'Skip');
+      const skipButton = wrapper.findAll('button').find((b) => b.text() === 'Skip');
       await skipButton.trigger('click');
 
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        SKIP_THIRD_PERSON_PROMPT_KEY,
-        'true'
-      );
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(SKIP_THIRD_PERSON_PROMPT_KEY, 'true');
     });
 
     it('should only save preference once per action', async () => {
@@ -237,7 +224,7 @@ describe('ThirdPersonPromptModal', () => {
       const checkbox = wrapper.find('input[type="checkbox"]');
       await checkbox.setValue(true);
 
-      const rewriteButton = wrapper.findAll('button').find(b => b.text().includes('Rewrite'));
+      const rewriteButton = wrapper.findAll('button').find((b) => b.text().includes('Rewrite'));
       await rewriteButton.trigger('click');
 
       expect(localStorageMock.setItem).toHaveBeenCalledTimes(1);
@@ -273,8 +260,8 @@ describe('ThirdPersonPromptModal', () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
       // Find buttons by their text content (footer has Skip and Rewrite)
-      const skipButton = wrapper.findAll('button').find(b => b.text() === 'Skip');
-      const rewriteButton = wrapper.findAll('button').find(b => b.text().includes('Rewrite'));
+      const skipButton = wrapper.findAll('button').find((b) => b.text() === 'Skip');
+      const rewriteButton = wrapper.findAll('button').find((b) => b.text().includes('Rewrite'));
 
       expect(skipButton).toBeTruthy();
       expect(rewriteButton).toBeTruthy();
@@ -293,7 +280,7 @@ describe('ThirdPersonPromptModal', () => {
     it('should only emit events once when Skip is clicked multiple times rapidly', async () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      const skipButton = wrapper.findAll('button').find(b => b.text() === 'Skip');
+      const skipButton = wrapper.findAll('button').find((b) => b.text() === 'Skip');
 
       // Simulate rapid clicks
       await skipButton.trigger('click');
@@ -308,7 +295,7 @@ describe('ThirdPersonPromptModal', () => {
     it('should only emit events once when Rewrite is clicked multiple times rapidly', async () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      const rewriteButton = wrapper.findAll('button').find(b => b.text().includes('Rewrite'));
+      const rewriteButton = wrapper.findAll('button').find((b) => b.text().includes('Rewrite'));
 
       // Simulate rapid clicks
       await rewriteButton.trigger('click');
@@ -323,7 +310,7 @@ describe('ThirdPersonPromptModal', () => {
     it('should disable Skip button after first click', async () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      const skipButton = wrapper.findAll('button').find(b => b.text() === 'Skip');
+      const skipButton = wrapper.findAll('button').find((b) => b.text() === 'Skip');
 
       expect(skipButton.attributes('disabled')).toBeUndefined();
 
@@ -335,7 +322,7 @@ describe('ThirdPersonPromptModal', () => {
     it('should disable Rewrite button after first click', async () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
-      const rewriteButton = wrapper.findAll('button').find(b => b.text().includes('Rewrite'));
+      const rewriteButton = wrapper.findAll('button').find((b) => b.text().includes('Rewrite'));
 
       expect(rewriteButton.attributes('disabled')).toBeUndefined();
 
@@ -350,7 +337,7 @@ describe('ThirdPersonPromptModal', () => {
       const checkbox = wrapper.find('input[type="checkbox"]');
       await checkbox.setValue(true);
 
-      const skipButton = wrapper.findAll('button').find(b => b.text() === 'Skip');
+      const skipButton = wrapper.findAll('button').find((b) => b.text() === 'Skip');
 
       await skipButton.trigger('click');
       await skipButton.trigger('click');

@@ -44,10 +44,10 @@ export class StorageService {
           filterAsterisks: true,
           includeDialogueExamples: false,
           // Lorebook settings
-          lorebookScanDepth: 2000,     // Tokens to scan (approx 8000 chars)
-          lorebookTokenBudget: 1800,   // Max tokens for lorebook content
-          lorebookRecursionDepth: 3,   // Max recursive activation depth
-          lorebookEnableRecursion: true
+          lorebookScanDepth: 2000, // Tokens to scan (approx 8000 chars)
+          lorebookTokenBudget: 1800, // Max tokens for lorebook content
+          lorebookRecursionDepth: 3, // Max recursive activation depth
+          lorebookEnableRecursion: true,
         });
       }
 
@@ -109,7 +109,10 @@ export class StorageService {
         if (await this.exists(contentPath)) {
           const content = await fs.readFile(contentPath, 'utf-8');
           // Count words (split by whitespace and filter empty strings)
-          wordCount = content.trim().split(/\s+/).filter(word => word.length > 0).length;
+          wordCount = content
+            .trim()
+            .split(/\s+/)
+            .filter((word) => word.length > 0).length;
         }
 
         metadata.wordCount = wordCount;
@@ -130,7 +133,7 @@ export class StorageService {
     const metadataPath = path.join(storyPath, 'metadata.json');
     const contentPath = path.join(storyPath, 'content.txt');
 
-    if (!await this.exists(metadataPath)) {
+    if (!(await this.exists(metadataPath))) {
       throw new Error(`Story not found: ${storyId}`);
     }
 
@@ -148,7 +151,7 @@ export class StorageService {
     return {
       ...metadata,
       content,
-      characters
+      characters,
     };
   }
 
@@ -170,10 +173,10 @@ export class StorageService {
       description,
       created: now,
       modified: now,
-      characterIds: [],        // Array of character IDs (references to global library)
+      characterIds: [], // Array of character IDs (references to global library)
       personaCharacterId: null, // Optional: use a character as persona for this story
-      lorebookIds: [],         // Array of lorebook IDs (references to global library)
-      configPresetId: null     // Optional: configuration preset for this story (null = use default)
+      lorebookIds: [], // Array of lorebook IDs (references to global library)
+      configPresetId: null, // Optional: configuration preset for this story (null = use default)
     };
 
     await this.writeJSON(path.join(storyPath, 'metadata.json'), metadata);
@@ -191,7 +194,7 @@ export class StorageService {
     const storyPath = path.join(this.storiesDir, storyId);
     const metadataPath = path.join(storyPath, 'metadata.json');
 
-    if (!await this.exists(metadataPath)) {
+    if (!(await this.exists(metadataPath))) {
       throw new Error(`Story not found: ${storyId}`);
     }
 
@@ -200,7 +203,7 @@ export class StorageService {
       ...metadata,
       ...updates,
       id: storyId, // Prevent ID from being changed
-      modified: new Date().toISOString()
+      modified: new Date().toISOString(),
     };
 
     await this.writeJSON(metadataPath, updated);
@@ -215,7 +218,7 @@ export class StorageService {
     const contentPath = path.join(storyPath, 'content.txt');
     const metadataPath = path.join(storyPath, 'metadata.json');
 
-    if (!await this.exists(metadataPath)) {
+    if (!(await this.exists(metadataPath))) {
       throw new Error(`Story not found: ${storyId}`);
     }
 
@@ -249,7 +252,7 @@ export class StorageService {
   async deleteStory(storyId) {
     const storyPath = path.join(this.storiesDir, storyId);
 
-    if (!await this.exists(storyPath)) {
+    if (!(await this.exists(storyPath))) {
       throw new Error(`Story not found: ${storyId}`);
     }
 
@@ -284,15 +287,15 @@ export class StorageService {
    * List all characters in global library
    */
   async listAllCharacters() {
-    if (!await this.exists(this.charactersDir)) {
+    if (!(await this.exists(this.charactersDir))) {
       return [];
     }
 
     const files = await fs.readdir(this.charactersDir);
-    const jsonFiles = files.filter(f => f.endsWith('.json'));
+    const jsonFiles = files.filter((f) => f.endsWith('.json'));
 
-    return jsonFiles.map(filename => ({
-      id: path.parse(filename).name
+    return jsonFiles.map((filename) => ({
+      id: path.parse(filename).name,
     }));
   }
 
@@ -302,7 +305,7 @@ export class StorageService {
   async listStoryCharacters(storyId) {
     const metadataPath = path.join(this.storiesDir, storyId, 'metadata.json');
 
-    if (!await this.exists(metadataPath)) {
+    if (!(await this.exists(metadataPath))) {
       return [];
     }
 
@@ -331,7 +334,7 @@ export class StorageService {
         .resize(96, 96, {
           fit: 'cover',
           position: 'top',
-          withoutEnlargement: false
+          withoutEnlargement: false,
         })
         .png({ quality: 90 })
         .toBuffer();
@@ -348,7 +351,7 @@ export class StorageService {
     const dataPath = this.getCharacterDataPath(characterId);
 
     // Check if character already exists
-    const isNew = !await this.exists(dataPath);
+    const isNew = !(await this.exists(dataPath));
 
     // Add metadata timestamps
     if (!characterData.metadata) {
@@ -384,7 +387,7 @@ export class StorageService {
   async getCharacter(characterId) {
     const dataPath = this.getCharacterDataPath(characterId);
 
-    if (!await this.exists(dataPath)) {
+    if (!(await this.exists(dataPath))) {
       throw new Error(`Character not found: ${characterId}`);
     }
 
@@ -397,7 +400,7 @@ export class StorageService {
   async getCharacterImage(characterId) {
     const imagePath = this.getCharacterImagePath(characterId);
 
-    if (!await this.exists(imagePath)) {
+    if (!(await this.exists(imagePath))) {
       return null;
     }
 
@@ -418,7 +421,7 @@ export class StorageService {
   async getCharacterThumbnail(characterId) {
     const thumbnailPath = this.getCharacterThumbnailPath(characterId);
 
-    if (!await this.exists(thumbnailPath)) {
+    if (!(await this.exists(thumbnailPath))) {
       return null;
     }
 
@@ -466,13 +469,13 @@ export class StorageService {
   async addCharacterToStory(storyId, characterId) {
     const metadataPath = path.join(this.storiesDir, storyId, 'metadata.json');
 
-    if (!await this.exists(metadataPath)) {
+    if (!(await this.exists(metadataPath))) {
       throw new Error(`Story not found: ${storyId}`);
     }
 
     // Verify character exists in global library
     const characterPath = this.getCharacterDataPath(characterId);
-    if (!await this.exists(characterPath)) {
+    if (!(await this.exists(characterPath))) {
       throw new Error(`Character not found: ${characterId}`);
     }
 
@@ -493,12 +496,12 @@ export class StorageService {
   async removeCharacterFromStory(storyId, characterId) {
     const metadataPath = path.join(this.storiesDir, storyId, 'metadata.json');
 
-    if (!await this.exists(metadataPath)) {
+    if (!(await this.exists(metadataPath))) {
       throw new Error(`Story not found: ${storyId}`);
     }
 
     const metadata = await this.readJSON(metadataPath);
-    metadata.characterIds = metadata.characterIds.filter(id => id !== characterId);
+    metadata.characterIds = metadata.characterIds.filter((id) => id !== characterId);
 
     // If this character was the persona, clear that too
     if (metadata.personaCharacterId === characterId) {
@@ -517,14 +520,14 @@ export class StorageService {
   async setStoryPersona(storyId, characterId) {
     const metadataPath = path.join(this.storiesDir, storyId, 'metadata.json');
 
-    if (!await this.exists(metadataPath)) {
+    if (!(await this.exists(metadataPath))) {
       throw new Error(`Story not found: ${storyId}`);
     }
 
     // Verify character exists (can be null to unset)
     if (characterId) {
       const characterPath = this.getCharacterDataPath(characterId);
-      if (!await this.exists(characterPath)) {
+      if (!(await this.exists(characterPath))) {
         throw new Error(`Character not found: ${characterId}`);
       }
     }
@@ -550,12 +553,12 @@ export class StorageService {
    * List all lorebooks in global library
    */
   async listAllLorebooks() {
-    if (!await this.exists(this.lorebooksDir)) {
+    if (!(await this.exists(this.lorebooksDir))) {
       return [];
     }
 
     const files = await fs.readdir(this.lorebooksDir);
-    const jsonFiles = files.filter(f => f.endsWith('.json'));
+    const jsonFiles = files.filter((f) => f.endsWith('.json'));
 
     const lorebooks = [];
     for (const filename of jsonFiles) {
@@ -568,7 +571,7 @@ export class StorageService {
           id: lorebookId,
           name: data.name || 'Untitled',
           description: data.description || '',
-          entryCount: data.entries ? data.entries.length : 0
+          entryCount: data.entries ? data.entries.length : 0,
         });
       } catch (error) {
         console.error(`Failed to read lorebook ${lorebookId}:`, error);
@@ -584,7 +587,7 @@ export class StorageService {
   async listStoryLorebooks(storyId) {
     const metadataPath = path.join(this.storiesDir, storyId, 'metadata.json');
 
-    if (!await this.exists(metadataPath)) {
+    if (!(await this.exists(metadataPath))) {
       return [];
     }
 
@@ -602,7 +605,7 @@ export class StorageService {
             id: lorebookId,
             name: data.name || 'Untitled',
             description: data.description || '',
-            entryCount: data.entries ? data.entries.length : 0
+            entryCount: data.entries ? data.entries.length : 0,
           });
         } catch (error) {
           console.error(`Failed to read lorebook ${lorebookId}:`, error);
@@ -628,7 +631,7 @@ export class StorageService {
   async getLorebook(lorebookId) {
     const lorebookPath = this.getLorebookPath(lorebookId);
 
-    if (!await this.exists(lorebookPath)) {
+    if (!(await this.exists(lorebookPath))) {
       throw new Error(`Lorebook not found: ${lorebookId}`);
     }
 
@@ -655,13 +658,13 @@ export class StorageService {
   async addLorebookToStory(storyId, lorebookId) {
     const metadataPath = path.join(this.storiesDir, storyId, 'metadata.json');
 
-    if (!await this.exists(metadataPath)) {
+    if (!(await this.exists(metadataPath))) {
       throw new Error(`Story not found: ${storyId}`);
     }
 
     // Verify lorebook exists in global library
     const lorebookPath = this.getLorebookPath(lorebookId);
-    if (!await this.exists(lorebookPath)) {
+    if (!(await this.exists(lorebookPath))) {
       throw new Error(`Lorebook not found: ${lorebookId}`);
     }
 
@@ -688,14 +691,14 @@ export class StorageService {
   async removeLorebookFromStory(storyId, lorebookId) {
     const metadataPath = path.join(this.storiesDir, storyId, 'metadata.json');
 
-    if (!await this.exists(metadataPath)) {
+    if (!(await this.exists(metadataPath))) {
       throw new Error(`Story not found: ${storyId}`);
     }
 
     const metadata = await this.readJSON(metadataPath);
 
     if (metadata.lorebookIds) {
-      metadata.lorebookIds = metadata.lorebookIds.filter(id => id !== lorebookId);
+      metadata.lorebookIds = metadata.lorebookIds.filter((id) => id !== lorebookId);
       metadata.modified = new Date().toISOString();
       await this.writeJSON(metadataPath, metadata);
     }
@@ -709,7 +712,7 @@ export class StorageService {
    * Get settings
    */
   async getSettings() {
-    if (!await this.exists(this.settingsFile)) {
+    if (!(await this.exists(this.settingsFile))) {
       return null;
     }
 
@@ -737,12 +740,12 @@ export class StorageService {
    * List all configuration presets
    */
   async listPresets() {
-    if (!await this.exists(this.presetsDir)) {
+    if (!(await this.exists(this.presetsDir))) {
       return [];
     }
 
     const files = await fs.readdir(this.presetsDir);
-    const jsonFiles = files.filter(f => f.endsWith('.json'));
+    const jsonFiles = files.filter((f) => f.endsWith('.json'));
 
     const presets = [];
     for (const filename of jsonFiles) {
@@ -755,7 +758,7 @@ export class StorageService {
           id: presetId,
           name: data.name || 'Untitled',
           provider: data.provider || 'deepseek',
-          isDefault: data.isDefault || false
+          isDefault: data.isDefault || false,
         });
       } catch (error) {
         console.error(`Failed to read preset ${presetId}:`, error);
@@ -771,7 +774,7 @@ export class StorageService {
   async getPreset(presetId) {
     const presetPath = this.getPresetPath(presetId);
 
-    if (!await this.exists(presetPath)) {
+    if (!(await this.exists(presetPath))) {
       throw new Error(`Preset not found: ${presetId}`);
     }
 
@@ -812,7 +815,7 @@ export class StorageService {
    * Set default preset ID in settings
    */
   async setDefaultPresetId(presetId) {
-    const settings = await this.getSettings() || {};
+    const settings = (await this.getSettings()) || {};
     settings.defaultPresetId = presetId;
     await this.saveSettings(settings);
     return { success: true };

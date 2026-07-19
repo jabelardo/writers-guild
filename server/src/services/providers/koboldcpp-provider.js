@@ -29,7 +29,7 @@ export class KoboldCppProvider extends LLMProvider {
     const koboldConfig = {
       ...config,
       baseURL: normalizeBaseURL(config.baseURL),
-      model: config.model || ''
+      model: config.model || '',
     };
 
     super(koboldConfig);
@@ -42,7 +42,7 @@ export class KoboldCppProvider extends LLMProvider {
       streaming: true,
       reasoning: false,
       visionAPI: false,
-      maxContextWindow: 8192
+      maxContextWindow: 8192,
     };
   }
 
@@ -78,15 +78,25 @@ export class KoboldCppProvider extends LLMProvider {
       max_context_length: options.maxContextTokens ?? DEFAULT_MAX_CONTEXT,
       temperature: options.temperature ?? 0.7,
       use_default_badwordsids: true,
-      trim_stop: true
+      trim_stop: true,
     };
 
     if (genkey) body.genkey = genkey;
 
     const passthrough = [
-      'top_p', 'top_k', 'top_a', 'typical', 'tfs', 'min_p',
-      'rep_pen', 'rep_pen_range', 'rep_pen_slope',
-      'sampler_order', 'mirostat', 'mirostat_tau', 'mirostat_eta'
+      'top_p',
+      'top_k',
+      'top_a',
+      'typical',
+      'tfs',
+      'min_p',
+      'rep_pen',
+      'rep_pen_range',
+      'rep_pen_slope',
+      'sampler_order',
+      'mirostat',
+      'mirostat_tau',
+      'mirostat_eta',
     ];
     for (const key of passthrough) {
       if (options[key] !== null && options[key] !== undefined) {
@@ -109,13 +119,15 @@ export class KoboldCppProvider extends LLMProvider {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
-      signal: options.signal
+      signal: options.signal,
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.detail?.msg || errorData.msg || `KoboldCpp request failed: ${response.statusText}`
+        errorData.detail?.msg ||
+          errorData.msg ||
+          `KoboldCpp request failed: ${response.statusText}`,
       );
     }
 
@@ -126,7 +138,7 @@ export class KoboldCppProvider extends LLMProvider {
       content: text,
       reasoning: '',
       usage: undefined,
-      metadata: { genkey }
+      metadata: { genkey },
     };
   }
 
@@ -154,13 +166,15 @@ export class KoboldCppProvider extends LLMProvider {
       method: 'POST',
       headers: this.authHeaders(),
       body: JSON.stringify(body),
-      signal
+      signal,
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
-        errorData.detail?.msg || errorData.msg || `KoboldCpp stream request failed: ${response.statusText}`
+        errorData.detail?.msg ||
+          errorData.msg ||
+          `KoboldCpp stream request failed: ${response.statusText}`,
       );
     }
 
@@ -169,7 +183,7 @@ export class KoboldCppProvider extends LLMProvider {
       abort: () => {
         controller.abort();
       },
-      metadata: { genkey, userPrompt, systemPrompt }
+      metadata: { genkey, userPrompt, systemPrompt },
     };
   }
 
@@ -237,7 +251,7 @@ export class KoboldCppProvider extends LLMProvider {
     const response = await fetch(`${this.baseURL}/api/extra/abort`, {
       method: 'POST',
       headers: this.authHeaders(),
-      body: JSON.stringify({ genkey })
+      body: JSON.stringify({ genkey }),
     });
     if (!response.ok) {
       throw new Error(`Abort request failed: ${response.statusText}`);
@@ -251,7 +265,7 @@ export class KoboldCppProvider extends LLMProvider {
   async getCurrentModel() {
     const response = await fetch(`${this.baseURL}/api/v1/model`, {
       method: 'GET',
-      headers: this.authHeaders()
+      headers: this.authHeaders(),
     });
     if (!response.ok) {
       throw new Error(`Failed to fetch model: ${response.statusText}`);
@@ -269,7 +283,7 @@ export class KoboldCppProvider extends LLMProvider {
   async getMaxContextLength() {
     const response = await fetch(`${this.baseURL}/api/extra/true_max_context_length`, {
       method: 'GET',
-      headers: this.authHeaders()
+      headers: this.authHeaders(),
     });
     if (!response.ok) {
       throw new Error(`Failed to fetch max context length: ${response.statusText}`);
@@ -285,7 +299,7 @@ export class KoboldCppProvider extends LLMProvider {
   async getMaxLength() {
     const response = await fetch(`${this.baseURL}/api/v1/config/max_length`, {
       method: 'GET',
-      headers: this.authHeaders()
+      headers: this.authHeaders(),
     });
     if (!response.ok) {
       throw new Error(`Failed to fetch max length: ${response.statusText}`);
@@ -322,14 +336,18 @@ export class KoboldCppProvider extends LLMProvider {
       return {
         code: 'AUTH_ERROR',
         message: 'Wrong password, or endpoint requires --password',
-        original: error
+        original: error,
       };
     }
-    if (msg.includes('ECONNREFUSED') || msg.includes('fetch failed') || error.cause?.code === 'ECONNREFUSED') {
+    if (
+      msg.includes('ECONNREFUSED') ||
+      msg.includes('fetch failed') ||
+      error.cause?.code === 'ECONNREFUSED'
+    ) {
       return {
         code: 'CONNECTION_ERROR',
         message: `Could not reach KoboldCpp at ${this.baseURL}`,
-        original: error
+        original: error,
       };
     }
     return super.parseError(error);

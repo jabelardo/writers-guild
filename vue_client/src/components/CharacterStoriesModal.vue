@@ -1,21 +1,13 @@
 <template>
   <Modal :title="title" max-width="900px" max-height="85vh" @close="$emit('close')">
-    <div v-if="loading" class="loading">
-      Loading stories...
-    </div>
+    <div v-if="loading" class="loading">Loading stories...</div>
 
     <div v-else-if="stories.length === 0" class="empty-state">
       <i class="fas fa-book"></i>
       <p>No stories yet with this character.</p>
     </div>
 
-    <DataTable
-      v-else
-      :columns="columns"
-      :data="stories"
-      default-sort="modified"
-      row-key="id"
-    >
+    <DataTable v-else :columns="columns" :data="stories" default-sort="modified" row-key="id">
       <!-- Avatar column -->
       <template #cell-avatar="{ row }">
         <CharacterAvatar :characters="getStoryCharacters(row)" />
@@ -35,43 +27,41 @@
     </DataTable>
 
     <template #footer>
-      <button class="btn btn-secondary" @click="$emit('close')">
-        Close
-      </button>
+      <button class="btn btn-secondary" @click="$emit('close')">Close</button>
     </template>
   </Modal>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import Modal from './Modal.vue'
-import DataTable from './DataTable.vue'
-import CharacterAvatar from './CharacterAvatar.vue'
+import { computed } from 'vue';
+import Modal from './Modal.vue';
+import DataTable from './DataTable.vue';
+import CharacterAvatar from './CharacterAvatar.vue';
 
 const props = defineProps({
   character: {
     type: Object,
-    required: true
+    required: true,
   },
   stories: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   allCharacters: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   loading: {
     type: Boolean,
-    default: false
-  }
-})
+    default: false,
+  },
+});
 
-const emit = defineEmits(['close', 'open-story', 'delete'])
+const emit = defineEmits(['close', 'open-story', 'delete']);
 
 const title = computed(() => {
-  return `Stories with ${props.character?.name || 'Character'}`
-})
+  return `Stories with ${props.character?.name || 'Character'}`;
+});
 
 const columns = [
   {
@@ -79,21 +69,21 @@ const columns = [
     label: '',
     sortable: false,
     headerClass: 'avatar-col',
-    cellClass: 'avatar-cell'
+    cellClass: 'avatar-cell',
   },
   {
     key: 'title',
     label: 'Title',
     sortable: true,
     cellClass: 'title-cell',
-    format: (value) => value || 'Untitled Story'
+    format: (value) => value || 'Untitled Story',
   },
   {
     key: 'modified',
     label: 'Modified',
     sortable: true,
     cellClass: 'date-cell',
-    format: (value, row) => new Date(value || row.created).toLocaleDateString()
+    format: (value, row) => new Date(value || row.created).toLocaleDateString(),
   },
   {
     key: 'wordCount',
@@ -101,47 +91,47 @@ const columns = [
     sortable: true,
     headerClass: 'text-right',
     cellClass: 'wordcount-cell',
-    format: (value) => (value || 0).toLocaleString()
+    format: (value) => (value || 0).toLocaleString(),
   },
   {
     key: 'actions',
     label: 'Actions',
     sortable: false,
-    headerClass: 'actions-col'
-  }
-]
+    headerClass: 'actions-col',
+  },
+];
 
 function getStoryCharacters(story) {
-  const characters = []
+  const characters = [];
 
   // Add all characters from characterIds
   if (story.characterIds && story.characterIds.length > 0) {
     for (const charId of story.characterIds) {
-      const character = props.allCharacters.find(c => c.id === charId)
-      if (character && !characters.find(c => c.id === character.id)) {
-        characters.push(character)
+      const character = props.allCharacters.find((c) => c.id === charId);
+      if (character && !characters.find((c) => c.id === character.id)) {
+        characters.push(character);
       }
     }
   }
 
   // Add persona character if it exists and isn't already included
   if (story.personaCharacterId) {
-    const personaChar = props.allCharacters.find(c => c.id === story.personaCharacterId)
-    if (personaChar && !characters.find(c => c.id === personaChar.id)) {
-      characters.push(personaChar)
+    const personaChar = props.allCharacters.find((c) => c.id === story.personaCharacterId);
+    if (personaChar && !characters.find((c) => c.id === personaChar.id)) {
+      characters.push(personaChar);
     }
   }
 
-  return characters
+  return characters;
 }
 
 function openStory(storyId) {
-  emit('close')
-  emit('open-story', storyId)
+  emit('close');
+  emit('open-story', storyId);
 }
 
 function deleteStory(story) {
-  emit('delete', story)
+  emit('delete', story);
 }
 </script>
 

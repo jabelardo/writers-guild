@@ -3,8 +3,6 @@
  */
 
 import { PNG } from 'pngjs';
-import path from 'path';
-import fs from 'fs';
 
 /**
  * Create a minimal valid PNG buffer for testing
@@ -12,12 +10,12 @@ import fs from 'fs';
  */
 export function createTestPng(width = 10, height = 10) {
   const png = new PNG({ width, height });
-  
+
   // Fill with a simple pattern (white pixels)
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const idx = (y * width + x) * 4;
-      png.data[idx] = 255;     // R
+      png.data[idx] = 255; // R
       png.data[idx + 1] = 255; // G
       png.data[idx + 2] = 255; // B
       png.data[idx + 3] = 255; // A
@@ -44,7 +42,7 @@ export async function createTestCharacterPng(characterData = {}) {
     name: 'Test Character',
     description: 'A test character',
     first_mes: 'Hello!',
-    ...characterData
+    ...characterData,
   };
 
   return CharacterParser.createPNGWithCharacterData(defaultData);
@@ -63,6 +61,6 @@ export function createTestCharacterJson(overrides = {}) {
     scenario: 'In a test environment',
     first_mes: 'Hello, I am a test character!',
     mes_example: '',
-    ...overrides
+    ...overrides,
   };
 }

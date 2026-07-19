@@ -11,7 +11,7 @@ export class AppError extends Error {
   }
 }
 
-export function errorHandler(err, req, res, next) {
+export function errorHandler(err, req, res, _next) {
   console.error('Error:', err);
 
   const statusCode = err.statusCode || 500;
@@ -32,13 +32,14 @@ export function errorHandler(err, req, res, next) {
 
   res.status(statusCode).json({
     error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 }
 
 // Async handler wrapper to catch promise rejections
 export function asyncHandler(fn) {
   return (req, res, next) => {
+    // oxlint-disable-next-line promise/no-callback-in-promise -- canonical Express async wrapper
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 }

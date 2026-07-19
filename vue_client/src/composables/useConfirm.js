@@ -1,14 +1,14 @@
-import { ref } from 'vue'
+import { ref } from 'vue';
 
 // Global state for confirmation dialog
-const isVisible = ref(false)
+const isVisible = ref(false);
 const config = ref({
   message: '',
   confirmText: 'Confirm',
   cancelText: 'Cancel',
-  variant: 'default'
-})
-let resolveCallback = null
+  variant: 'default',
+});
+let resolveCallback = null;
 
 export function useConfirm() {
   /**
@@ -26,27 +26,27 @@ export function useConfirm() {
         message: options.message || '',
         confirmText: options.confirmText || 'Confirm',
         cancelText: options.cancelText || 'Cancel',
-        variant: options.variant || 'default'
-      }
+        variant: options.variant || 'default',
+      };
 
-      resolveCallback = resolve
-      isVisible.value = true
-    })
+      resolveCallback = resolve;
+      isVisible.value = true;
+    });
   }
 
   function handleConfirm() {
-    isVisible.value = false
+    isVisible.value = false;
     if (resolveCallback) {
-      resolveCallback(true)
-      resolveCallback = null
+      resolveCallback(true);
+      resolveCallback = null;
     }
   }
 
   function handleCancel() {
-    isVisible.value = false
+    isVisible.value = false;
     if (resolveCallback) {
-      resolveCallback(false)
-      resolveCallback = null
+      resolveCallback(false);
+      resolveCallback = null;
     }
   }
 
@@ -58,6 +58,6 @@ export function useConfirm() {
 
     // State (for use in template)
     isVisible,
-    config
-  }
+    config,
+  };
 }

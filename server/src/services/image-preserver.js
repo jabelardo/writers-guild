@@ -10,7 +10,11 @@
  */
 
 // Import shared regex patterns
-import { MARKDOWN_IMAGE_RE, HTML_IMAGE_RE, WG_PLACEHOLDER_RE } from '../../../shared/regex-patterns.js';
+import {
+  MARKDOWN_IMAGE_RE,
+  HTML_IMAGE_RE,
+  WG_PLACEHOLDER_RE,
+} from '../../../shared/regex-patterns.js';
 
 // Placeholder template — uses a dedicated marker.
 // HTML comments (<!-- -->) get stripped by LLMs, so use plain text markers.
@@ -114,10 +118,12 @@ export class ImagePreserver {
     });
 
     // Detect missing: placeholders that were saved but not found in response
-    const missing = this.saved.filter(item => !foundPlaceholders.has(item.placeholder));
+    const missing = this.saved.filter((item) => !foundPlaceholders.has(item.placeholder));
 
     if (hallucinated.length > 0) {
-      console.warn(`[ImagePreserver] Dropped ${hallucinated.length} invented marker(s): ${[...new Set(hallucinated)].join(', ')}`);
+      console.warn(
+        `[ImagePreserver] Dropped ${hallucinated.length} invented marker(s): ${[...new Set(hallucinated)].join(', ')}`,
+      );
     }
 
     return { text: result, missing, hallucinated };
@@ -157,7 +163,7 @@ export class ImagePreserver {
         finalContent: llmResponse || '',
         imagesRestored: false,
         imagesPreserved: 0,
-        imagesMissing: 0
+        imagesMissing: 0,
       };
     }
 
@@ -166,23 +172,25 @@ export class ImagePreserver {
     // Only images that came from the text being rewritten may be recovered.
     // Character card and lorebook images were never part of the story, so
     // appending them would inject the card's gallery into the prose.
-    const recoverable = missing.filter(m => m.source === 'story');
+    const recoverable = missing.filter((m) => m.source === 'story');
 
     // Build final content with missing images appended at the end
     let finalContent = restoredContent;
     if (appendMissing && recoverable.length > 0) {
-      finalContent += '\n\n' + recoverable.map(m => m.original).join('\n');
+      finalContent += '\n\n' + recoverable.map((m) => m.original).join('\n');
     }
 
     // Report only story images as missing. Card and lorebook images are
     // context the model was never asked to echo back, so counting them would
     // report every healthy `continue` as having lost its entire gallery.
-    console.log(`[ImagePreserver] Restored ${this.saved.length} image(s), ${recoverable.length} story image(s) missing`);
+    console.log(
+      `[ImagePreserver] Restored ${this.saved.length} image(s), ${recoverable.length} story image(s) missing`,
+    );
     return {
       finalContent,
       imagesRestored: true,
       imagesPreserved: this.saved.length,
-      imagesMissing: recoverable.length
+      imagesMissing: recoverable.length,
     };
   }
 }

@@ -13,7 +13,7 @@ describe('PromptBuilder', () => {
     builder = new PromptBuilder();
     macroProcessor = new MacroProcessor({
       userName: 'Alice',
-      charName: 'Bob'
+      charName: 'Bob',
     });
 
     characterCard = {
@@ -22,14 +22,14 @@ describe('PromptBuilder', () => {
         description: 'A friendly character',
         personality: 'Kind and helpful',
         scenario: 'Meeting in a cafe',
-        mes_example: '<START>\n{{user}}: Hello!\n{{char}}: Hi there!'
-      }
+        mes_example: '<START>\n{{user}}: Hello!\n{{char}}: Hi there!',
+      },
     };
 
     persona = {
       name: 'Alice',
       description: 'A curious adventurer',
-      writingStyle: 'Descriptive and poetic'
+      writingStyle: 'Descriptive and poetic',
     };
   });
 
@@ -138,12 +138,9 @@ describe('PromptBuilder', () => {
     });
 
     it('should skip dialogue examples when disabled', () => {
-      const result = builder.buildSingleCharacterSection(
-        characterCard,
-        persona,
-        macroProcessor,
-        { includeDialogueExamples: false }
-      );
+      const result = builder.buildSingleCharacterSection(characterCard, persona, macroProcessor, {
+        includeDialogueExamples: false,
+      });
 
       expect(result).not.toContain('=== DIALOGUE STYLE EXAMPLES ===');
     });
@@ -156,8 +153,8 @@ describe('PromptBuilder', () => {
     it('should handle character card with missing optional fields', () => {
       const minimalCard = {
         data: {
-          name: 'Simple Character'
-        }
+          name: 'Simple Character',
+        },
       };
       const result = builder.buildSingleCharacterSection(minimalCard, persona, macroProcessor);
 
@@ -168,7 +165,9 @@ describe('PromptBuilder', () => {
 
     it('should return empty for characterCard with null/undefined data', () => {
       expect(builder.buildSingleCharacterSection({ data: null }, persona, macroProcessor)).toBe('');
-      expect(builder.buildSingleCharacterSection({ data: undefined }, persona, macroProcessor)).toBe('');
+      expect(
+        builder.buildSingleCharacterSection({ data: undefined }, persona, macroProcessor),
+      ).toBe('');
       expect(builder.buildSingleCharacterSection({}, persona, macroProcessor)).toBe('');
     });
   });
@@ -180,16 +179,16 @@ describe('PromptBuilder', () => {
           data: {
             name: 'Alice',
             description: 'First character',
-            personality: 'Brave'
-          }
+            personality: 'Brave',
+          },
         },
         {
           data: {
             name: 'Bob',
             description: 'Second character',
-            personality: 'Clever'
-          }
-        }
+            personality: 'Clever',
+          },
+        },
       ];
 
       const result = builder.buildMultipleCharactersSection(cards, persona, macroProcessor);
@@ -202,22 +201,21 @@ describe('PromptBuilder', () => {
     });
 
     it('should separate characters with dividers', () => {
-      const cards = [
-        { data: { name: 'Alice' } },
-        { data: { name: 'Bob' } }
-      ];
+      const cards = [{ data: { name: 'Alice' } }, { data: { name: 'Bob' } }];
 
       const result = builder.buildMultipleCharactersSection(cards, persona, macroProcessor);
       expect(result).toContain('---');
     });
 
     it('should include scenario only for single character', () => {
-      const singleCard = [{
-        data: {
-          name: 'Alice',
-          scenario: 'In the forest'
-        }
-      }];
+      const singleCard = [
+        {
+          data: {
+            name: 'Alice',
+            scenario: 'In the forest',
+          },
+        },
+      ];
 
       const result = builder.buildMultipleCharactersSection(singleCard, persona, macroProcessor);
       expect(result).toContain('Scenario: In the forest');
@@ -226,7 +224,7 @@ describe('PromptBuilder', () => {
     it('should not include scenario for multiple characters', () => {
       const multipleCards = [
         { data: { name: 'Alice', scenario: 'Forest' } },
-        { data: { name: 'Bob', scenario: 'City' } }
+        { data: { name: 'Bob', scenario: 'City' } },
       ];
 
       const result = builder.buildMultipleCharactersSection(multipleCards, persona, macroProcessor);
@@ -249,12 +247,12 @@ describe('PromptBuilder', () => {
       const lorebooks = [
         {
           comment: 'Entry 1',
-          content: 'The kingdom is vast'
+          content: 'The kingdom is vast',
         },
         {
           comment: 'Entry 2',
-          content: 'Magic is common'
-        }
+          content: 'Magic is common',
+        },
       ];
 
       const result = builder.buildLorebookSection(lorebooks, macroProcessor);
@@ -267,8 +265,8 @@ describe('PromptBuilder', () => {
     it('should process macros in lorebook content', () => {
       const lorebooks = [
         {
-          content: '{{user}} lives in the city'
-        }
+          content: '{{user}} lives in the city',
+        },
       ];
 
       const result = builder.buildLorebookSection(lorebooks, macroProcessor);
@@ -278,8 +276,8 @@ describe('PromptBuilder', () => {
     it('should filter asterisks from lorebook content', () => {
       const lorebooks = [
         {
-          content: 'The *ancient* sword'
-        }
+          content: 'The *ancient* sword',
+        },
       ];
 
       const result = builder.buildLorebookSection(lorebooks, macroProcessor);
@@ -290,8 +288,8 @@ describe('PromptBuilder', () => {
       const lorebooks = [
         {
           comment: 'Test Entry',
-          content: 'Content here'
-        }
+          content: 'Content here',
+        },
       ];
 
       const result = builder.buildLorebookSection(lorebooks, macroProcessor, { showPrompt: true });
@@ -302,8 +300,8 @@ describe('PromptBuilder', () => {
       const lorebooks = [
         {
           comment: 'Test Entry',
-          content: 'Content here'
-        }
+          content: 'Content here',
+        },
       ];
 
       const result = builder.buildLorebookSection(lorebooks, macroProcessor, { showPrompt: false });
@@ -399,7 +397,7 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -415,17 +413,17 @@ describe('PromptBuilder', () => {
     });
 
     it('should process macros in character fields', () => {
-      characterCard.data.description = '{{user}}\'s friend';
+      characterCard.data.description = "{{user}}'s friend";
       const context = {
         persona,
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
-      expect(result).toContain('Description: Alice\'s friend');
+      expect(result).toContain("Description: Alice's friend");
     });
 
     it('should filter asterisks from character content', () => {
@@ -435,7 +433,7 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -449,7 +447,7 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: { scenario: 'A dark forest at night' },
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -461,11 +459,9 @@ describe('PromptBuilder', () => {
       const context = {
         persona,
         characterCards: [characterCard],
-        activatedLorebooks: [
-          { content: 'Magic is real and powerfu:q', comment: 'Magic' }
-        ],
+        activatedLorebooks: [{ content: 'Magic is real and powerfu:q', comment: 'Magic' }],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -477,11 +473,11 @@ describe('PromptBuilder', () => {
         persona,
         characterCards: [
           { data: { name: 'Alice', description: 'First character', personality: 'Brave' } },
-          { data: { name: 'Bob', description: 'Second character', personality: 'Clever' } }
+          { data: { name: 'Bob', description: 'Second character', personality: 'Clever' } },
         ],
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -497,7 +493,7 @@ describe('PromptBuilder', () => {
         characterCards: [],
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -512,7 +508,7 @@ describe('PromptBuilder', () => {
         characterCards: null,
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -525,7 +521,7 @@ describe('PromptBuilder', () => {
         characterCards: [{ data: { name: '', description: 'No name char' } }],
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -538,11 +534,11 @@ describe('PromptBuilder', () => {
         persona,
         characterCards: [
           { data: { name: '', description: 'First' } },
-          { data: { name: '', description: 'Second' } }
+          { data: { name: '', description: 'Second' } },
         ],
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -558,7 +554,7 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: null,
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -570,11 +566,9 @@ describe('PromptBuilder', () => {
       const context = {
         persona,
         characterCards: [characterCard],
-        activatedLorebooks: [
-          { content: 'No comment entry' }
-        ],
+        activatedLorebooks: [{ content: 'No comment entry' }],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -588,7 +582,7 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: {},
-        settings: { includeDialogueExamples: false }
+        settings: { includeDialogueExamples: false },
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -601,7 +595,7 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const customTemplate = 'Custom system: {{#if has_single_character}}{{character.name}}{{/if}}';
@@ -616,7 +610,7 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -631,7 +625,7 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -642,8 +636,8 @@ describe('PromptBuilder', () => {
       const charCard = {
         data: {
           name: 'Dr. {{user}}',
-          description: 'The {{char}} is here'
-        }
+          description: 'The {{char}} is here',
+        },
       };
 
       const context = {
@@ -651,7 +645,7 @@ describe('PromptBuilder', () => {
         characterCards: [charCard],
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -663,11 +657,9 @@ describe('PromptBuilder', () => {
       const context = {
         persona: { name: 'Hero' },
         characterCards: [characterCard],
-        activatedLorebooks: [
-          { content: 'The {{user}} is the chosen one', comment: 'Prophecy' }
-        ],
+        activatedLorebooks: [{ content: 'The {{user}} is the chosen one', comment: 'Prophecy' }],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildSystemPrompt(context);
@@ -690,7 +682,9 @@ describe('PromptBuilder', () => {
     it('should return content as-is when within limit', () => {
       const content = 'Short story content here.';
       const result = builder.truncateStoryContent(content, 1000);
-      expect(result).toBe('Here is the current story so far:\n\nShort story content here.\n\n---\n\n');
+      expect(result).toBe(
+        'Here is the current story so far:\n\nShort story content here.\n\n---\n\n',
+      );
     });
 
     it('should truncate content exceeding maxChars', () => {
@@ -709,9 +703,15 @@ describe('PromptBuilder', () => {
     });
 
     it('should throw error for invalid maxChars', () => {
-      expect(() => builder.truncateStoryContent('content', 0)).toThrow('maxChars must be provided and greater than 0');
-      expect(() => builder.truncateStoryContent('content', -1)).toThrow();
-      expect(() => builder.truncateStoryContent('content', null)).toThrow();
+      expect(() => builder.truncateStoryContent('content', 0)).toThrow(
+        'maxChars must be provided and greater than 0',
+      );
+      expect(() => builder.truncateStoryContent('content', -1)).toThrow(
+        'maxChars must be provided and greater than 0',
+      );
+      expect(() => builder.truncateStoryContent('content', null)).toThrow(
+        'maxChars must be provided and greater than 0',
+      );
     });
   });
 
@@ -723,7 +723,7 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: null,
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       expect(result).toContain('Continue the story naturally');
@@ -737,7 +737,7 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: null,
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       expect(result).toContain('Alice');
@@ -751,7 +751,7 @@ describe('PromptBuilder', () => {
         customInstruction: 'Make it spooky',
         templateText: null,
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       expect(result).toContain('Make it spooky');
@@ -764,7 +764,7 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: null,
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       expect(result).toContain('Rewrite the following text');
@@ -778,7 +778,7 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: null,
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       expect(result).toContain('creative suggestions');
@@ -791,7 +791,7 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: null,
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       expect(result).toContain('opening 3-5 paragraphs');
@@ -804,7 +804,7 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: null,
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       expect(result).toBe('Continue the story.');
@@ -817,7 +817,7 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: null,
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       expect(result).toBe('Continue the story.');
@@ -830,7 +830,7 @@ describe('PromptBuilder', () => {
         customInstruction: 'Do something fun',
         templateText: 'Write about {{charName}}: {{instruction}} -- {{storyContent}} -- {{user}}',
         maxChars: 1000,
-        userName: 'Player'
+        userName: 'Player',
       });
 
       expect(result).toContain('Write about Bob: Do something fun --');
@@ -843,9 +843,9 @@ describe('PromptBuilder', () => {
         storyContent: 'Once upon a time...',
         characterName: '',
         customInstruction: '',
-        templateText: 'Write a story',  // no {{storyContent}} placeholder
+        templateText: 'Write a story', // no {{storyContent}} placeholder
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       expect(result).toContain('Here is the current story so far:');
@@ -863,7 +863,7 @@ describe('PromptBuilder', () => {
         templateText: 'Story: {{storyContent}}',
         maxChars: 1000,
         userName: 'User',
-        imagePreserver
+        imagePreserver,
       });
 
       expect(result).toContain('[WG_IMAGE_0]');
@@ -881,12 +881,14 @@ describe('PromptBuilder', () => {
         templateText: 'Story: {{storyContent}}',
         maxChars: 1000,
         userName: 'User',
-        imagePreserver
+        imagePreserver,
       });
 
       expect(result).toContain('[WG_IMAGE_0]');
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[ImagePreserver] Appended image-preservation note for rewriteThirdPerson')
+        expect.stringContaining(
+          '[ImagePreserver] Appended image-preservation note for rewriteThirdPerson',
+        ),
       );
       consoleSpy.mockRestore();
     });
@@ -902,7 +904,7 @@ describe('PromptBuilder', () => {
         templateText: 'Story: {{storyContent}}',
         maxChars: 1000,
         userName: 'User',
-        imagePreserver
+        imagePreserver,
       });
 
       // Images are still hidden behind placeholders...
@@ -911,7 +913,7 @@ describe('PromptBuilder', () => {
       // the markers would invite images it was never asked for.
       expect(result).not.toContain('IMPORTANT: Preserve any markers');
       expect(consoleSpy).not.toHaveBeenCalledWith(
-        expect.stringContaining('Appended image-preservation note')
+        expect.stringContaining('Appended image-preservation note'),
       );
       consoleSpy.mockRestore();
     });
@@ -927,7 +929,7 @@ describe('PromptBuilder', () => {
         templateText: 'Story: {{storyContent}}',
         maxChars: 1000,
         userName: 'User',
-        imagePreserver
+        imagePreserver,
       });
 
       expect(consoleSpy).not.toHaveBeenCalled();
@@ -941,32 +943,32 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: 'Hello {{user}}!',
         maxChars: 1000,
-        userName: 'Adventurer'
+        userName: 'Adventurer',
       });
 
       expect(result).toContain('Hello Adventurer!');
     });
 
-    it('should fall back to \"the user\" when userName not provided (custom template)', () => {
+    it('should fall back to "the user" when userName not provided (custom template)', () => {
       const result = builder.buildGenerationPrompt('continue', {
         storyContent: '',
         characterName: '',
         customInstruction: '',
         templateText: 'Greetings {{user}}!',
-        maxChars: 1000
+        maxChars: 1000,
         // intentionally no userName
       });
 
       expect(result).toContain('Greetings the user!');
     });
 
-    it('should fall back to \"the user\" when userName not provided (default template)', () => {
+    it('should fall back to "the user" when userName not provided (default template)', () => {
       const result = builder.buildGenerationPrompt('ideate', {
         storyContent: '',
         characterName: '',
         customInstruction: '',
         templateText: null,
-        maxChars: 1000
+        maxChars: 1000,
         // intentionally no userName
       });
 
@@ -983,7 +985,7 @@ describe('PromptBuilder', () => {
         templateText: 'Custom instruction without story placeholder',
         maxChars: 1000,
         userName: 'User',
-        imagePreserver
+        imagePreserver,
       });
 
       expect(result).toContain('[WG_IMAGE_0]');
@@ -1000,7 +1002,7 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: 'Short template',
         maxChars: 100,
-        userName: 'User'
+        userName: 'User',
       });
 
       // Should have truncated story (with ... prefix) plus the instruction
@@ -1015,7 +1017,7 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: 'Just the instruction',
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       expect(result).toBe('Just the instruction');
@@ -1028,7 +1030,7 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: null,
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       // Default continue template has no {{storyContent}}, so story context is added separately
@@ -1044,7 +1046,7 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: 'Custom: no placeholder here',
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       expect(result).toContain('Here is the current story so far:');
@@ -1060,7 +1062,7 @@ describe('PromptBuilder', () => {
         customInstruction: '',
         templateText: null,
         maxChars: 1000,
-        userName: 'User'
+        userName: 'User',
       });
 
       // The story content should be embedded directly, no separate story context
@@ -1101,12 +1103,12 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: { content: 'The story begins.' },
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildPrompts(context, {
         generationType: 'continue',
-        userName: 'Alice'
+        userName: 'Alice',
       });
 
       expect(result).toHaveProperty('system');
@@ -1121,13 +1123,13 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: { content: 'Story content.' },
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildPrompts(context, {
         generationType: 'continue',
         systemPromptTemplate: 'Custom system: {{character.name}}',
-        userName: 'Alice'
+        userName: 'Alice',
       });
 
       expect(result.system).toContain('Custom system: Bob');
@@ -1140,14 +1142,14 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: { content: 'Some story content here.' },
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildPrompts(context, {
         generationType: 'character',
         characterName: 'Bob',
         customInstruction: 'Make it dramatic',
-        userName: 'Alice'
+        userName: 'Alice',
       });
 
       expect(result.user).toContain('Bob');
@@ -1161,13 +1163,13 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: { content: 'Story with ![img](photo.png) inside.' },
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildPrompts(context, {
         generationType: 'continue',
         userName: 'Alice',
-        imagePreserver
+        imagePreserver,
       });
 
       expect(result.user).toContain('[WG_IMAGE_0]');
@@ -1180,14 +1182,14 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: { content: 'Story.' },
-        settings: {}
+        settings: {},
       };
 
       // Explicitly passing null should use default template
       const result = builder.buildPrompts(context, {
         generationType: 'continue',
         systemPromptTemplate: null,
-        userName: 'Alice'
+        userName: 'Alice',
       });
 
       expect(result.system).toContain('=== CHARACTER PROFILE ===');
@@ -1199,12 +1201,12 @@ describe('PromptBuilder', () => {
         characterCards: [characterCard],
         activatedLorebooks: [],
         story: {},
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildPrompts(context, {
         generationType: 'continue',
-        userName: 'Alice'
+        userName: 'Alice',
       });
 
       expect(result.system).toBeTruthy();
@@ -1216,12 +1218,12 @@ describe('PromptBuilder', () => {
         persona,
         characterCards: [characterCard],
         activatedLorebooks: [],
-        settings: {}
+        settings: {},
       };
 
       const result = builder.buildPrompts(context, {
         generationType: 'continue',
-        userName: 'Alice'
+        userName: 'Alice',
       });
 
       expect(result.system).toContain('=== CHARACTER PROFILE ===');
@@ -1233,32 +1235,42 @@ describe('PromptBuilder', () => {
     it('should allow custom section headers', () => {
       const customBuilder = new PromptBuilder({
         sectionHeaders: {
-          characterProfile: '### CHARACTER ###'
-        }
+          characterProfile: '### CHARACTER ###',
+        },
       });
 
-      const result = customBuilder.buildSingleCharacterSection(characterCard, persona, macroProcessor);
+      const result = customBuilder.buildSingleCharacterSection(
+        characterCard,
+        persona,
+        macroProcessor,
+      );
       expect(result).toContain('### CHARACTER ###');
     });
 
     it('should allow disabling asterisk filtering globally', () => {
       const noFilterBuilder = new PromptBuilder({
-        filterAsterisks: false
+        filterAsterisks: false,
       });
 
       characterCard.data.description = '*friendly*';
-      const result = noFilterBuilder.buildSingleCharacterSection(characterCard, persona, macroProcessor);
+      const result = noFilterBuilder.buildSingleCharacterSection(
+        characterCard,
+        persona,
+        macroProcessor,
+      );
       expect(result).toContain('*friendly*');
     });
 
     it('should use custom instruction templates', () => {
       const customBuilder = new PromptBuilder({
         instructionTemplates: {
-          continue: 'Custom continue instruction'
-        }
+          continue: 'Custom continue instruction',
+        },
       });
 
-      expect(customBuilder.config.instructionTemplates.continue).toBe('Custom continue instruction');
+      expect(customBuilder.config.instructionTemplates.continue).toBe(
+        'Custom continue instruction',
+      );
     });
   });
 });

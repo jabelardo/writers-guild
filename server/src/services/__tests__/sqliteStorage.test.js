@@ -36,7 +36,7 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
         showReasoning: true,
         autoSave: false,
         temperature: 1.2,
-        lorebookScanDepth: 3000
+        lorebookScanDepth: 3000,
       });
 
       const settings = await storage.getSettings();
@@ -48,11 +48,11 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
     it('should update only specified settings', async () => {
       await storage.saveSettings({
         showReasoning: true,
-        autoSave: true
+        autoSave: true,
       });
 
       await storage.saveSettings({
-        showReasoning: false
+        showReasoning: false,
       });
 
       const settings = await storage.getSettings();
@@ -100,7 +100,9 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
     });
 
     it('should create story with needsRewritePrompt option', async () => {
-      const story = await storage.createStory('Rewrite Story', 'Desc', { needsRewritePrompt: true });
+      const story = await storage.createStory('Rewrite Story', 'Desc', {
+        needsRewritePrompt: true,
+      });
       expect(story.needsRewritePrompt).toBe(true);
     });
 
@@ -109,7 +111,7 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
 
       const updated = await storage.updateStoryMetadata(story.id, {
         title: 'Updated Title',
-        description: 'Updated Desc'
+        description: 'Updated Desc',
       });
 
       expect(updated.title).toBe('Updated Title');
@@ -154,7 +156,7 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
     it('should update avatar windows', async () => {
       const story = await storage.createStory('Avatar Story', 'Desc');
       const avatarWindows = [
-        { id: 'w1', characterId: 'c1', x: 100, y: 100, width: 200, height: 200 }
+        { id: 'w1', characterId: 'c1', x: 100, y: 100, width: 200, height: 200 },
       ];
 
       await storage.updateStoryAvatarWindows(story.id, avatarWindows);
@@ -182,10 +184,14 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
       const characterData = {
         spec: 'chara_card_v2',
         spec_version: '2.0',
-        data: { name: 'Test Char', description: 'A character' }
+        data: { name: 'Test Char', description: 'A character' },
       };
       await storage.saveCharacter('char-dup-1', characterData, null);
-      await storage.saveCharacter('char-dup-2', { ...characterData, data: { name: 'Char 2' } }, null);
+      await storage.saveCharacter(
+        'char-dup-2',
+        { ...characterData, data: { name: 'Char 2' } },
+        null,
+      );
       await storage.addCharacterToStory(story.id, 'char-dup-1');
       await storage.addCharacterToStory(story.id, 'char-dup-2');
 
@@ -212,7 +218,7 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
       const characterData = {
         spec: 'chara_card_v2',
         spec_version: '2.0',
-        data: { name: 'Persona', description: 'User persona' }
+        data: { name: 'Persona', description: 'User persona' },
       };
       await storage.saveCharacter('persona-dup', characterData, null);
       await storage.setStoryPersona(story.id, 'persona-dup');
@@ -228,7 +234,7 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
     it('should duplicate story with avatar windows', async () => {
       const story = await storage.createStory('Story with avatars', 'Desc');
       const avatarWindows = [
-        { id: 'w1', characterId: 'c1', x: 50, y: 50, width: 150, height: 150 }
+        { id: 'w1', characterId: 'c1', x: 50, y: 50, width: 150, height: 150 },
       ];
       await storage.updateStoryAvatarWindows(story.id, avatarWindows);
 
@@ -244,12 +250,12 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
     it('should create duplicate with new timestamps', async () => {
       const original = await storage.createStory('Old Story', 'Desc');
       // Small delay to ensure timestamps differ
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       const duplicate = await storage.duplicateStory(original.id);
 
       expect(new Date(duplicate.created).getTime()).toBeGreaterThanOrEqual(
-        new Date(original.created).getTime()
+        new Date(original.created).getTime(),
       );
     });
   });
@@ -262,8 +268,8 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
         name: 'Test Character',
         description: 'A test character',
         personality: 'Friendly',
-        first_mes: 'Hello!'
-      }
+        first_mes: 'Hello!',
+      },
     };
 
     it('should save and list characters', async () => {
@@ -291,7 +297,7 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
 
       const updatedData = {
         ...sampleCharacterData,
-        data: { ...sampleCharacterData.data, name: 'Updated Name' }
+        data: { ...sampleCharacterData.data, name: 'Updated Name' },
       };
       await storage.saveCharacter('char-1', updatedData, null);
 
@@ -331,7 +337,7 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
       const characterData = {
         spec: 'chara_card_v2',
         spec_version: '2.0',
-        data: { name: 'Assoc Char', description: 'Test' }
+        data: { name: 'Assoc Char', description: 'Test' },
       };
       characterId = 'assoc-char';
       await storage.saveCharacter(characterId, characterData, null);
@@ -384,13 +390,15 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
     });
 
     it('should throw error when adding character to non-existent story', async () => {
-      await expect(storage.addCharacterToStory('non-existent', characterId))
-        .rejects.toThrow('Story not found');
+      await expect(storage.addCharacterToStory('non-existent', characterId)).rejects.toThrow(
+        'Story not found',
+      );
     });
 
     it('should throw error when adding non-existent character to story', async () => {
-      await expect(storage.addCharacterToStory(storyId, 'non-existent'))
-        .rejects.toThrow('Character not found');
+      await expect(storage.addCharacterToStory(storyId, 'non-existent')).rejects.toThrow(
+        'Character not found',
+      );
     });
   });
 
@@ -403,8 +411,8 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
       recursiveScanning: true,
       entries: [
         { id: 0, keys: ['dragon'], content: 'A mythical creature', enabled: true },
-        { id: 1, keys: ['castle'], content: 'A stone fortress', enabled: true }
-      ]
+        { id: 1, keys: ['castle'], content: 'A stone fortress', enabled: true },
+      ],
     };
 
     it('should save and list lorebooks', async () => {
@@ -435,7 +443,7 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
       const updated = {
         ...sampleLorebook,
         name: 'Updated Lorebook',
-        entries: [{ id: 0, keys: ['unicorn'], content: 'A magical horse', enabled: true }]
+        entries: [{ id: 0, keys: ['unicorn'], content: 'A magical horse', enabled: true }],
       };
       await storage.saveLorebook('lb-1', updated);
 
@@ -466,7 +474,7 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
       await storage.saveLorebook(lorebookId, {
         name: 'Test LB',
         description: 'Test',
-        entries: []
+        entries: [],
       });
     });
 
@@ -494,13 +502,15 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
     });
 
     it('should throw error when adding lorebook to non-existent story', async () => {
-      await expect(storage.addLorebookToStory('non-existent', lorebookId))
-        .rejects.toThrow('Story not found');
+      await expect(storage.addLorebookToStory('non-existent', lorebookId)).rejects.toThrow(
+        'Story not found',
+      );
     });
 
     it('should throw error when adding non-existent lorebook to story', async () => {
-      await expect(storage.addLorebookToStory(storyId, 'non-existent'))
-        .rejects.toThrow('Lorebook not found');
+      await expect(storage.addLorebookToStory(storyId, 'non-existent')).rejects.toThrow(
+        'Lorebook not found',
+      );
     });
   });
 
@@ -511,7 +521,7 @@ describe('SqliteStorageService - Comprehensive Tests', () => {
       apiConfig: { apiKey: 'test-key' },
       generationSettings: { maxTokens: 4000 },
       lorebookSettings: { scanDepth: 2000 },
-      promptTemplates: {}
+      promptTemplates: {},
     };
 
     it('should save and list presets', async () => {

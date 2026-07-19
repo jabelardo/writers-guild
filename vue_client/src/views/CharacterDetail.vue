@@ -141,9 +141,10 @@
               </div>
             </div>
             <div v-else class="section-content">
-              <p class="section-display">
-                {{ character.description || 'No description set' }}
-              </p>
+              <p
+                class="section-display"
+                v-html="displayContent(character.description, 'No description set')"
+              ></p>
             </div>
           </section>
 
@@ -212,9 +213,10 @@
               </div>
             </div>
             <div v-else class="section-content">
-              <p class="section-display">
-                {{ character.personality || 'No personality set' }}
-              </p>
+              <p
+                class="section-display"
+                v-html="displayContent(character.personality, 'No personality set')"
+              ></p>
             </div>
           </section>
 
@@ -245,9 +247,10 @@
               </div>
             </div>
             <div v-else class="section-content">
-              <p class="section-display">
-                {{ character.scenario || 'No scenario set' }}
-              </p>
+              <p
+                class="section-display"
+                v-html="displayContent(character.scenario, 'No scenario set')"
+              ></p>
             </div>
           </section>
 
@@ -280,9 +283,10 @@
               </div>
             </div>
             <div v-else class="section-content">
-              <p class="section-display">
-                {{ character.mes_example || 'No dialogue examples set' }}
-              </p>
+              <p
+                class="section-display"
+                v-html="displayContent(character.mes_example, 'No dialogue examples set')"
+              ></p>
             </div>
           </section>
 
@@ -315,9 +319,10 @@
               </div>
             </div>
             <div v-else class="section-content">
-              <p class="section-display">
-                {{ character.first_mes || 'No first message set' }}
-              </p>
+              <p
+                class="section-display"
+                v-html="displayContent(character.first_mes, 'No first message set')"
+              ></p>
             </div>
           </section>
 
@@ -389,9 +394,7 @@
                     </div>
                   </div>
 
-                  <div v-else class="greeting-content">
-                    {{ greeting }}
-                  </div>
+                  <div v-else class="greeting-content" v-html="renderContent(greeting)"></div>
                 </div>
               </div>
             </div>
@@ -425,6 +428,7 @@ import { useNavigation } from '../composables/useNavigation';
 import { useConfirm } from '../composables/useConfirm';
 import { setPageTitle } from '../router';
 import { useDataCache } from '../composables/useDataCache';
+import { renderContent } from '../utils/renderContent';
 import CharacterCard from '../components/CharacterCard.vue';
 import GreetingSelectorModal from '../components/GreetingSelectorModal.vue';
 
@@ -804,6 +808,11 @@ function getLorebookName(lorebookId) {
   if (!lorebookId) return null;
   const lorebook = availableLorebooks.value.find((lb) => lb.id === lorebookId);
   return lorebook?.name || null;
+}
+
+function displayContent(content, fallback) {
+  const rendered = renderContent(content);
+  return rendered || fallback;
 }
 
 // Alternate greetings management
@@ -1285,5 +1294,36 @@ async function setAsDefaultPersona() {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
+}
+
+/* Embedded images in read-only content — scale to fit the page like story images */
+:deep(.embedded-image) {
+  width: auto;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+@media (max-width: 480px) {
+  :deep(.embedded-image) {
+    max-width: calc(100vw - 2rem);
+    max-height: 70vh;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 1024px) {
+  :deep(.embedded-image) {
+    max-width: calc(100vw - 4rem);
+    max-height: 70vh;
+  }
+}
+
+@media (min-width: 1025px) {
+  :deep(.embedded-image) {
+    max-width: min(100%, calc(100vw - 8rem), 800px);
+    max-height: calc(100vh - 10rem);
+  }
 }
 </style>

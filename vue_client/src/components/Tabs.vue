@@ -24,7 +24,7 @@
 defineProps({
   tabs: {
     type: Array,
-    required: true
+    required: true,
     // tabs: [
     //   { key: 'stories', label: 'Stories', icon: 'fas fa-book' },
     //   { key: 'characters', label: 'Characters', icon: 'fas fa-users' }
@@ -32,8 +32,8 @@ defineProps({
   },
   modelValue: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 });
 
 defineEmits(['update:modelValue']);

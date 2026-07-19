@@ -52,7 +52,7 @@ export async function* parseSSEStream(body, transformDelta, providerName = 'Prov
 
               yield {
                 ...result,
-                finished: finishReason !== null
+                finished: finishReason !== null,
               };
             }
           } catch (e) {
@@ -80,7 +80,7 @@ export const transformers = {
    */
   deepseek: (delta) => ({
     reasoning: delta.reasoning_content || null,
-    content: delta.content || null
+    content: delta.content || null,
   }),
 
   /**
@@ -88,7 +88,7 @@ export const transformers = {
    */
   openai: (delta) => ({
     reasoning: null,
-    content: delta.content || null
+    content: delta.content || null,
   }),
 
   /**
@@ -104,7 +104,7 @@ export const transformers = {
     return {
       reasoning: reasoning,
       content: delta.content || null,
-      usage: data.usage || null
+      usage: data.usage || null,
     };
-  }
+  },
 };

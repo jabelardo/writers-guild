@@ -45,8 +45,8 @@ import { useToast } from '../composables/useToast';
 const props = defineProps({
   story: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['close', 'updated']);
@@ -62,28 +62,28 @@ const columns = [
     label: '',
     sortable: false,
     cellClass: 'checkbox-cell',
-    headerClass: 'checkbox-col'
+    headerClass: 'checkbox-col',
   },
   {
     key: 'name',
     label: 'Name',
     sortable: true,
     cellClass: 'name-cell',
-    format: (value) => value || 'Untitled Lorebook'
+    format: (value) => value || 'Untitled Lorebook',
   },
   {
     key: 'description',
     label: 'Description',
     sortable: true,
-    cellClass: 'description-cell'
+    cellClass: 'description-cell',
   },
   {
     key: 'entryCount',
     label: 'Entries',
     sortable: true,
     cellClass: 'count-cell',
-    format: (value) => value || 0
-  }
+    format: (value) => value || 0,
+  },
 ];
 
 onMounted(async () => {

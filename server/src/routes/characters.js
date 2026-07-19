@@ -14,7 +14,7 @@ import { IMAGE_EXTENSIONS } from '../../../shared/regex-patterns.js';
 import {
   cacheCharacterImages,
   cacheAndRewriteLorebookImages,
-  rewriteCharacterImageUrls
+  rewriteCharacterImageUrls,
 } from '../services/image-cacher.js';
 import { AssetManager } from '../services/asset-manager.js';
 import { sseChannel } from '../utils/sse.js';
@@ -25,7 +25,7 @@ const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+    fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/avif'];
@@ -34,7 +34,7 @@ const upload = multer({
     } else {
       cb(null, true);
     }
-  }
+  },
 });
 
 // Configure multer for JSON uploads (import-json route)
@@ -60,7 +60,7 @@ async function cacheCardImages(characterId, cardData, dataRoot, onProgress) {
     if (imageMap.size > 0) {
       rewriteCharacterImageUrls(cardData, imageMap);
       console.log(
-        `[cacheCardImages] Rewrote ${imageMap.size} image URL(s) for character ${characterId}`
+        `[cacheCardImages] Rewrote ${imageMap.size} image URL(s) for character ${characterId}`,
       );
     }
   } catch (error) {
@@ -104,11 +104,11 @@ async function extractAndSaveEmbeddedLorebook(storageInstance, cardData, dataRoo
       embeddedLorebook = {
         id: lorebookId,
         name: lorebookData.name,
-        entryCount: lorebookData.entries.length
+        entryCount: lorebookData.entries.length,
       };
 
       console.log(
-        `Extracted embedded lorebook from ${cardData.data.name}: ${lorebookData.entries.length} entries`
+        `Extracted embedded lorebook from ${cardData.data.name}: ${lorebookData.entries.length} entries`,
       );
     } catch (error) {
       console.error('Failed to parse embedded lorebook:', error);
@@ -144,11 +144,12 @@ router.get(
 
           // Calculate total words from all stories this character appears in
           const characterStories = allStories.filter(
-            (story) => story.characterIds?.includes(char.id) || story.personaCharacterId === char.id
+            (story) =>
+              story.characterIds?.includes(char.id) || story.personaCharacterId === char.id,
           );
           const totalWords = characterStories.reduce(
             (sum, story) => sum + (story.wordCount || 0),
-            0
+            0,
           );
 
           // Provide full image, small thumbnail, and medium thumbnail URLs
@@ -169,7 +170,7 @@ router.get(
             thumbnailUrl, // 96x96 — table rows / recent bar
             thumbnailMediumUrl, // 256x384 — picker cards / floating avatar
             created: cardData.metadata?.created || null,
-            totalWords
+            totalWords,
           };
         } catch (error) {
           console.error(`Failed to load character ${char.id}:`, error);
@@ -182,10 +183,10 @@ router.get(
             thumbnailUrl: null,
             thumbnailMediumUrl: null,
             created: null,
-            totalWords: 0
+            totalWords: 0,
           };
         }
-      })
+      }),
     );
 
     // Sort characters alphabetically by name (case-insensitive)
@@ -196,7 +197,7 @@ router.get(
     });
 
     res.json({ characters: charactersWithData });
-  })
+  }),
 );
 
 // Upload new character to global library (import PNG)
@@ -224,7 +225,7 @@ router.post(
         storage,
         cardData,
         req.app.locals.dataRoot,
-        channel.send
+        channel.send,
       );
 
       // Save character data as JSON and image separately
@@ -238,8 +239,8 @@ router.post(
           description: cardData.data?.description || '',
           imageUrl: `/api/characters/${characterId}/image`,
           firstMessage: cardData.data?.first_mes || '',
-          embeddedLorebook: embeddedLorebook // Will be null if no lorebook
-        }
+          embeddedLorebook: embeddedLorebook, // Will be null if no lorebook
+        },
       });
     } catch (error) {
       // Once the stream is open the status code is already sent, so the error
@@ -250,7 +251,7 @@ router.post(
       }
       throw new AppError(`Invalid character card: ${error.message}`, 400);
     }
-  })
+  }),
 );
 
 // Create new character from scratch (no PNG import)
@@ -284,8 +285,8 @@ router.post(
         tags: [],
         creator: '',
         character_version: '1.0',
-        extensions: {}
-      }
+        extensions: {},
+      },
     };
 
     // Cache any external images in the card data, then save so the rewritten
@@ -300,9 +301,9 @@ router.post(
       name: characterData.data.name,
       description: characterData.data.description,
       imageUrl: null,
-      firstMessage: characterData.data.first_mes
+      firstMessage: characterData.data.first_mes,
     });
-  })
+  }),
 );
 
 // Create character with optional image
@@ -351,8 +352,8 @@ router.post(
         tags: [],
         creator: '',
         character_version: '1.0',
-        extensions: {}
-      }
+        extensions: {},
+      },
     };
 
     // Cache any external images in the card data, then save so the rewritten
@@ -370,9 +371,9 @@ router.post(
       name: characterData.data.name,
       description: characterData.data.description,
       imageUrl: hasImage ? `/api/characters/${characterId}/image` : null,
-      firstMessage: characterData.data.first_mes
+      firstMessage: characterData.data.first_mes,
     });
-  })
+  }),
 );
 
 /**
@@ -414,7 +415,7 @@ router.post(
         storage,
         cardData,
         req.app.locals.dataRoot,
-        channel.send
+        channel.send,
       );
 
       // Save character data (no image for JSON import)
@@ -428,8 +429,8 @@ router.post(
           description: cardData.data.description || '',
           imageUrl: null,
           firstMessage: cardData.data.first_mes || '',
-          embeddedLorebook: embeddedLorebook
-        }
+          embeddedLorebook: embeddedLorebook,
+        },
       });
     } catch (error) {
       // Once the stream is open the status line is already sent, so the failure
@@ -440,7 +441,7 @@ router.post(
       }
       throw error;
     }
-  })
+  }),
 );
 
 // Import character from URL (CHUB, or direct image URL)
@@ -480,7 +481,7 @@ router.post(
           storage,
           cardData,
           req.app.locals.dataRoot,
-          channel.send
+          channel.send,
         );
 
         // Save character data as JSON and image separately
@@ -494,8 +495,8 @@ router.post(
             description: cardData.data?.description || '',
             imageUrl: `/api/characters/${characterId}/image`,
             firstMessage: cardData.data?.first_mes || '',
-            embeddedLorebook: embeddedLorebook
-          }
+            embeddedLorebook: embeddedLorebook,
+          },
         });
         return;
       } catch (error) {
@@ -511,7 +512,7 @@ router.post(
     if (!url.includes('chub.ai')) {
       throw new AppError(
         'Only CHUB URLs and direct image URLs (PNG, JPEG, WebP) are currently supported',
-        400
+        400,
       );
     }
 
@@ -529,7 +530,7 @@ router.post(
         storage,
         characterData,
         req.app.locals.dataRoot,
-        channel.send
+        channel.send,
       );
 
       // Save character with image
@@ -545,8 +546,8 @@ router.post(
           description: characterData.data.description,
           imageUrl: hasImage ? `/api/characters/${characterId}/image` : null,
           firstMessage: characterData.data.first_mes,
-          embeddedLorebook: embeddedLorebook
-        }
+          embeddedLorebook: embeddedLorebook,
+        },
       });
     } catch (error) {
       if (channel.streaming) {
@@ -555,7 +556,7 @@ router.post(
       }
       throw new AppError(`Failed to import character: ${error.message}`, 400);
     }
-  })
+  }),
 );
 
 // Get character image
@@ -572,7 +573,7 @@ router.get(
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
     res.send(imageBuffer);
-  })
+  }),
 );
 
 // Get character thumbnail (96x96 optimized avatar)
@@ -589,7 +590,7 @@ router.get(
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
     res.send(thumbnailBuffer);
-  })
+  }),
 );
 
 // Get character medium thumbnail (256x384, 2:3 — for picker cards / floating avatar)
@@ -606,7 +607,7 @@ router.get(
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
     res.send(thumbnailBuffer);
-  })
+  }),
 );
 
 // Get character data (JSON)
@@ -617,7 +618,7 @@ router.get(
     const cardData = await storage.getCharacter(characterId);
 
     res.json({ character: cardData });
-  })
+  }),
 );
 
 // Update character data
@@ -634,7 +635,7 @@ router.put(
       mes_example,
       system_prompt,
       alternate_greetings,
-      ursceal_lorebook_id
+      ursceal_lorebook_id,
     } = req.body;
 
     // Get existing character data
@@ -669,9 +670,9 @@ router.put(
     res.json({
       id: characterId,
       name: existingData.data.name,
-      description: existingData.data.description
+      description: existingData.data.description,
     });
-  })
+  }),
 );
 
 // Update character with new image
@@ -706,7 +707,7 @@ router.put(
       mes_example,
       system_prompt,
       alternate_greetings,
-      ursceal_lorebook_id
+      ursceal_lorebook_id,
     } = parsedData;
 
     if (name !== undefined) existingData.data.name = name.trim();
@@ -741,9 +742,9 @@ router.put(
       id: characterId,
       name: existingData.data.name,
       description: existingData.data.description,
-      imageUrl: hasImage ? `/api/characters/${characterId}/image` : null
+      imageUrl: hasImage ? `/api/characters/${characterId}/image` : null,
     });
-  })
+  }),
 );
 
 // Get stories that include this character
@@ -756,11 +757,11 @@ router.get(
     const allStories = await storage.listStories();
     const characterStories = allStories.filter(
       (story) =>
-        story.characterIds?.includes(characterId) || story.personaCharacterId === characterId
+        story.characterIds?.includes(characterId) || story.personaCharacterId === characterId,
     );
 
     res.json({ stories: characterStories });
-  })
+  }),
 );
 
 // Delete character from global library
@@ -773,14 +774,14 @@ router.delete(
     const allStories = await storage.listStories();
     const storiesUsingChar = allStories.filter(
       (story) =>
-        story.characterIds?.includes(characterId) || story.personaCharacterId === characterId
+        story.characterIds?.includes(characterId) || story.personaCharacterId === characterId,
     );
 
     if (storiesUsingChar.length > 0) {
       const storyTitles = storiesUsingChar.map((s) => s.title).join(', ');
       throw new AppError(
         `Cannot delete character: Used in ${storiesUsingChar.length} story(ies): ${storyTitles}. Remove from stories first.`,
-        409
+        409,
       );
     }
 
@@ -795,7 +796,7 @@ router.delete(
     }
 
     res.json({ success: true });
-  })
+  }),
 );
 
 export default router;

@@ -28,8 +28,8 @@ import CharacterAvatar from './CharacterAvatar.vue';
 defineProps({
   lorebooks: {
     type: Array,
-    required: true
-  }
+    required: true,
+  },
 });
 
 defineEmits(['edit', 'delete']);
@@ -40,34 +40,34 @@ const columns = [
     label: '',
     sortable: false,
     headerClass: 'avatar-col',
-    cellClass: 'avatar-cell'
+    cellClass: 'avatar-cell',
   },
   {
     key: 'name',
     label: 'Name',
     sortable: true,
     cellClass: 'name-cell',
-    format: (value) => value || 'Untitled Lorebook'
+    format: (value) => value || 'Untitled Lorebook',
   },
   {
     key: 'description',
     label: 'Description',
     sortable: true,
-    cellClass: 'description-cell'
+    cellClass: 'description-cell',
   },
   {
     key: 'entryCount',
     label: 'Entries',
     sortable: true,
     cellClass: 'count-cell',
-    format: (value) => value || 0
+    format: (value) => value || 0,
   },
   {
     key: 'actions',
     label: 'Actions',
     sortable: false,
-    headerClass: 'actions-col'
-  }
+    headerClass: 'actions-col',
+  },
 ];
 </script>
 

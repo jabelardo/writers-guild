@@ -74,6 +74,6 @@ export function sseChannel(req, res) {
       }
       write({ type: 'error', error: message });
       res.end();
-    }
+    },
   };
 }

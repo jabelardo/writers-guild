@@ -57,7 +57,7 @@ export class CharacterParser {
     const textData = Buffer.concat([
       keywordBytes,
       Buffer.from([0]), // Null separator
-      textBytes
+      textBytes,
     ]);
 
     // Calculate CRC for tEXt chunk
@@ -69,7 +69,7 @@ export class CharacterParser {
       this.uint32ToBuffer(textData.length),
       textType,
       textData,
-      this.uint32ToBuffer(textCRC)
+      this.uint32ToBuffer(textCRC),
     ]);
 
     // Minimal 1x1 transparent PNG
@@ -89,7 +89,7 @@ export class CharacterParser {
       6, // Color type: RGBA
       0, // Compression: deflate
       0, // Filter: adaptive
-      0 // Interlace: none
+      0, // Interlace: none
     ]);
     const ihdrType = Buffer.from('IHDR', 'latin1');
     const ihdrCRC = this.calculateCRC(Buffer.concat([ihdrType, ihdrData]));
@@ -97,7 +97,7 @@ export class CharacterParser {
       this.uint32ToBuffer(ihdrData.length),
       ihdrType,
       ihdrData,
-      this.uint32ToBuffer(ihdrCRC)
+      this.uint32ToBuffer(ihdrCRC),
     ]);
 
     // IDAT chunk (1x1 transparent pixel)
@@ -108,7 +108,7 @@ export class CharacterParser {
       this.uint32ToBuffer(idatData.length),
       idatType,
       idatData,
-      this.uint32ToBuffer(idatCRC)
+      this.uint32ToBuffer(idatCRC),
     ]);
 
     // IEND chunk
@@ -117,7 +117,7 @@ export class CharacterParser {
     const iendChunk = Buffer.concat([
       this.uint32ToBuffer(0),
       iendType,
-      this.uint32ToBuffer(iendCRC)
+      this.uint32ToBuffer(iendCRC),
     ]);
 
     // Combine all chunks
@@ -177,7 +177,7 @@ export class CharacterParser {
         dataView.getUint8(offset),
         dataView.getUint8(offset + 1),
         dataView.getUint8(offset + 2),
-        dataView.getUint8(offset + 3)
+        dataView.getUint8(offset + 3),
       );
       offset += 4;
 
@@ -248,7 +248,7 @@ export class CharacterParser {
       return {
         spec: 'chara_card_v2',
         spec_version: '2.0',
-        data: rawData
+        data: rawData,
       };
     }
 

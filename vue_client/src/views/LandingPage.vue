@@ -257,7 +257,7 @@ const {
   removeCharacterLocally,
   removeLorebookLocally,
   removePresetLocally,
-  setDefaultPresetIdLocally
+  setDefaultPresetIdLocally,
 } = useDataCache();
 
 // Character Stories Modal
@@ -283,7 +283,7 @@ const characterStoriesForModal = computed(() => {
   return stories.value.filter(
     (story) =>
       story.characterIds?.includes(selectedCharacter.value.id) ||
-      story.personaCharacterId === selectedCharacter.value.id
+      story.personaCharacterId === selectedCharacter.value.id,
   );
 });
 
@@ -312,7 +312,7 @@ const tabs = [
   { key: 'stories', label: 'Stories', icon: 'fas fa-book' },
   { key: 'characters', label: 'Characters', icon: 'fas fa-users' },
   { key: 'lorebooks', label: 'Lorebooks', icon: 'fas fa-book-open' },
-  { key: 'presets', label: 'Presets', icon: 'fas fa-sliders' }
+  { key: 'presets', label: 'Presets', icon: 'fas fa-sliders' },
 ];
 
 // Active tab with localStorage persistence
@@ -399,7 +399,7 @@ async function deleteStory(story) {
   const confirmed = await confirm({
     message: `Delete story "${story.title}"? This cannot be undone.`,
     confirmText: 'Delete Story',
-    variant: 'danger'
+    variant: 'danger',
   });
 
   if (!confirmed) return;
@@ -426,7 +426,7 @@ async function deleteCharacter(character) {
   const confirmed = await confirm({
     message: msg,
     confirmText: 'Delete Character',
-    variant: 'danger'
+    variant: 'danger',
   });
 
   if (!confirmed) return;
@@ -445,7 +445,7 @@ async function deleteLorebook(lorebook) {
   const confirmed = await confirm({
     message: `Delete lorebook "${lorebook.name}"?\n\nThis cannot be undone.`,
     confirmText: 'Delete Lorebook',
-    variant: 'danger'
+    variant: 'danger',
   });
 
   if (!confirmed) return;
@@ -516,7 +516,7 @@ async function duplicatePreset(presetId) {
 
     const duplicateData = {
       ...originalPreset,
-      name: `${originalPreset.name} (Copy)`
+      name: `${originalPreset.name} (Copy)`,
     };
     delete duplicateData.id;
 
@@ -538,7 +538,7 @@ async function deletePreset(preset) {
   const confirmed = await confirm({
     message: `Delete preset "${preset.name}"?\n\nThis cannot be undone.`,
     confirmText: 'Delete Preset',
-    variant: 'danger'
+    variant: 'danger',
   });
 
   if (!confirmed) return;

@@ -71,7 +71,7 @@ async function createLorebook() {
 
     const result = await lorebooksAPI.create(
       lorebookName.value.trim(),
-      lorebookDescription.value.trim()
+      lorebookDescription.value.trim(),
     );
 
     toast.success(`Successfully created "${result.name}"!`);

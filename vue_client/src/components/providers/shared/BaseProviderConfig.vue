@@ -41,28 +41,28 @@ import PromptTemplates from './PromptTemplates.vue';
 const props = defineProps({
   config: {
     type: Object,
-    required: true
+    required: true,
   },
   showMaxContext: {
     type: Boolean,
-    default: true
+    default: true,
   },
   contextRange: {
     type: Object,
-    default: () => ({ min: 32000, max: 128000 })
+    default: () => ({ min: 32000, max: 128000 }),
   },
   contextHelpText: {
     type: String,
-    default: 'Context window size (32k-128k tokens). Larger = more story content but higher costs.'
+    default: 'Context window size (32k-128k tokens). Larger = more story content but higher costs.',
   },
   provider: {
     type: String,
-    required: true
+    required: true,
   },
   model: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 });
 
 const emit = defineEmits(['update:config']);
@@ -74,7 +74,7 @@ const localGenerationSettings = computed({
   },
   set(value) {
     emit('update:config', { ...props.config, generationSettings: value });
-  }
+  },
 });
 
 const localLorebookSettings = computed({
@@ -83,7 +83,7 @@ const localLorebookSettings = computed({
   },
   set(value) {
     emit('update:config', { ...props.config, lorebookSettings: value });
-  }
+  },
 });
 
 const localPromptTemplates = computed({
@@ -97,12 +97,12 @@ const localPromptTemplates = computed({
       instruction: templates.instruction ?? null,
       rewriteThirdPerson: templates.rewriteThirdPerson ?? null,
       ideate: templates.ideate ?? null,
-      storyStarter: templates.storyStarter ?? null
+      storyStarter: templates.storyStarter ?? null,
     };
   },
   set(value) {
     emit('update:config', { ...props.config, promptTemplates: value });
-  }
+  },
 });
 </script>
 

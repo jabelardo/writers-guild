@@ -17,12 +17,12 @@ import { computed } from 'vue';
 const props = defineProps({
   character: {
     type: Object,
-    required: true
+    required: true,
   },
   clickable: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
 const emit = defineEmits(['click']);
@@ -38,7 +38,7 @@ const avatarStyle = computed(() => {
     return {
       backgroundImage: `url(${url})`,
       backgroundSize: 'cover',
-      backgroundPosition: 'center top'
+      backgroundPosition: 'center top',
     };
   }
   return {};

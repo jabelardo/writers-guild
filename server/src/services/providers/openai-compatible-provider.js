@@ -29,7 +29,7 @@ export class OpenAICompatibleProvider extends OpenAIProvider {
       ...config,
       baseURL: config.baseURL || DEFAULT_BASE_URL,
       apiKey: config.apiKey || PLACEHOLDER_TOKEN,
-      model: config.model || ''
+      model: config.model || '',
     };
 
     super(compatConfig);
@@ -46,7 +46,7 @@ export class OpenAICompatibleProvider extends OpenAIProvider {
       visionAPI: false,
       // Conservative default — most local models are 4k–32k. Users set the
       // real value per preset.
-      maxContextWindow: 8192
+      maxContextWindow: 8192,
     };
   }
 
@@ -80,8 +80,8 @@ export class OpenAICompatibleProvider extends OpenAIProvider {
       const response = await fetch(`${this.baseURL}/models`, {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${this.apiKey}`
-        }
+          Authorization: `Bearer ${this.apiKey}`,
+        },
       });
 
       if (!response.ok) {
@@ -97,7 +97,7 @@ export class OpenAICompatibleProvider extends OpenAIProvider {
         description: model.owned_by ? `owned_by: ${model.owned_by}` : '',
         contextLength: 0, // not exposed by the OpenAI /models shape
         created: model.created,
-        ownedBy: model.owned_by
+        ownedBy: model.owned_by,
       }));
     } catch (error) {
       console.error('Failed to fetch OpenAI-compatible models:', error);
@@ -113,7 +113,7 @@ export class OpenAICompatibleProvider extends OpenAIProvider {
         message: this.hasUserToken
           ? 'Endpoint rejected the Bearer token. Check it matches what the server expects.'
           : 'Endpoint requires authentication. Add a Bearer token in preset settings.',
-        original: error
+        original: error,
       };
     }
     if (
@@ -124,7 +124,7 @@ export class OpenAICompatibleProvider extends OpenAIProvider {
       return {
         code: 'CONNECTION_ERROR',
         message: `Could not reach endpoint at ${this.baseURL}`,
-        original: error
+        original: error,
       };
     }
     // Fall through to the OpenAIProvider's parsing for rate-limit/quota cases,

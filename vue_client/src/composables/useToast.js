@@ -23,7 +23,7 @@ export function useToast() {
       message,
       type,
       duration,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     };
 
     toasts.value.push(toast);
@@ -79,6 +79,6 @@ export function useToast() {
     info,
     warning,
     remove,
-    clear
+    clear,
   };
 }

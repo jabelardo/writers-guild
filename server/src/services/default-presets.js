@@ -104,7 +104,7 @@ export const DEFAULT_PROMPT_TEMPLATES = {
     'Instead of continuing the story, please provide 3-5 creative suggestions for what {{user}} could do next to move this story forward. Consider the characters, setting, and current situation. Format your response as a numbered list of actionable ideas.',
 
   storyStarter:
-    'Write the opening 3-5 paragraphs for a new story. Establish the setting, introduce the characters naturally, and create an engaging hook that draws readers in. Focus on vivid scene-setting and character introduction without rushing into action. End at a natural point that invites continuation.'
+    'Write the opening 3-5 paragraphs for a new story. Establish the setting, introduce the characters naturally, and create an engaging hook that draws readers in. Focus on vivid scene-setting and character introduction without rushing into action. End at a natural point that invites continuation.',
 };
 
 export function getDefaultPresets() {
@@ -115,7 +115,7 @@ export function getDefaultPresets() {
       apiConfig: {
         baseURL: 'http://localhost:1234/v1',
         apiKey: '',
-        model: ''
+        model: '',
       },
       generationSettings: {
         maxTokens: 4000,
@@ -125,13 +125,13 @@ export function getDefaultPresets() {
         top_p: null,
         frequency_penalty: null,
         presence_penalty: null,
-        stop_sequences: []
+        stop_sequences: [],
       },
       lorebookSettings: {
         scanDepth: 2000,
         tokenBudget: 1800,
         recursionDepth: 3,
-        enableRecursion: true
+        enableRecursion: true,
       },
       promptTemplates: {
         systemPrompt: null,
@@ -140,8 +140,8 @@ export function getDefaultPresets() {
         instruction: null,
         rewriteThirdPerson: null,
         ideate: null,
-        storyStarter: null
-      }
+        storyStarter: null,
+      },
     },
     ollama: {
       name: 'Ollama',
@@ -149,7 +149,7 @@ export function getDefaultPresets() {
       apiConfig: {
         baseURL: 'http://localhost:11434',
         password: '',
-        model: ''
+        model: '',
       },
       generationSettings: {
         maxTokens: 200,
@@ -166,13 +166,13 @@ export function getDefaultPresets() {
         mirostat: null,
         mirostat_tau: null,
         mirostat_eta: null,
-        stop_sequences: []
+        stop_sequences: [],
       },
       lorebookSettings: {
         scanDepth: 2000,
         tokenBudget: 1800,
         recursionDepth: 3,
-        enableRecursion: true
+        enableRecursion: true,
       },
       promptTemplates: {
         systemPrompt: null,
@@ -181,8 +181,8 @@ export function getDefaultPresets() {
         instruction: null,
         rewriteThirdPerson: null,
         ideate: null,
-        storyStarter: null
-      }
+        storyStarter: null,
+      },
     },
     koboldcpp: {
       name: 'KoboldCpp',
@@ -190,7 +190,7 @@ export function getDefaultPresets() {
       apiConfig: {
         baseURL: 'http://localhost:5001/api',
         password: '',
-        model: ''
+        model: '',
       },
       generationSettings: {
         maxTokens: 200,
@@ -210,13 +210,13 @@ export function getDefaultPresets() {
         mirostat: null,
         mirostat_tau: null,
         mirostat_eta: null,
-        stop_sequences: []
+        stop_sequences: [],
       },
       lorebookSettings: {
         scanDepth: 2000,
         tokenBudget: 1800,
         recursionDepth: 3,
-        enableRecursion: true
+        enableRecursion: true,
       },
       promptTemplates: {
         systemPrompt: null,
@@ -225,8 +225,8 @@ export function getDefaultPresets() {
         instruction: null,
         rewriteThirdPerson: null,
         ideate: null,
-        storyStarter: null
-      }
+        storyStarter: null,
+      },
     },
     aihorde: {
       name: 'Default',
@@ -237,7 +237,7 @@ export function getDefaultPresets() {
         models: [], // Empty by default - users should select from available models
         workerBlacklist: [],
         trustedWorkers: false,
-        slowWorkers: true
+        slowWorkers: true,
       },
       generationSettings: {
         maxTokens: 512, // AI Horde typically allows less
@@ -262,13 +262,13 @@ export function getDefaultPresets() {
         min_p: null,
         dynatemp_range: null,
         dynatemp_exponent: null,
-        smoothing_factor: null
+        smoothing_factor: null,
       },
       lorebookSettings: {
         scanDepth: 2000,
         tokenBudget: 1800,
         recursionDepth: 3,
-        enableRecursion: true
+        enableRecursion: true,
       },
       promptTemplates: {
         systemPrompt: null,
@@ -277,9 +277,9 @@ export function getDefaultPresets() {
         instruction: null,
         rewriteThirdPerson: null,
         ideate: null,
-        storyStarter: null
-      }
-    }
+        storyStarter: null,
+      },
+    },
   };
 }
 
@@ -293,7 +293,7 @@ export function createPresetFromSettings(settings) {
     apiConfig: {
       apiKey: settings.apiKey || '',
       baseURL: 'https://api.deepseek.com/v1',
-      model: 'deepseek-v4-flash'
+      model: 'deepseek-v4-flash',
     },
     generationSettings: {
       maxTokens: settings.maxTokens || 4000,
@@ -319,13 +319,13 @@ export function createPresetFromSettings(settings) {
       min_p: null,
       dynatemp_range: null,
       dynatemp_exponent: null,
-      smoothing_factor: null
+      smoothing_factor: null,
     },
     lorebookSettings: {
       scanDepth: settings.lorebookScanDepth || 2000,
       tokenBudget: settings.lorebookTokenBudget || 1800,
       recursionDepth: settings.lorebookRecursionDepth || 3,
-      enableRecursion: settings.lorebookEnableRecursion !== false
+      enableRecursion: settings.lorebookEnableRecursion !== false,
     },
     promptTemplates: {
       systemPrompt: null,
@@ -334,7 +334,7 @@ export function createPresetFromSettings(settings) {
       instruction: null,
       rewriteThirdPerson: null,
       ideate: null,
-      storyStarter: null
-    }
+      storyStarter: null,
+    },
   };
 }

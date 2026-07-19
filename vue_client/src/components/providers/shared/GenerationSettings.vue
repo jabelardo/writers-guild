@@ -70,28 +70,28 @@ import { computed } from 'vue';
 const props = defineProps({
   modelValue: {
     type: Object,
-    required: true
+    required: true,
   },
   showMaxContext: {
     type: Boolean,
-    default: true
+    default: true,
   },
   contextRange: {
     type: Object,
-    default: () => ({ min: 32000, max: 128000 })
+    default: () => ({ min: 32000, max: 128000 }),
   },
   contextHelpText: {
     type: String,
-    default: 'Context window size (32k-128k tokens). Larger = more story content but higher costs.'
+    default: 'Context window size (32k-128k tokens). Larger = more story content but higher costs.',
   },
   provider: {
     type: String,
-    default: ''
+    default: '',
   },
   model: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -110,7 +110,7 @@ const localSettings = computed({
   },
   set(value) {
     emit('update:modelValue', value);
-  }
+  },
 });
 </script>
 

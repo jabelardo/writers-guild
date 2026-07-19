@@ -87,14 +87,14 @@ function handleImportProgress(event) {
       completed: prev?.completed ?? 0,
       total: (prev?.total ?? 0) + event.total,
       failed: prev?.failed ?? 0,
-      stage: event.entityType === 'lorebooks' ? 'lorebook' : 'character'
+      stage: event.entityType === 'lorebooks' ? 'lorebook' : 'character',
     };
   } else if (event.phase === 'image' && imageProgress.value) {
     const p = imageProgress.value;
     imageProgress.value = {
       ...p,
       completed: p.completed + 1,
-      failed: p.failed + (event.ok ? 0 : 1)
+      failed: p.failed + (event.ok ? 0 : 1),
     };
   }
 }
@@ -117,7 +117,7 @@ function reportImportResult(name) {
   const p = imageProgress.value;
   if (p && p.failed > 0) {
     toast.warning(
-      `Imported "${name}" — ${p.failed} of ${p.total} image(s) could not be cached and still point at their original host`
+      `Imported "${name}" — ${p.failed} of ${p.total} image(s) could not be cached and still point at their original host`,
     );
     return;
   }
@@ -138,7 +138,7 @@ async function importFromURL() {
     importing.value = 'url';
     const result = await charactersAPI.importFromURL(
       characterUrl.value.trim(),
-      handleImportProgress
+      handleImportProgress,
     );
 
     reportImportResult(result.name);

@@ -33,12 +33,12 @@ import CharacterAvatar from './CharacterAvatar.vue';
 const props = defineProps({
   stories: {
     type: Array,
-    required: true
+    required: true,
   },
   characters: {
     type: Array,
-    default: () => []
-  }
+    default: () => [],
+  },
 });
 
 defineEmits(['open', 'duplicate', 'delete']);
@@ -49,28 +49,28 @@ const columns = [
     label: '',
     sortable: false,
     headerClass: 'avatar-col',
-    cellClass: 'avatar-cell'
+    cellClass: 'avatar-cell',
   },
   {
     key: 'title',
     label: 'Title',
     sortable: true,
     cellClass: 'title-cell',
-    format: (value) => value || 'Untitled Story'
+    format: (value) => value || 'Untitled Story',
   },
   {
     key: 'created',
     label: 'Created',
     sortable: true,
     cellClass: 'date-cell',
-    format: (value) => new Date(value).toLocaleDateString()
+    format: (value) => new Date(value).toLocaleDateString(),
   },
   {
     key: 'modified',
     label: 'Modified',
     sortable: true,
     cellClass: 'date-cell',
-    format: (value, row) => new Date(value || row.created).toLocaleDateString()
+    format: (value, row) => new Date(value || row.created).toLocaleDateString(),
   },
   {
     key: 'wordCount',
@@ -78,14 +78,14 @@ const columns = [
     sortable: true,
     headerClass: 'text-right',
     cellClass: 'wordcount-cell',
-    format: (value) => (value || 0).toLocaleString()
+    format: (value) => (value || 0).toLocaleString(),
   },
   {
     key: 'actions',
     label: 'Actions',
     sortable: false,
-    headerClass: 'actions-col'
-  }
+    headerClass: 'actions-col',
+  },
 ];
 
 function getStoryCharacters(story) {

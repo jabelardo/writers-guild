@@ -10,7 +10,7 @@ describe('OpenAICompatibleProvider', () => {
     global.fetch = mockFetch;
     provider = new OpenAICompatibleProvider({
       baseURL: 'http://localhost:1234/v1',
-      model: 'llama-3.2-3b-instruct'
+      model: 'llama-3.2-3b-instruct',
     });
   });
 
@@ -69,7 +69,7 @@ describe('OpenAICompatibleProvider', () => {
 
     it('puts max_tokens (not max_completion_tokens) in request body', () => {
       const body = provider.buildRequestBody([{ role: 'user', content: 'hi' }], {
-        maxTokens: 1234
+        maxTokens: 1234,
       });
       expect(body.max_tokens).toBe(1234);
       expect(body.max_completion_tokens).toBeUndefined();
@@ -84,9 +84,9 @@ describe('OpenAICompatibleProvider', () => {
           data: [
             { id: 'llama-3.2-3b-instruct', owned_by: 'lmstudio' },
             { id: 'Meta-Llama-3.1-8B-Instruct-GGUF', owned_by: 'lmstudio' },
-            { id: 'qwen2.5-coder-7b-instruct', owned_by: 'lmstudio' }
-          ]
-        })
+            { id: 'qwen2.5-coder-7b-instruct', owned_by: 'lmstudio' },
+          ],
+        }),
       });
 
       const models = await provider.getAvailableModels();
@@ -95,7 +95,7 @@ describe('OpenAICompatibleProvider', () => {
       expect(models.map((m) => m.id)).toEqual([
         'llama-3.2-3b-instruct',
         'Meta-Llama-3.1-8B-Instruct-GGUF',
-        'qwen2.5-coder-7b-instruct'
+        'qwen2.5-coder-7b-instruct',
       ]);
       expect(models[0].description).toBe('owned_by: lmstudio');
     });
@@ -103,7 +103,7 @@ describe('OpenAICompatibleProvider', () => {
     it('works without a user-provided token (sends placeholder Bearer)', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ data: [{ id: 'm' }] })
+        json: async () => ({ data: [{ id: 'm' }] }),
       });
       await provider.getAvailableModels();
       expect(mockFetch.mock.calls[0][1].headers.Authorization).toBe('Bearer no-key');
@@ -112,11 +112,11 @@ describe('OpenAICompatibleProvider', () => {
     it('sends the user-provided Bearer when set', async () => {
       const p = new OpenAICompatibleProvider({
         baseURL: 'http://localhost:1234/v1',
-        apiKey: 'real-token'
+        apiKey: 'real-token',
       });
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ data: [{ id: 'm' }] })
+        json: async () => ({ data: [{ id: 'm' }] }),
       });
       await p.getAvailableModels();
       expect(mockFetch.mock.calls[0][1].headers.Authorization).toBe('Bearer real-token');
@@ -131,7 +131,7 @@ describe('OpenAICompatibleProvider', () => {
     it('handles a missing data field defensively', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({})
+        json: async () => ({}),
       });
       const models = await provider.getAvailableModels();
       expect(models).toEqual([]);
@@ -142,7 +142,7 @@ describe('OpenAICompatibleProvider', () => {
     it('maps 401 to AUTH_ERROR with token-set message when user provided one', () => {
       const p = new OpenAICompatibleProvider({
         baseURL: 'http://localhost:1234/v1',
-        apiKey: 'real-token'
+        apiKey: 'real-token',
       });
       const err = p.parseError(new Error('401 Unauthorized'));
       expect(err.code).toBe('AUTH_ERROR');
@@ -172,8 +172,8 @@ describe('OpenAICompatibleProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: 'hello from local model' } }]
-        })
+          choices: [{ message: { content: 'hello from local model' } }],
+        }),
       });
 
       const result = await provider.generate('SYS', 'USR', { maxTokens: 256 });
@@ -183,7 +183,7 @@ describe('OpenAICompatibleProvider', () => {
       expect(body.model).toBe('llama-3.2-3b-instruct');
       expect(body.messages).toEqual([
         { role: 'system', content: 'SYS' },
-        { role: 'user', content: 'USR' }
+        { role: 'user', content: 'USR' },
       ]);
       expect(body.max_tokens).toBe(256);
       expect(result.content).toBe('hello from local model');

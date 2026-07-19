@@ -194,7 +194,7 @@ const DEFAULT_TEMPLATES = ref({
   instruction: '',
   rewriteThirdPerson: '',
   ideate: '',
-  storyStarter: ''
+  storyStarter: '',
 });
 
 const isLoading = ref(true);
@@ -206,7 +206,7 @@ onMounted(async () => {
     // Merge with existing defaults to ensure new fields are preserved
     DEFAULT_TEMPLATES.value = {
       ...DEFAULT_TEMPLATES.value,
-      ...templates
+      ...templates,
     };
   } catch (error) {
     console.error('Failed to load default templates:', error);
@@ -218,8 +218,8 @@ onMounted(async () => {
 const props = defineProps({
   modelValue: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -234,7 +234,7 @@ const getTemplates = () => {
     instruction: templates.instruction ?? null,
     rewriteThirdPerson: templates.rewriteThirdPerson ?? null,
     ideate: templates.ideate ?? null,
-    storyStarter: templates.storyStarter ?? null
+    storyStarter: templates.storyStarter ?? null,
   };
 };
 
@@ -242,7 +242,7 @@ const getTemplates = () => {
 const updateTemplate = (key, value) => {
   emit('update:modelValue', {
     ...getTemplates(),
-    [key]: value
+    [key]: value,
   });
 };
 
@@ -251,32 +251,32 @@ const updateTemplate = (key, value) => {
 const localTemplates = reactive({
   systemPrompt: computed({
     get: () => getTemplates().systemPrompt,
-    set: (value) => updateTemplate('systemPrompt', value)
+    set: (value) => updateTemplate('systemPrompt', value),
   }),
   continue: computed({
     get: () => getTemplates().continue,
-    set: (value) => updateTemplate('continue', value)
+    set: (value) => updateTemplate('continue', value),
   }),
   character: computed({
     get: () => getTemplates().character,
-    set: (value) => updateTemplate('character', value)
+    set: (value) => updateTemplate('character', value),
   }),
   instruction: computed({
     get: () => getTemplates().instruction,
-    set: (value) => updateTemplate('instruction', value)
+    set: (value) => updateTemplate('instruction', value),
   }),
   rewriteThirdPerson: computed({
     get: () => getTemplates().rewriteThirdPerson,
-    set: (value) => updateTemplate('rewriteThirdPerson', value)
+    set: (value) => updateTemplate('rewriteThirdPerson', value),
   }),
   ideate: computed({
     get: () => getTemplates().ideate,
-    set: (value) => updateTemplate('ideate', value)
+    set: (value) => updateTemplate('ideate', value),
   }),
   storyStarter: computed({
     get: () => getTemplates().storyStarter,
-    set: (value) => updateTemplate('storyStarter', value)
-  })
+    set: (value) => updateTemplate('storyStarter', value),
+  }),
 });
 
 // Check if a prompt is customized (not null)

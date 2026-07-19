@@ -67,8 +67,8 @@ import { useDataCache } from '../composables/useDataCache';
 const props = defineProps({
   story: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['close', 'updated']);
@@ -109,7 +109,7 @@ const filteredCharacters = computed(() => {
   }
 
   // Sort: selected characters and persona first, then alphabetically
-  return [...characters].sort((a, b) => {
+  return [...characters].toSorted((a, b) => {
     const aSelected = isCharacterInStory(a.id) || isPersona(a.id);
     const bSelected = isCharacterInStory(b.id) || isPersona(b.id);
 

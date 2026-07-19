@@ -125,7 +125,7 @@ export class AssetManager {
       originalUrl,
       hash: path.parse(filename).name,
       filename,
-      mimeType
+      mimeType,
     });
   }
 

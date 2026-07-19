@@ -42,7 +42,7 @@ describe('SqliteStorageService - History Operations', () => {
         personaCharacterId: null,
         configPresetId: null,
         created: now,
-        modified: now
+        modified: now,
       });
 
       // Verify no history exists yet
@@ -76,7 +76,7 @@ describe('SqliteStorageService - History Operations', () => {
         personaCharacterId: null,
         configPresetId: null,
         created: now,
-        modified: now
+        modified: now,
       });
 
       // Call getHistoryStatus multiple times
@@ -104,7 +104,7 @@ describe('SqliteStorageService - History Operations', () => {
         personaCharacterId: null,
         configPresetId: null,
         created: now,
-        modified: now
+        modified: now,
       });
 
       // Call getHistoryStatus
@@ -132,7 +132,7 @@ describe('SqliteStorageService - History Operations', () => {
         personaCharacterId: null,
         configPresetId: null,
         created: now,
-        modified: now
+        modified: now,
       });
 
       // Call saveToHistory directly with some content
@@ -168,7 +168,7 @@ describe('SqliteStorageService - History Operations', () => {
         personaCharacterId: null,
         configPresetId: null,
         created: now,
-        modified: now
+        modified: now,
       });
 
       const result = await storage.undoStoryContent(storyId);
@@ -190,7 +190,7 @@ describe('SqliteStorageService - History Operations', () => {
         personaCharacterId: null,
         configPresetId: null,
         created: now,
-        modified: now
+        modified: now,
       });
 
       // Initialize history
@@ -218,7 +218,7 @@ describe('SqliteStorageService - History Operations', () => {
         personaCharacterId: null,
         configPresetId: null,
         created: now,
-        modified: now
+        modified: now,
       });
 
       const result = await storage.redoStoryContent(storyId);
@@ -240,7 +240,7 @@ describe('SqliteStorageService - History Operations', () => {
         personaCharacterId: null,
         configPresetId: null,
         created: now,
-        modified: now
+        modified: now,
       });
 
       // Initialize history

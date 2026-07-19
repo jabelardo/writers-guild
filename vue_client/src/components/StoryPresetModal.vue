@@ -82,12 +82,12 @@ import { useToast } from '../composables/useToast';
 const props = defineProps({
   storyId: {
     type: String,
-    required: true
+    required: true,
   },
   currentPresetId: {
     type: String,
-    default: null
-  }
+    default: null,
+  },
 });
 
 const emit = defineEmits(['close', 'updated']);
@@ -117,7 +117,7 @@ async function loadPresets() {
   try {
     const [presetsData, defaultData] = await Promise.all([
       presetsAPI.list(),
-      presetsAPI.getDefaultId()
+      presetsAPI.getDefaultId(),
     ]);
     presets.value = presetsData.presets || [];
     defaultPresetId.value = defaultData.defaultPresetId;
@@ -131,7 +131,7 @@ async function handlePresetChange() {
   try {
     // Update story's preset
     await storiesAPI.updateMetadata(props.storyId, {
-      configPresetId: selectedPresetId.value
+      configPresetId: selectedPresetId.value,
     });
 
     currentStoryPresetId.value = selectedPresetId.value;
@@ -186,7 +186,7 @@ function getProviderDisplayName(provider) {
     aihorde: 'AI Horde',
     openai: 'OpenAI',
     anthropic: 'Claude',
-    openrouter: 'OpenRouter'
+    openrouter: 'OpenRouter',
   };
   return names[provider] || provider;
 }

@@ -80,7 +80,7 @@ export class TemplateEngine {
       const positions = [
         { type: 'if', pos: ifStart === -1 ? Infinity : ifStart },
         { type: 'unless', pos: unlessStart === -1 ? Infinity : unlessStart },
-        { type: 'each', pos: eachStart === -1 ? Infinity : eachStart }
+        { type: 'each', pos: eachStart === -1 ? Infinity : eachStart },
       ];
 
       // Sort by position to find the earliest
@@ -122,7 +122,7 @@ export class TemplateEngine {
             result,
             '{{#unless ',
             '{{/unless}}',
-            contentStart
+            contentStart,
           );
 
           if (closePos !== -1) {
@@ -157,7 +157,7 @@ export class TemplateEngine {
                   '@index_1': index + 1,
                   '@first': index === 0,
                   '@last': index === array.length - 1,
-                  '@length': array.length
+                  '@length': array.length,
                 };
 
                 // Recursively process the content with item context
@@ -199,7 +199,7 @@ export class TemplateEngine {
    * Process variable substitutions
    */
   processVariables(template, context) {
-    return template.replace(/\{\{([^#\/][^}]*)\}\}/g, (match, path) => {
+    return template.replace(/\{\{([^#/][^}]*)\}\}/g, (match, path) => {
       const trimmedPath = path.trim();
       const value = this.getNestedValue(trimmedPath, context);
 

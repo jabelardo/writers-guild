@@ -57,11 +57,11 @@ async function importCharacterFromFile(storage, filePath) {
         embeddedLorebook = {
           id: lorebookId,
           name: lorebookData.name,
-          entryCount: lorebookData.entries.length
+          entryCount: lorebookData.entries.length,
         };
 
         console.log(
-          `✓ Extracted embedded lorebook from ${cardData.data.name}: ${lorebookData.entries.length} entries`
+          `✓ Extracted embedded lorebook from ${cardData.data.name}: ${lorebookData.entries.length} entries`,
         );
       } catch (error) {
         console.error('Failed to parse embedded lorebook:', error);
@@ -82,7 +82,7 @@ async function importCharacterFromFile(storage, filePath) {
     return {
       id: characterId,
       name: cardData.data?.name || 'Unknown',
-      embeddedLorebook: embeddedLorebook
+      embeddedLorebook: embeddedLorebook,
     };
   } catch (error) {
     console.error(`Failed to import character from ${filePath}:`, error.message);
@@ -139,7 +139,7 @@ async function createDefaultStory(storage, character) {
     const story = await storage.createStory(
       `A Story with ${character.name}`,
       `An adventure featuring ${character.name}`,
-      { needsRewritePrompt: hasFirstMessage }
+      { needsRewritePrompt: hasFirstMessage },
     );
 
     // Add character to story
@@ -158,7 +158,7 @@ async function createDefaultStory(storage, character) {
         const promptBuilder = new PromptBuilder();
         const macroProcessor = new MacroProcessor({
           userName: 'User',
-          charName: characterCard.data?.name || 'Character'
+          charName: characterCard.data?.name || 'Character',
         });
 
         let processed = characterCard.data.first_mes;
@@ -177,7 +177,7 @@ async function createDefaultStory(storage, character) {
 
     return {
       id: story.id,
-      title: story.title
+      title: story.title,
     };
   } catch (error) {
     console.error('Failed to create default story:', error.message);
@@ -244,7 +244,7 @@ async function generateMissingThumbnails(storage) {
             : storage.generateThumbnail(imageBuffer),
           hasMedium
             ? storage.getCharacterThumbnailMedium(char.id)
-            : storage.generateMediumThumbnail(imageBuffer)
+            : storage.generateMediumThumbnail(imageBuffer),
         ]);
 
         await storage.setCharacterThumbnails(char.id, small, medium);
@@ -284,7 +284,7 @@ export async function migrate(storage) {
       return {
         success: true,
         migrated: false,
-        message: 'Migration not needed'
+        message: 'Migration not needed',
       };
     }
 
@@ -305,13 +305,13 @@ export async function migrate(storage) {
 
       await storage.savePreset(deepseekPresetId, {
         ...deepseekPreset,
-        id: deepseekPresetId
+        id: deepseekPresetId,
       });
 
       createdPresets.push({
         id: deepseekPresetId,
         name: deepseekPreset.name,
-        provider: deepseekPreset.provider
+        provider: deepseekPreset.provider,
       });
 
       // Set this as default since user was already using it
@@ -330,13 +330,13 @@ export async function migrate(storage) {
       const presetId = uuidv4();
       await storage.savePreset(presetId, {
         ...presetData,
-        id: presetId
+        id: presetId,
       });
 
       createdPresets.push({
         id: presetId,
         name: presetData.name,
-        provider: presetData.provider
+        provider: presetData.provider,
       });
 
       // If no default set yet and this is aihorde, set it as default (free option)
@@ -374,7 +374,7 @@ export async function migrate(storage) {
       defaultStories,
       message: hasExistingConfig
         ? 'Migrated existing configuration to preset system'
-        : 'Created default presets for fresh installation'
+        : 'Created default presets for fresh installation',
     };
   } catch (error) {
     console.error('Migration failed:', error);
@@ -382,7 +382,7 @@ export async function migrate(storage) {
       success: false,
       migrated: false,
       error: error.message,
-      message: 'Migration failed'
+      message: 'Migration failed',
     };
   }
 }

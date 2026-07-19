@@ -43,12 +43,12 @@ import { useDataCache } from '../composables/useDataCache';
 const props = defineProps({
   characters: {
     type: Array,
-    required: true
+    required: true,
   },
   stories: {
     type: Array,
-    default: () => []
-  }
+    default: () => [],
+  },
 });
 
 defineEmits(['continue', 'new-story', 'edit', 'delete']);
@@ -93,28 +93,28 @@ const columns = [
     label: '',
     sortable: false,
     headerClass: 'avatar-col',
-    cellClass: 'avatar-cell'
+    cellClass: 'avatar-cell',
   },
   {
     key: 'name',
     label: 'Name',
     sortable: true,
     cellClass: 'name-cell',
-    format: (value) => value || 'Unknown'
+    format: (value) => value || 'Unknown',
   },
   {
     key: 'created',
     label: 'Created',
     sortable: true,
     cellClass: 'date-cell',
-    format: (value) => (value ? new Date(value).toLocaleDateString() : 'Unknown')
+    format: (value) => (value ? new Date(value).toLocaleDateString() : 'Unknown'),
   },
   {
     key: 'storyCount',
     label: 'Stories',
     sortable: true,
     cellClass: 'count-cell',
-    sortFn: sortByStoryCount
+    sortFn: sortByStoryCount,
   },
   {
     key: 'totalWords',
@@ -122,13 +122,13 @@ const columns = [
     sortable: true,
     headerClass: 'text-right',
     cellClass: 'wordcount-cell',
-    format: (value) => (value || 0).toLocaleString()
+    format: (value) => (value || 0).toLocaleString(),
   },
   {
     key: 'actions',
     label: 'Actions',
     sortable: false,
-    headerClass: 'actions-col'
-  }
+    headerClass: 'actions-col',
+  },
 ];
 </script>

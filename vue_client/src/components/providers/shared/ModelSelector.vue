@@ -77,39 +77,39 @@
 const props = defineProps({
   models: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   selectedModel: {
     type: String,
-    default: ''
+    default: '',
   },
   loading: {
     type: Boolean,
-    default: false
+    default: false,
   },
   error: {
     type: String,
-    default: null
+    default: null,
   },
   description: {
     type: String,
-    default: ''
+    default: '',
   },
   emptyStateText: {
     type: String,
-    default: 'Click "Fetch Available Models" to see available models.'
+    default: 'Click "Fetch Available Models" to see available models.',
   },
   canFetch: {
     type: Boolean,
-    default: true
+    default: true,
   },
   requiresApiKey: {
     type: Boolean,
-    default: true
+    default: true,
   },
   listClass: {
     type: String,
-    default: ''
+    default: '',
   },
   formatContext: {
     type: Function,
@@ -121,8 +121,8 @@ const props = defineProps({
         return `${(length / 1000).toFixed(0)}k context`;
       }
       return `${length} tokens`;
-    }
-  }
+    },
+  },
 });
 
 const emit = defineEmits(['fetch', 'select']);

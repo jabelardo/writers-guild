@@ -9,7 +9,7 @@ import { SqliteStorageService } from '../services/sqliteStorage.js';
 import {
   getDefaultPresets,
   DEFAULT_SYSTEM_PROMPT_TEMPLATE,
-  DEFAULT_PROMPT_TEMPLATES
+  DEFAULT_PROMPT_TEMPLATES,
 } from '../services/default-presets.js';
 import { AIHordeProvider } from '../services/providers/aihorde-provider.js';
 import { OpenRouterProvider } from '../services/providers/openrouter-provider.js';
@@ -38,7 +38,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const presets = await storage.listPresets();
     res.json({ presets });
-  })
+  }),
 );
 
 // Get a specific preset
@@ -47,7 +47,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const preset = await storage.getPreset(req.params.id);
     res.json({ preset });
-  })
+  }),
 );
 
 // Create a new preset
@@ -57,21 +57,21 @@ router.post(
     const presetId = uuidv4();
     const presetData = {
       ...req.body,
-      id: presetId
+      id: presetId,
     };
 
     // Validate required fields
     if (!presetData.name || !presetData.provider) {
       return res.status(400).json({
-        error: 'Preset name and provider are required'
+        error: 'Preset name and provider are required',
       });
     }
 
     await storage.savePreset(presetId, presetData);
     res.status(201).json({
-      preset: presetData
+      preset: presetData,
     });
-  })
+  }),
 );
 
 // Update an existing preset
@@ -85,20 +85,20 @@ router.put(
       await storage.getPreset(presetId);
     } catch (error) {
       return res.status(404).json({
-        error: `Preset not found: ${presetId}`
+        error: `Preset not found: ${presetId}`,
       });
     }
 
     const presetData = {
       ...req.body,
-      id: presetId
+      id: presetId,
     };
 
     await storage.savePreset(presetId, presetData);
     res.json({
-      preset: presetData
+      preset: presetData,
     });
-  })
+  }),
 );
 
 // Delete a preset
@@ -112,16 +112,16 @@ router.delete(
       await storage.getPreset(presetId);
     } catch (error) {
       return res.status(404).json({
-        error: `Preset not found: ${presetId}`
+        error: `Preset not found: ${presetId}`,
       });
     }
 
     await storage.deletePreset(presetId);
     res.json({
       success: true,
-      message: `Preset ${presetId} deleted`
+      message: `Preset ${presetId} deleted`,
     });
-  })
+  }),
 );
 
 // Get default preset ID
@@ -130,7 +130,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const defaultPresetId = await storage.getDefaultPresetId();
     res.json({ defaultPresetId });
-  })
+  }),
 );
 
 // Set default preset
@@ -141,7 +141,7 @@ router.put(
 
     if (!presetId) {
       return res.status(400).json({
-        error: 'Preset ID is required'
+        error: 'Preset ID is required',
       });
     }
 
@@ -150,16 +150,16 @@ router.put(
       await storage.getPreset(presetId);
     } catch (error) {
       return res.status(404).json({
-        error: `Preset not found: ${presetId}`
+        error: `Preset not found: ${presetId}`,
       });
     }
 
     await storage.setDefaultPresetId(presetId);
     res.json({
       success: true,
-      defaultPresetId: presetId
+      defaultPresetId: presetId,
     });
-  })
+  }),
 );
 
 // Initialize default presets (can be called manually or during migration)
@@ -169,24 +169,24 @@ router.post(
     const defaults = getDefaultPresets();
     const createdPresets = [];
 
-    for (const [key, presetData] of Object.entries(defaults)) {
+    for (const presetData of Object.values(defaults)) {
       const presetId = uuidv4();
       await storage.savePreset(presetId, {
         ...presetData,
-        id: presetId
+        id: presetId,
       });
       createdPresets.push({
         id: presetId,
         name: presetData.name,
-        provider: presetData.provider
+        provider: presetData.provider,
       });
     }
 
     res.json({
       success: true,
-      presets: createdPresets
+      presets: createdPresets,
     });
-  })
+  }),
 );
 
 // Get default prompt templates (single source of truth for both server and client)
@@ -195,9 +195,9 @@ router.get(
   asyncHandler(async (req, res) => {
     res.json({
       systemPrompt: DEFAULT_SYSTEM_PROMPT_TEMPLATE,
-      ...DEFAULT_PROMPT_TEMPLATES
+      ...DEFAULT_PROMPT_TEMPLATES,
     });
-  })
+  }),
 );
 
 // Get available AI Horde models (with caching)
@@ -217,7 +217,7 @@ router.get(
         models: hordeModelsCache,
         autoSelected: hordeAutoSelectedCache,
         cached: true,
-        cacheAge: Math.floor((now - hordeCacheTime) / 1000)
+        cacheAge: Math.floor((now - hordeCacheTime) / 1000),
       });
     }
 
@@ -236,16 +236,16 @@ router.get(
       res.json({
         models,
         autoSelected, // Array of recommended model names
-        cached: false
+        cached: false,
       });
     } catch (error) {
       console.error('Failed to fetch AI Horde models:', error);
       res.status(500).json({
         error: 'Failed to fetch models from AI Horde',
-        message: error.message
+        message: error.message,
       });
     }
-  })
+  }),
 );
 
 // Get AI Horde worker data (for context limit calculations)
@@ -261,10 +261,10 @@ router.get(
       console.error('Failed to fetch AI Horde workers:', error);
       res.status(500).json({
         error: 'Failed to fetch workers from AI Horde',
-        message: error.message
+        message: error.message,
       });
     }
-  })
+  }),
 );
 
 // Get available OpenRouter models (with caching)
@@ -282,7 +282,7 @@ router.get(
       return res.json({
         models: openrouterModelsCache,
         cached: true,
-        cacheAge: Math.floor((now - openrouterCacheTime) / 1000)
+        cacheAge: Math.floor((now - openrouterCacheTime) / 1000),
       });
     }
 
@@ -291,7 +291,7 @@ router.get(
 
     if (!apiKey) {
       return res.status(400).json({
-        error: 'API key required to fetch OpenRouter models'
+        error: 'API key required to fetch OpenRouter models',
       });
     }
 
@@ -306,16 +306,16 @@ router.get(
 
       res.json({
         models,
-        cached: false
+        cached: false,
       });
     } catch (error) {
       console.error('Failed to fetch OpenRouter models:', error);
       res.status(500).json({
         error: 'Failed to fetch models from OpenRouter',
-        message: error.message
+        message: error.message,
       });
     }
-  })
+  }),
 );
 
 // Get available OpenAI models (with caching)
@@ -333,7 +333,7 @@ router.get(
       return res.json({
         models: openaiModelsCache,
         cached: true,
-        cacheAge: Math.floor((now - openaiCacheTime) / 1000)
+        cacheAge: Math.floor((now - openaiCacheTime) / 1000),
       });
     }
 
@@ -342,7 +342,7 @@ router.get(
 
     if (!apiKey) {
       return res.status(400).json({
-        error: 'API key required to fetch OpenAI models'
+        error: 'API key required to fetch OpenAI models',
       });
     }
 
@@ -357,16 +357,16 @@ router.get(
 
       res.json({
         models,
-        cached: false
+        cached: false,
       });
     } catch (error) {
       console.error('Failed to fetch OpenAI models:', error);
       res.status(500).json({
         error: 'Failed to fetch models from OpenAI',
-        message: error.message
+        message: error.message,
       });
     }
-  })
+  }),
 );
 
 // Get available Anthropic models (with caching)
@@ -384,7 +384,7 @@ router.get(
       return res.json({
         models: anthropicModelsCache,
         cached: true,
-        cacheAge: Math.floor((now - anthropicCacheTime) / 1000)
+        cacheAge: Math.floor((now - anthropicCacheTime) / 1000),
       });
     }
 
@@ -393,7 +393,7 @@ router.get(
 
     if (!apiKey) {
       return res.status(400).json({
-        error: 'API key required to fetch Anthropic models'
+        error: 'API key required to fetch Anthropic models',
       });
     }
 
@@ -408,16 +408,16 @@ router.get(
 
       res.json({
         models,
-        cached: false
+        cached: false,
       });
     } catch (error) {
       console.error('Failed to fetch Anthropic models:', error);
       res.status(500).json({
         error: 'Failed to fetch models from Anthropic',
-        message: error.message
+        message: error.message,
       });
     }
-  })
+  }),
 );
 
 // Get available DeepSeek models (with caching)
@@ -435,7 +435,7 @@ router.get(
       return res.json({
         models: deepseekModelsCache,
         cached: true,
-        cacheAge: Math.floor((now - deepseekCacheTime) / 1000)
+        cacheAge: Math.floor((now - deepseekCacheTime) / 1000),
       });
     }
 
@@ -444,7 +444,7 @@ router.get(
 
     if (!apiKey) {
       return res.status(400).json({
-        error: 'API key required to fetch DeepSeek models'
+        error: 'API key required to fetch DeepSeek models',
       });
     }
 
@@ -459,16 +459,16 @@ router.get(
 
       res.json({
         models,
-        cached: false
+        cached: false,
       });
     } catch (error) {
       console.error('Failed to fetch DeepSeek models:', error);
       res.status(500).json({
         error: 'Failed to fetch models from DeepSeek',
-        message: error.message
+        message: error.message,
       });
     }
-  })
+  }),
 );
 
 // Inspect a KoboldCpp endpoint: returns loaded model + configured max context length.
@@ -481,7 +481,7 @@ router.get(
 
     if (!baseURL) {
       return res.status(400).json({
-        error: 'baseURL query parameter is required'
+        error: 'baseURL query parameter is required',
       });
     }
 
@@ -494,10 +494,10 @@ router.get(
       res.status(502).json({
         error: 'Could not reach KoboldCpp',
         message: `Could not reach KoboldCpp at ${baseURL}. Is it running?`,
-        detail: error.message
+        detail: error.message,
       });
     }
-  })
+  }),
 );
 
 // Inspect a specific Ollama model: pulls architectural max context + the
@@ -524,10 +524,10 @@ router.get(
       res.status(502).json({
         error: 'Could not fetch model info',
         message: `Could not fetch info for "${name}" from Ollama at ${baseURL}.`,
-        detail: error.message
+        detail: error.message,
       });
     }
-  })
+  }),
 );
 
 // List models installed on a user-provided Ollama instance. No caching — local
@@ -540,7 +540,7 @@ router.get(
 
     if (!baseURL) {
       return res.status(400).json({
-        error: 'baseURL query parameter is required'
+        error: 'baseURL query parameter is required',
       });
     }
 
@@ -553,10 +553,10 @@ router.get(
       res.status(502).json({
         error: 'Could not reach Ollama',
         message: `Could not reach Ollama at ${baseURL}. Is it running?`,
-        detail: error.message
+        detail: error.message,
       });
     }
-  })
+  }),
 );
 
 // List models advertised by an OpenAI-compatible endpoint. Unlike /openai/models,
@@ -582,10 +582,10 @@ router.get(
       res.status(502).json({
         error: 'Could not reach endpoint',
         message: `Could not reach OpenAI-compatible endpoint at ${baseURL}. Is it running?`,
-        detail: error.message
+        detail: error.message,
       });
     }
-  })
+  }),
 );
 
 export default router;

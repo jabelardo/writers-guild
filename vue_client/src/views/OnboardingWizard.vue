@@ -92,7 +92,7 @@
             class="provider-option"
             :class="{
               selected: selectedProvider === provider.id,
-              recommended: provider.recommended
+              recommended: provider.recommended,
             }"
             role="radio"
             :aria-checked="selectedProvider === provider.id"
@@ -372,7 +372,7 @@ const loadingMessage = ref('');
 // Step 2: Persona
 const persona = ref({
   firstName: '',
-  description: ''
+  description: '',
 });
 
 // Step 3: Provider
@@ -391,43 +391,43 @@ const providers = [
     name: 'DeepSeek',
     description:
       'High-quality reasoning model with excellent creative writing capabilities. Very affordable.',
-    recommended: true
+    recommended: true,
   },
   {
     id: 'openai',
     name: 'OpenAI',
-    description: 'GPT-4o and other models. Reliable and well-established.'
+    description: 'GPT-4o and other models. Reliable and well-established.',
   },
   {
     id: 'anthropic',
     name: 'Anthropic',
-    description: 'Claude models known for nuanced, thoughtful responses.'
+    description: 'Claude models known for nuanced, thoughtful responses.',
   },
   {
     id: 'openrouter',
     name: 'OpenRouter',
-    description: 'Access to multiple AI models through a unified API.'
+    description: 'Access to multiple AI models through a unified API.',
   },
   {
     id: 'aihorde',
     name: 'AI Horde',
-    description: 'Free, community-powered AI. No API key required.'
+    description: 'Free, community-powered AI. No API key required.',
   },
   {
     id: 'koboldcpp',
     name: 'KoboldCpp',
-    description: "Connect to a local KoboldCpp endpoint you're already running."
+    description: "Connect to a local KoboldCpp endpoint you're already running.",
   },
   {
     id: 'ollama',
     name: 'Ollama',
-    description: "Connect to a local Ollama endpoint you're already running."
+    description: "Connect to a local Ollama endpoint you're already running.",
   },
   {
     id: 'openaicompatible',
     name: 'OpenAI Compatible',
-    description: "Any local server that speaks OpenAI's API (LM Studio, llama.cpp, vLLM)."
-  }
+    description: "Any local server that speaks OpenAI's API (LM Studio, llama.cpp, vLLM).",
+  },
 ];
 
 // Step 4: Import defaults
@@ -497,11 +497,11 @@ async function createPersona() {
   try {
     const result = await onboardingAPI.createPersona(
       persona.value.firstName.trim(),
-      persona.value.description.trim()
+      persona.value.description.trim(),
     );
     setupSummary.value = {
       ...setupSummary.value,
-      persona: result.name
+      persona: result.name,
     };
     nextStep();
   } catch (error) {
@@ -549,17 +549,17 @@ async function createPreset() {
     } else if (selectedProvider.value === 'openaicompatible') {
       extraConfig = {
         baseURL: oaiCompatBaseURL.value.trim(),
-        apiKey: oaiCompatApiKey.value.trim()
+        apiKey: oaiCompatApiKey.value.trim(),
       };
     }
     const result = await onboardingAPI.createPreset(
       selectedProvider.value,
       apiKey.value.trim(),
-      extraConfig
+      extraConfig,
     );
     setupSummary.value = {
       ...setupSummary.value,
-      provider: result.name
+      provider: result.name,
     };
     nextStep();
   } catch (error) {
@@ -579,7 +579,7 @@ async function handleImportChoice() {
       setupSummary.value = {
         ...setupSummary.value,
         importedCharacters: result.importedCharacters,
-        createdStories: result.createdStories
+        createdStories: result.createdStories,
       };
     }
 

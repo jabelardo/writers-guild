@@ -108,7 +108,7 @@ async function createCharacter() {
       description: characterDescription.value.trim(),
       personality: characterPersonality.value.trim(),
       scenario: characterScenario.value.trim(),
-      first_mes: characterFirstMessage.value.trim()
+      first_mes: characterFirstMessage.value.trim(),
     };
 
     const result = await charactersAPI.create(data);

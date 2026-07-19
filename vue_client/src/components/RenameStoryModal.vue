@@ -48,8 +48,8 @@ import { useToast } from '../composables/useToast';
 const props = defineProps({
   story: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['close', 'updated']);
@@ -77,7 +77,7 @@ async function saveStory() {
 
     await storiesAPI.updateMetadata(props.story.id, {
       title: storyTitle.value.trim(),
-      scenario: storyScenario.value.trim()
+      scenario: storyScenario.value.trim(),
     });
 
     toast.success('Story updated successfully');

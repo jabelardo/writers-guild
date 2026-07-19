@@ -193,12 +193,12 @@ import { useConfirm } from '../composables/useConfirm';
 const props = defineProps({
   lorebookId: {
     type: String,
-    required: true
+    required: true,
   },
   entry: {
     type: Object,
-    default: null
-  }
+    default: null,
+  },
 });
 
 const emit = defineEmits(['close', 'saved']);
@@ -222,7 +222,7 @@ const formData = ref({
   selectiveLogic: 0,
   probability: 100,
   useProbability: false,
-  group: ''
+  group: '',
 });
 
 // Comma-separated string inputs
@@ -251,7 +251,7 @@ onMounted(() => {
       selectiveLogic: props.entry.selectiveLogic ?? 0,
       probability: props.entry.probability ?? 100,
       useProbability: props.entry.useProbability ?? false,
-      group: props.entry.group || ''
+      group: props.entry.group || '',
     };
     keysInput.value = (props.entry.keys || []).join(', ');
     secondaryKeysInput.value = (props.entry.secondaryKeys || []).join(', ');
@@ -296,7 +296,7 @@ async function saveEntry() {
       selectiveLogic: formData.value.selectiveLogic,
       probability: formData.value.probability,
       useProbability: formData.value.useProbability,
-      group: formData.value.group
+      group: formData.value.group,
     };
 
     if (isNewEntry.value) {
@@ -320,7 +320,7 @@ async function deleteEntry() {
   const confirmed = await confirm({
     message: 'Delete this entry? This cannot be undone.',
     confirmText: 'Delete Entry',
-    variant: 'danger'
+    variant: 'danger',
   });
 
   if (!confirmed) return;

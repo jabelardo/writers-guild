@@ -37,7 +37,7 @@ import { ref, computed, watch } from 'vue';
 const props = defineProps({
   columns: {
     type: Array,
-    required: true
+    required: true,
     // columns: [
     //   { key: 'name', label: 'Name', sortable: true },
     //   { key: 'actions', label: 'Actions', sortable: false }
@@ -45,20 +45,20 @@ const props = defineProps({
   },
   data: {
     type: Array,
-    required: true
+    required: true,
   },
   rowKey: {
     type: String,
-    default: 'id'
+    default: 'id',
   },
   defaultSort: {
     type: String,
-    default: null
+    default: null,
   },
   defaultSortAsc: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
 const sortColumn = ref(props.defaultSort || props.columns.find((c) => c.sortable)?.key);
@@ -74,7 +74,7 @@ watch(
   () => {
     sortValueCache = new WeakMap();
   },
-  { flush: 'sync' }
+  { flush: 'sync' },
 );
 
 // Get cached sort value for a row

@@ -10,8 +10,8 @@ describe('CharacterParser', () => {
         data: {
           name: 'Test Character',
           description: 'A test character',
-          personality: 'Friendly'
-        }
+          personality: 'Friendly',
+        },
       };
 
       const pngBuffer = CharacterParser.createPNGWithCharacterData(characterData);
@@ -30,8 +30,8 @@ describe('CharacterParser', () => {
         data: {
           name: 'Roundtrip Test',
           description: 'Testing roundtrip',
-          first_mes: 'Hello!'
-        }
+          first_mes: 'Hello!',
+        },
       };
 
       const pngBuffer = CharacterParser.createPNGWithCharacterData(originalData);
@@ -62,7 +62,7 @@ describe('CharacterParser', () => {
         CharacterParser.uint32ToBuffer(ihdrData.length),
         ihdrType,
         ihdrData,
-        CharacterParser.uint32ToBuffer(ihdrCRC)
+        CharacterParser.uint32ToBuffer(ihdrCRC),
       ]);
 
       // IEND chunk
@@ -71,13 +71,13 @@ describe('CharacterParser', () => {
       const iendChunk = Buffer.concat([
         CharacterParser.uint32ToBuffer(0),
         iendType,
-        CharacterParser.uint32ToBuffer(iendCRC)
+        CharacterParser.uint32ToBuffer(iendCRC),
       ]);
 
       const minimalPNG = Buffer.concat([pngSignature, ihdrChunk, iendChunk]);
 
       await expect(CharacterParser.parseCard(minimalPNG)).rejects.toThrow(
-        'No character data found'
+        'No character data found',
       );
     });
   });
@@ -100,7 +100,7 @@ describe('CharacterParser', () => {
       const dataView = new DataView(
         jpegBuffer.buffer,
         jpegBuffer.byteOffset,
-        jpegBuffer.byteLength
+        jpegBuffer.byteLength,
       );
       expect(CharacterParser.isPNG(dataView)).toBe(false);
     });

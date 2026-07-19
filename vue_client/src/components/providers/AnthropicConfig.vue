@@ -45,8 +45,8 @@ import { useModelSelector } from '../../composables/useModelSelector';
 const props = defineProps({
   config: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['update:config']);
@@ -58,7 +58,7 @@ const localApiConfig = computed({
   },
   set(value) {
     emit('update:config', { ...props.config, apiConfig: value });
-  }
+  },
 });
 
 // Use the shared model selector composable
@@ -67,7 +67,7 @@ const {
   loadingModels,
   modelsError,
   fetchAvailableModels,
-  selectModel: baseSelectModel
+  selectModel: baseSelectModel,
 } = useModelSelector({
   apiConfig: localApiConfig,
   fetchModels: presetsAPI.getAnthropicModels,
@@ -77,14 +77,14 @@ const {
       ...props.config,
       apiConfig: {
         ...localApiConfig.value,
-        model: updates.model
+        model: updates.model,
       },
       generationSettings: {
         ...props.config.generationSettings,
-        maxContextTokens: updates.contextLength
-      }
+        maxContextTokens: updates.contextLength,
+      },
     });
-  }
+  },
 });
 
 // Wrapper to handle model selection

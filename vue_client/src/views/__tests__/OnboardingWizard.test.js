@@ -9,35 +9,35 @@ const { mockPush, mockOnboardingAPI, mockToast, mockMarkOnboardingComplete } = v
     createPersona: vi.fn(),
     createPreset: vi.fn(),
     importDefaults: vi.fn(),
-    complete: vi.fn()
+    complete: vi.fn(),
   },
   mockToast: {
     error: vi.fn(),
-    success: vi.fn()
+    success: vi.fn(),
   },
-  mockMarkOnboardingComplete: vi.fn()
+  mockMarkOnboardingComplete: vi.fn(),
 }));
 
 // Mock the router
 vi.mock('vue-router', () => ({
   useRouter: () => ({
-    push: mockPush
-  })
+    push: mockPush,
+  }),
 }));
 
 // Mock the API
 vi.mock('../../services/api', () => ({
-  onboardingAPI: mockOnboardingAPI
+  onboardingAPI: mockOnboardingAPI,
 }));
 
 // Mock the toast
 vi.mock('../../composables/useToast', () => ({
-  useToast: () => mockToast
+  useToast: () => mockToast,
 }));
 
 // Mock markOnboardingComplete
 vi.mock('../../router', () => ({
-  markOnboardingComplete: () => mockMarkOnboardingComplete()
+  markOnboardingComplete: () => mockMarkOnboardingComplete(),
 }));
 
 import OnboardingWizard from '../OnboardingWizard.vue';
@@ -50,11 +50,11 @@ describe('OnboardingWizard', () => {
     mockOnboardingAPI.createPreset.mockResolvedValue({
       id: 'preset-1',
       name: 'DeepSeek',
-      provider: 'deepseek'
+      provider: 'deepseek',
     });
     mockOnboardingAPI.importDefaults.mockResolvedValue({
       importedCharacters: 4,
-      createdStories: 4
+      createdStories: 4,
     });
     mockOnboardingAPI.complete.mockResolvedValue({ success: true });
   });
@@ -402,7 +402,7 @@ describe('OnboardingWizard', () => {
     it('should show loading overlay during API calls', async () => {
       // Make API call take longer
       mockOnboardingAPI.createPersona.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ name: 'John' }), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve({ name: 'John' }), 100)),
       );
 
       const wrapper = mount(OnboardingWizard);
@@ -419,7 +419,7 @@ describe('OnboardingWizard', () => {
 
     it('should show appropriate loading message', async () => {
       mockOnboardingAPI.createPersona.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ name: 'John' }), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve({ name: 'John' }), 100)),
       );
 
       const wrapper = mount(OnboardingWizard);

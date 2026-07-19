@@ -3,8 +3,6 @@
  */
 
 import { PNG } from 'pngjs';
-import path from 'path';
-import fs from 'fs';
 
 /**
  * Create a minimal valid PNG buffer for testing
@@ -44,7 +42,7 @@ export async function createTestCharacterPng(characterData = {}) {
     name: 'Test Character',
     description: 'A test character',
     first_mes: 'Hello!',
-    ...characterData
+    ...characterData,
   };
 
   return CharacterParser.createPNGWithCharacterData(defaultData);
@@ -63,6 +61,6 @@ export function createTestCharacterJson(overrides = {}) {
     scenario: 'In a test environment',
     first_mes: 'Hello, I am a test character!',
     mes_example: '',
-    ...overrides
+    ...overrides,
   };
 }

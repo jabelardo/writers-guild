@@ -19,8 +19,8 @@ import { ref, computed, watch, nextTick } from 'vue';
 const props = defineProps({
   reasoning: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 });
 
 defineEmits(['close']);
@@ -54,7 +54,7 @@ watch(
     if (contentRef.value) {
       contentRef.value.scrollTop = contentRef.value.scrollHeight;
     }
-  }
+  },
 );
 </script>
 

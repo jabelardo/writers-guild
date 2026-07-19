@@ -24,9 +24,9 @@ describe('Avatar Windows API Routes', () => {
     app.use('/api/stories', storiesRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
 
@@ -53,7 +53,7 @@ describe('Avatar Windows API Routes', () => {
       x: 100,
       y: 200,
       width: 300,
-      height: 400
+      height: 400,
     };
 
     it('should save valid avatar windows', async () => {
@@ -297,7 +297,7 @@ describe('Avatar Windows API Routes', () => {
       it('should reject too many avatar windows', async () => {
         const windows = Array.from({ length: 21 }, (_, i) => ({
           ...validWindow,
-          id: `avatar-${i}`
+          id: `avatar-${i}`,
         }));
 
         const response = await request(app)
@@ -311,7 +311,7 @@ describe('Avatar Windows API Routes', () => {
       it('should accept exactly 20 avatar windows', async () => {
         const windows = Array.from({ length: 20 }, (_, i) => ({
           ...validWindow,
-          id: `avatar-${i}`
+          id: `avatar-${i}`,
         }));
 
         const response = await request(app)

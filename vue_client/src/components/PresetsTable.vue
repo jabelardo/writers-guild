@@ -38,12 +38,12 @@ import DataTable from './DataTable.vue';
 const props = defineProps({
   presets: {
     type: Array,
-    required: true
+    required: true,
   },
   defaultPresetId: {
     type: String,
-    default: null
-  }
+    default: null,
+  },
 });
 
 defineEmits(['edit', 'duplicate', 'delete', 'set-default']);
@@ -54,7 +54,7 @@ function getProviderDisplayName(provider) {
     aihorde: 'AI Horde',
     openai: 'OpenAI',
     anthropic: 'Claude',
-    openrouter: 'OpenRouter'
+    openrouter: 'OpenRouter',
   };
   return names[provider] || provider;
 }
@@ -64,20 +64,20 @@ const columns = [
     key: 'name',
     label: 'Name',
     sortable: true,
-    cellClass: 'name-cell'
+    cellClass: 'name-cell',
   },
   {
     key: 'provider',
     label: 'Provider',
     sortable: true,
-    cellClass: 'provider-cell'
+    cellClass: 'provider-cell',
   },
   {
     key: 'actions',
     label: 'Actions',
     sortable: false,
-    headerClass: 'actions-col-wide'
-  }
+    headerClass: 'actions-col-wide',
+  },
 ];
 </script>
 

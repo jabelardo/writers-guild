@@ -31,16 +31,16 @@ import Modal from './Modal.vue';
 defineProps({
   response: {
     type: String,
-    default: ''
+    default: '',
   },
   loading: {
     type: Boolean,
-    default: false
+    default: false,
   },
   status: {
     type: String,
-    default: 'Thinking...'
-  }
+    default: 'Thinking...',
+  },
 });
 
 defineEmits(['close']);

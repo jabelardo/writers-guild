@@ -66,8 +66,8 @@ import { useToast } from '../../composables/useToast';
 const props = defineProps({
   config: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['update:config']);
@@ -84,7 +84,7 @@ const localApiConfig = computed({
   },
   set(value) {
     emit('update:config', { ...props.config, apiConfig: value });
-  }
+  },
 });
 
 async function fetchModels(silent = false) {
@@ -98,14 +98,14 @@ async function fetchModels(silent = false) {
     modelsError.value = null;
     const response = await presetsAPI.getOllamaModels(
       localApiConfig.value.baseURL,
-      localApiConfig.value.password
+      localApiConfig.value.password,
     );
     availableModels.value = response.models || [];
     if (availableModels.value.length === 0) {
       modelsError.value = 'No models installed. Run `ollama pull <name>` on the host first.';
     } else if (!silent) {
       toast.success(
-        `Loaded ${availableModels.value.length} model${availableModels.value.length !== 1 ? 's' : ''}`
+        `Loaded ${availableModels.value.length} model${availableModels.value.length !== 1 ? 's' : ''}`,
       );
     }
   } catch (error) {
@@ -129,7 +129,7 @@ const PARAM_TO_PRESET = {
   repeat_last_n: 'rep_pen_range',
   mirostat: 'mirostat',
   mirostat_tau: 'mirostat_tau',
-  mirostat_eta: 'mirostat_eta'
+  mirostat_eta: 'mirostat_eta',
 };
 
 function applyModelDefaults(baseConfig, info) {
@@ -170,7 +170,7 @@ function applyModelDefaults(baseConfig, info) {
 
   return {
     config: applied.length > 0 ? { ...baseConfig, generationSettings: nextGen } : baseConfig,
-    applied
+    applied,
   };
 }
 
@@ -179,7 +179,7 @@ async function selectModel(model) {
   // can emit a single atomic update to the parent.
   let nextConfig = {
     ...props.config,
-    apiConfig: { ...(props.config.apiConfig || {}), model: model.id }
+    apiConfig: { ...props.config.apiConfig, model: model.id },
   };
 
   let toastMsg = `Selected ${model.name || model.id}`;
@@ -188,7 +188,7 @@ async function selectModel(model) {
     const info = await presetsAPI.getOllamaModelInfo(
       props.config.apiConfig?.baseURL,
       model.id,
-      props.config.apiConfig?.password
+      props.config.apiConfig?.password,
     );
     const { config: enriched, applied } = applyModelDefaults(nextConfig, info);
     nextConfig = enriched;

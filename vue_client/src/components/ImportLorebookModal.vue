@@ -84,7 +84,7 @@ function handleImportProgress(event) {
     imageProgress.value = {
       ...p,
       completed: p.completed + 1,
-      failed: p.failed + (event.ok ? 0 : 1)
+      failed: p.failed + (event.ok ? 0 : 1),
     };
   }
 }
@@ -98,7 +98,7 @@ function reportImportResult(name) {
   const p = imageProgress.value;
   if (p && p.failed > 0) {
     toast.warning(
-      `Imported "${name}" — ${p.failed} of ${p.total} image(s) could not be cached and still point at their original host`
+      `Imported "${name}" — ${p.failed} of ${p.total} image(s) could not be cached and still point at their original host`,
     );
     return;
   }

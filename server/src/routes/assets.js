@@ -66,14 +66,14 @@ router.get(
   '/characters/:entityId/:filename',
   asyncHandler(async (req, res) => {
     await serveAsset(req, res, 'characters');
-  })
+  }),
 );
 
 router.get(
   '/lorebooks/:entityId/:filename',
   asyncHandler(async (req, res) => {
     await serveAsset(req, res, 'lorebooks');
-  })
+  }),
 );
 
 export default router;

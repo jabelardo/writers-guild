@@ -15,7 +15,7 @@ export class OpenRouterProvider extends LLMProvider {
       baseURL: config.baseURL || 'https://openrouter.ai/api/v1',
       model: config.model || 'anthropic/claude-3.5-sonnet',
       providers: config.providers || [], // Empty = all providers
-      allowFallbacks: config.allowFallbacks !== false // Default true
+      allowFallbacks: config.allowFallbacks !== false, // Default true
     };
 
     super(openrouterConfig);
@@ -31,7 +31,7 @@ export class OpenRouterProvider extends LLMProvider {
       streaming: true,
       reasoning: true, // Supported by some models (e.g., DeepSeek R1)
       visionAPI: true, // Many OpenRouter models support vision
-      maxContextWindow: 200000 // Varies by model, using conservative default
+      maxContextWindow: 200000, // Varies by model, using conservative default
     };
   }
 
@@ -42,14 +42,14 @@ export class OpenRouterProvider extends LLMProvider {
     if (!this.apiKey || this.apiKey.trim() === '') {
       return {
         valid: false,
-        error: 'API key is required'
+        error: 'API key is required',
       };
     }
 
     if (!this.model || this.model.trim() === '') {
       return {
         valid: false,
-        error: 'Model is required'
+        error: 'Model is required',
       };
     }
 
@@ -64,7 +64,7 @@ export class OpenRouterProvider extends LLMProvider {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${this.apiKey}`,
       'HTTP-Referer': 'https://github.com/amiantos/writers-guild', // Optional: For rankings
-      'X-Title': 'Writers Guild' // Optional: For rankings
+      'X-Title': 'Writers Guild', // Optional: For rankings
     };
 
     // Add provider preferences if specified
@@ -85,7 +85,7 @@ export class OpenRouterProvider extends LLMProvider {
 
     const messages = [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
+      { role: 'user', content: userPrompt },
     ];
 
     const body = {
@@ -95,7 +95,7 @@ export class OpenRouterProvider extends LLMProvider {
       max_tokens: options.maxTokens || 4000,
       temperature: options.temperature !== undefined ? options.temperature : 1.0,
       // Enable reasoning tokens for models that support it
-      reasoning: { enabled: true }
+      reasoning: { enabled: true },
     };
 
     // Add optional sampling parameters if provided
@@ -121,7 +121,7 @@ export class OpenRouterProvider extends LLMProvider {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(body),
-      signal: options.signal
+      signal: options.signal,
     });
 
     if (!response.ok) {
@@ -138,8 +138,8 @@ export class OpenRouterProvider extends LLMProvider {
       usage: data.usage,
       metadata: {
         model: data.model, // Actual model used (may differ from requested)
-        provider: response.headers.get('X-OpenRouter-Provider') || 'unknown'
-      }
+        provider: response.headers.get('X-OpenRouter-Provider') || 'unknown',
+      },
     };
   }
 
@@ -153,7 +153,7 @@ export class OpenRouterProvider extends LLMProvider {
 
     const messages = [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
+      { role: 'user', content: userPrompt },
     ];
 
     const controller = new AbortController();
@@ -165,7 +165,7 @@ export class OpenRouterProvider extends LLMProvider {
       max_tokens: options.maxTokens || 4000,
       temperature: options.temperature !== undefined ? options.temperature : 1.0,
       // Enable reasoning tokens for models that support it
-      reasoning: { enabled: true }
+      reasoning: { enabled: true },
     };
 
     // Add optional sampling parameters if provided
@@ -191,7 +191,7 @@ export class OpenRouterProvider extends LLMProvider {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(body),
-      signal: options.signal || controller.signal
+      signal: options.signal || controller.signal,
     });
 
     if (!response.ok) {
@@ -205,8 +205,8 @@ export class OpenRouterProvider extends LLMProvider {
       metadata: {
         userPrompt,
         systemPrompt,
-        provider: response.headers.get('X-OpenRouter-Provider') || 'unknown'
-      }
+        provider: response.headers.get('X-OpenRouter-Provider') || 'unknown',
+      },
     };
   }
 
@@ -225,7 +225,7 @@ export class OpenRouterProvider extends LLMProvider {
       return {
         code: 'AUTH_ERROR',
         message: 'Invalid API key',
-        original: error
+        original: error,
       };
     }
 
@@ -233,7 +233,7 @@ export class OpenRouterProvider extends LLMProvider {
       return {
         code: 'RATE_LIMIT',
         message: 'Rate limit exceeded. Please try again later.',
-        original: error
+        original: error,
       };
     }
 
@@ -241,7 +241,7 @@ export class OpenRouterProvider extends LLMProvider {
       return {
         code: 'INSUFFICIENT_CREDITS',
         message: 'Insufficient credits. Please add credits to your OpenRouter account.',
-        original: error
+        original: error,
       };
     }
 
@@ -249,7 +249,7 @@ export class OpenRouterProvider extends LLMProvider {
       return {
         code: 'MODEL_NOT_FOUND',
         message: 'Model not found or not available',
-        original: error
+        original: error,
       };
     }
 
@@ -265,8 +265,8 @@ export class OpenRouterProvider extends LLMProvider {
       const response = await fetch(`${this.baseURL}/models`, {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${this.apiKey}`
-        }
+          Authorization: `Bearer ${this.apiKey}`,
+        },
       });
 
       if (!response.ok) {
@@ -283,12 +283,12 @@ export class OpenRouterProvider extends LLMProvider {
         contextLength: model.context_length || 0,
         pricing: {
           prompt: model.pricing?.prompt || 0,
-          completion: model.pricing?.completion || 0
+          completion: model.pricing?.completion || 0,
         },
         topProvider: model.top_provider || null,
         architecture: model.architecture || null,
         // Extract vendor from model ID (e.g., "anthropic/claude-3.5-sonnet" -> "anthropic")
-        vendor: model.id.split('/')[0] || 'unknown'
+        vendor: model.id.split('/')[0] || 'unknown',
       }));
     } catch (error) {
       console.error('Failed to fetch OpenRouter models:', error);
@@ -313,8 +313,8 @@ export class OpenRouterProvider extends LLMProvider {
           {
             name: model.topProvider.name || 'Unknown',
             maxCompletionTokens: model.topProvider.max_completion_tokens || null,
-            isModerationd: model.topProvider.is_moderated || false
-          }
+            isModerationd: model.topProvider.is_moderated || false,
+          },
         ];
       }
 

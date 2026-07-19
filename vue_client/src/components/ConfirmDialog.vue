@@ -29,21 +29,21 @@ import { computed, onMounted, ref } from 'vue';
 const props = defineProps({
   message: {
     type: String,
-    required: true
+    required: true,
   },
   confirmText: {
     type: String,
-    default: 'Confirm'
+    default: 'Confirm',
   },
   cancelText: {
     type: String,
-    default: 'Cancel'
+    default: 'Cancel',
   },
   variant: {
     type: String,
     default: 'default',
-    validator: (value) => ['default', 'danger', 'warning'].includes(value)
-  }
+    validator: (value) => ['default', 'danger', 'warning'].includes(value),
+  },
 });
 
 const emit = defineEmits(['confirm', 'cancel']);

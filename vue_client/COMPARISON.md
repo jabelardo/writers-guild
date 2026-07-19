@@ -160,11 +160,11 @@ const columns = [
     key: 'created',
     label: 'Created',
     sortable: true,
-    format: (v) => new Date(v).toLocaleDateString()
+    format: (v) => new Date(v).toLocaleDateString(),
   },
   { key: 'modified', label: 'Modified', sortable: true },
   { key: 'wordCount', label: 'Words', sortable: true, format: (v) => v.toLocaleString() },
-  { key: 'actions', label: 'Actions', sortable: false }
+  { key: 'actions', label: 'Actions', sortable: false },
 ];
 </script>
 ```
@@ -188,7 +188,7 @@ const columns = [
   { key: 'name', label: 'Name', sortable: true },
   { key: 'created', label: 'Created', sortable: true },
   { key: 'totalWords', label: 'Words', sortable: true },
-  { key: 'actions', label: 'Actions', sortable: false }
+  { key: 'actions', label: 'Actions', sortable: false },
 ];
 </script>
 ```
@@ -281,7 +281,7 @@ stories.value.push(newStory);
 <script setup>
 const myColumns = [
   { key: 'id', label: 'ID', sortable: true },
-  { key: 'name', label: 'Name', sortable: true }
+  { key: 'name', label: 'Name', sortable: true },
 ];
 </script>
 ```

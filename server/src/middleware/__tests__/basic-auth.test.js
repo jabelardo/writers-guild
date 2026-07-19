@@ -5,7 +5,7 @@ function createMockRes() {
   const res = {
     set: vi.fn().mockReturnThis(),
     status: vi.fn().mockReturnThis(),
-    send: vi.fn().mockReturnThis()
+    send: vi.fn().mockReturnThis(),
   };
   return res;
 }
@@ -98,7 +98,7 @@ describe('Basic Auth Middleware', () => {
 
     it('should return 401 with wrong credentials', () => {
       const req = {
-        headers: { authorization: `Basic ${encode('admin:wrong')}` }
+        headers: { authorization: `Basic ${encode('admin:wrong')}` },
       };
       const res = createMockRes();
       const next = vi.fn();
@@ -111,7 +111,7 @@ describe('Basic Auth Middleware', () => {
 
     it('should return 401 with wrong username', () => {
       const req = {
-        headers: { authorization: `Basic ${encode('wrong:secret')}` }
+        headers: { authorization: `Basic ${encode('wrong:secret')}` },
       };
       const res = createMockRes();
       const next = vi.fn();
@@ -124,7 +124,7 @@ describe('Basic Auth Middleware', () => {
 
     it('should call next() with correct credentials', () => {
       const req = {
-        headers: { authorization: `Basic ${encode('admin:secret')}` }
+        headers: { authorization: `Basic ${encode('admin:secret')}` },
       };
       const res = createMockRes();
       const next = vi.fn();
@@ -141,8 +141,8 @@ describe('Basic Auth Middleware', () => {
 
       const req = {
         headers: {
-          authorization: `Basic ${encode('admin:pass:with:colons')}`
-        }
+          authorization: `Basic ${encode('admin:pass:with:colons')}`,
+        },
       };
       const res = createMockRes();
       const next = vi.fn();
@@ -154,7 +154,7 @@ describe('Basic Auth Middleware', () => {
 
     it('should return 401 for malformed base64', () => {
       const req = {
-        headers: { authorization: 'Basic !!!not-base64!!!' }
+        headers: { authorization: 'Basic !!!not-base64!!!' },
       };
       const res = createMockRes();
       const next = vi.fn();
@@ -167,7 +167,7 @@ describe('Basic Auth Middleware', () => {
 
     it('should return 401 for empty Basic value', () => {
       const req = {
-        headers: { authorization: 'Basic ' }
+        headers: { authorization: 'Basic ' },
       };
       const res = createMockRes();
       const next = vi.fn();

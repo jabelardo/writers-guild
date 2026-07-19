@@ -8,9 +8,9 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
-        changeOrigin: true
-      }
-    }
+        changeOrigin: true,
+      },
+    },
   },
   test: {
     globals: true,
@@ -18,8 +18,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/**', 'src/**/__tests__/**', '**/*.test.js', '**/*.spec.js']
+      exclude: ['node_modules/**', 'src/**/__tests__/**', '**/*.test.js', '**/*.spec.js'],
     },
-    include: ['src/**/*.{test,spec}.js']
-  }
+    include: ['src/**/*.{test,spec}.js'],
+  },
 });

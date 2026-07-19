@@ -64,7 +64,7 @@ async function getStoryCharacterNames(storageService, storyId) {
 
   // Fetch all characters concurrently to avoid N+1 sequential queries
   const results = await Promise.allSettled(
-    storyCharacters.map((char) => storageService.getCharacter(char.id))
+    storyCharacters.map((char) => storageService.getCharacter(char.id)),
   );
 
   const characterNames = [];
@@ -81,7 +81,7 @@ async function getStoryCharacterNames(storageService, storyId) {
     } else {
       console.error(
         `Failed to load character ${storyCharacters[index].id} for title:`,
-        result.reason
+        result.reason,
       );
     }
   });
@@ -105,7 +105,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const stories = await storage.listStories();
     res.json({ stories });
-  })
+  }),
 );
 
 // Create new story
@@ -119,7 +119,7 @@ router.post(
     }
 
     const story = await storage.createStory(title.trim(), description?.trim() || '', {
-      needsRewritePrompt: !!needsRewritePrompt
+      needsRewritePrompt: !!needsRewritePrompt,
     });
 
     // Auto-assign default persona if set in settings
@@ -135,7 +135,7 @@ router.post(
     }
 
     res.status(201).json({ story });
-  })
+  }),
 );
 
 // Get story by ID
@@ -144,7 +144,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const story = await storage.getStory(req.params.id);
     res.json({ story });
-  })
+  }),
 );
 
 // Set or clear the rewrite prompt flag for a story
@@ -154,7 +154,7 @@ router.post(
     const { value } = req.body;
     await storage.setStoryNeedsRewritePrompt(req.params.id, !!value);
     res.json({ success: true });
-  })
+  }),
 );
 
 // Validate avatar window structure
@@ -230,7 +230,7 @@ router.put(
 
     const result = await storage.updateStoryAvatarWindows(req.params.id, avatarWindows);
     res.json(result);
-  })
+  }),
 );
 
 // Update story metadata
@@ -251,7 +251,7 @@ router.put(
 
     const story = await storage.updateStoryMetadata(req.params.id, updates);
     res.json({ story });
-  })
+  }),
 );
 
 // Update story content
@@ -269,7 +269,7 @@ router.put(
     // Include history status in response
     const historyStatus = await storage.getHistoryStatus(req.params.id);
     res.json({ ...result, ...historyStatus });
-  })
+  }),
 );
 
 // Get undo/redo status for a story
@@ -278,7 +278,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const status = await storage.getHistoryStatus(req.params.id);
     res.json(status);
-  })
+  }),
 );
 
 // Undo story content
@@ -292,7 +292,7 @@ router.post(
     }
 
     res.json(result);
-  })
+  }),
 );
 
 // Redo story content
@@ -306,7 +306,7 @@ router.post(
     }
 
     res.json(result);
-  })
+  }),
 );
 
 // Delete story
@@ -315,7 +315,7 @@ router.delete(
   asyncHandler(async (req, res) => {
     await storage.deleteStory(req.params.id);
     res.json({ success: true });
-  })
+  }),
 );
 
 // Duplicate story
@@ -324,7 +324,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const story = await storage.duplicateStory(req.params.id);
     res.status(201).json({ story });
-  })
+  }),
 );
 
 // ==================== Story-Character Associations ====================
@@ -346,7 +346,7 @@ router.get(
             id: char.id,
             name: cardData.data?.name || 'Unknown',
             description: cardData.data?.description || '',
-            imageUrl: hasImage ? `/api/characters/${char.id}/image` : null
+            imageUrl: hasImage ? `/api/characters/${char.id}/image` : null,
           };
         } catch (error) {
           console.error(`Failed to load character ${char.id}:`, error);
@@ -354,14 +354,14 @@ router.get(
             id: char.id,
             name: 'Unknown',
             description: 'Failed to load',
-            imageUrl: null
+            imageUrl: null,
           };
         }
-      })
+      }),
     );
 
     res.json({ characters: charactersWithData });
-  })
+  }),
 );
 
 // Add existing character to story
@@ -386,7 +386,7 @@ router.post(
         const personaCard = await storage.getCharacter(story.personaCharacterId);
         persona = {
           name: personaCard.data?.name || 'User',
-          description: personaCard.data?.description || ''
+          description: personaCard.data?.description || '',
         };
       } catch (error) {
         console.error('Failed to load persona:', error);
@@ -405,7 +405,7 @@ router.post(
         const characterNames = await getStoryCharacterNames(storage, req.params.id);
         const newTitle = generateAutoTitle(characterNames);
         await storage.updateStoryMetadata(req.params.id, {
-          title: newTitle
+          title: newTitle,
         });
         updatedTitle = newTitle;
       }
@@ -428,11 +428,10 @@ router.post(
       }
 
       if (characterCard.data?.first_mes) {
-        const settings = await storage.getSettings();
         const promptBuilder = new PromptBuilder();
         const macroProcessor = new MacroProcessor({
           userName: persona?.name || 'User',
-          charName: characterCard.data?.name || 'Character'
+          charName: characterCard.data?.name || 'Character',
         });
 
         let processed = characterCard.data.first_mes;
@@ -449,9 +448,9 @@ router.post(
       success: true,
       processedFirstMessage,
       updatedTitle,
-      addedLorebookId
+      addedLorebookId,
     });
-  })
+  }),
 );
 
 // Remove character from story (doesn't delete character)
@@ -475,7 +474,7 @@ router.delete(
         const characterNames = await getStoryCharacterNames(storage, storyId);
         const newTitle = generateAutoTitle(characterNames);
         await storage.updateStoryMetadata(storyId, {
-          title: newTitle
+          title: newTitle,
         });
         updatedTitle = newTitle;
       } catch (error) {
@@ -485,7 +484,7 @@ router.delete(
     }
 
     res.json({ success: true, updatedTitle });
-  })
+  }),
 );
 
 // Get processed greetings for a character in story context
@@ -504,7 +503,7 @@ router.get(
         const personaCard = await storage.getCharacter(story.personaCharacterId);
         persona = {
           name: personaCard.data?.name || 'User',
-          description: personaCard.data?.description || ''
+          description: personaCard.data?.description || '',
         };
       } catch (error) {
         console.error('Failed to load persona:', error);
@@ -514,14 +513,11 @@ router.get(
     // Load character card
     const characterCard = await storage.getCharacter(characterId);
 
-    // Load settings for filtering
-    const settings = await storage.getSettings();
-
     // Initialize processors for text processing
     const promptBuilder = new PromptBuilder();
     const macroProcessor = new MacroProcessor({
       userName: persona?.name || 'User',
-      charName: characterCard.data?.name || 'Character'
+      charName: characterCard.data?.name || 'Character',
     });
 
     // Process all greetings
@@ -537,7 +533,7 @@ router.get(
         index: 0,
         label: 'First Message',
         content: processed,
-        characterName: characterCard.data.name
+        characterName: characterCard.data.name,
       });
     }
 
@@ -555,13 +551,13 @@ router.get(
           index: idx + 1,
           label: `Alternate Greeting ${idx + 1}`,
           content: processed,
-          characterName: characterCard.data.name
+          characterName: characterCard.data.name,
         });
       });
     }
 
     res.json({ greetings });
-  })
+  }),
 );
 
 // Set story persona (use a character as persona)
@@ -572,7 +568,7 @@ router.put(
 
     await storage.setStoryPersona(req.params.id, characterId);
     res.json({ success: true });
-  })
+  }),
 );
 
 // ==================== Story-Lorebook Associations ====================
@@ -583,7 +579,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const lorebooks = await storage.listStoryLorebooks(req.params.id);
     res.json({ lorebooks });
-  })
+  }),
 );
 
 // Add existing lorebook to story
@@ -598,7 +594,7 @@ router.post(
 
     await storage.addLorebookToStory(req.params.id, lorebookId);
     res.json({ success: true });
-  })
+  }),
 );
 
 // Remove lorebook from story (doesn't delete lorebook)
@@ -608,7 +604,7 @@ router.delete(
     const { id: storyId, lorebookId } = req.params;
     await storage.removeLorebookFromStory(storyId, lorebookId);
     res.json({ success: true });
-  })
+  }),
 );
 
 // ==================== Generation Endpoints ====================
@@ -638,7 +634,7 @@ async function loadGenerationContext(storyId) {
     } else {
       throw new AppError(
         'No configuration preset found and no API key configured. Please configure a preset in settings.',
-        400
+        400,
       );
     }
   } else {
@@ -666,7 +662,7 @@ async function loadGenerationContext(storyId) {
       persona = {
         name: cardData.data?.name || 'User',
         description: cardData.data?.description || '',
-        writingStyle: cardData.data?.personality || ''
+        writingStyle: cardData.data?.personality || '',
       };
     } catch (error) {
       console.error('Failed to load persona character:', error);
@@ -706,12 +702,12 @@ async function loadGenerationContext(storyId) {
           lorebookScanDepth: 2000,
           lorebookTokenBudget: 1800,
           lorebookRecursionDepth: 3,
-          lorebookEnableRecursion: true
+          lorebookEnableRecursion: true,
         };
         const activator = new LorebookActivator(lorebookSettings);
         activatedLorebooks = activator.activate(lorebooks, story.content || '');
         console.log(
-          `Activated ${activatedLorebooks.length} lorebook entries from ${lorebooks.length} lorebook(s)`
+          `Activated ${activatedLorebooks.length} lorebook entries from ${lorebooks.length} lorebook(s)`,
         );
       }
     } catch (error) {
@@ -725,7 +721,7 @@ async function loadGenerationContext(storyId) {
     story,
     persona,
     characterCards,
-    activatedLorebooks
+    activatedLorebooks,
   };
 }
 
@@ -751,10 +747,10 @@ async function streamGeneration(
   context,
   generationType,
   params,
-  abortSignal = null
+  abortSignal = null,
 ) {
   console.log(
-    `[streamGeneration] Starting ${generationType}, signal present: ${!!abortSignal}, aborted: ${abortSignal?.aborted}`
+    `[streamGeneration] Starting ${generationType}, signal present: ${!!abortSignal}, aborted: ${abortSignal?.aborted}`,
   );
 
   // --- Image preservation: applied to card, lorebook and story text inside
@@ -774,16 +770,16 @@ async function streamGeneration(
       characterCards: params.characterCards || [],
       activatedLorebooks: context.activatedLorebooks || [],
       story: context.story,
-      settings: preset.generationSettings
+      settings: preset.generationSettings,
     },
     generationType,
     {
       characterName: params.characterName,
       customInstruction: params.customInstruction,
       templateText: preset.promptTemplates?.[generationType],
-      imagePreserver
+      imagePreserver,
     },
-    preset
+    preset,
   );
 
   const { system: systemPrompt, user: userPrompt } = prompts;
@@ -793,9 +789,9 @@ async function streamGeneration(
     `data: ${JSON.stringify({
       prompts: {
         system: systemPrompt,
-        user: userPrompt
-      }
-    })}\n\n`
+        user: userPrompt,
+      },
+    })}\n\n`,
   );
 
   if (res.flush) res.flush();
@@ -806,11 +802,11 @@ async function streamGeneration(
   if (capabilities.streaming) {
     console.log(`[streamGeneration] Using streaming provider, signal: ${!!abortSignal}`);
     // Start streaming generation
-    const { stream, metadata } = await provider.generateStreaming(systemPrompt, userPrompt, {
+    const { stream } = await provider.generateStreaming(systemPrompt, userPrompt, {
       // Pass all advanced sampling parameters
       ...preset.generationSettings,
       maxContextLength: preset.generationSettings.maxContextTokens,
-      signal: abortSignal
+      signal: abortSignal,
     });
 
     // Stream chunks
@@ -830,7 +826,7 @@ async function streamGeneration(
         const data = {
           reasoning: chunk.reasoning || null,
           content: processedContent,
-          finished: chunk.finished || false
+          finished: chunk.finished || false,
         };
 
         if (chunk.finished && imagePreserver) {
@@ -859,7 +855,7 @@ async function streamGeneration(
       ...preset.generationSettings,
       maxContextLength: preset.generationSettings.maxContextTokens,
       timeout: preset.generationSettings.timeout || 300000,
-      signal: abortSignal
+      signal: abortSignal,
     });
 
     for await (const update of streamWithStatus) {
@@ -871,24 +867,24 @@ async function streamGeneration(
               position: update.queuePosition,
               waitTime: update.waitTime,
               finished: update.finished,
-              faulted: update.faulted
-            }
-          })}\n\n`
+              faulted: update.faulted,
+            },
+          })}\n\n`,
         );
       } else if (update.type === 'complete') {
         const processedContent = update.content?.replace(/\*/g, '') || '';
 
         // Restore images in the final content
         const finalContent = imagePreserver.restoreImages(processedContent, {
-          appendMissing: appendMissingImages
+          appendMissing: appendMissingImages,
         }).finalContent;
 
         res.write(
           `data: ${JSON.stringify({
             content: finalContent,
             finished: true,
-            imagesRestored: imagePreserver.saved.length > 0
-          })}\n\n`
+            imagesRestored: imagePreserver.saved.length > 0,
+          })}\n\n`,
         );
       }
 
@@ -899,7 +895,7 @@ async function streamGeneration(
     const result = await provider.generate(systemPrompt, userPrompt, {
       // Pass all advanced sampling parameters
       ...preset.generationSettings,
-      maxContextLength: preset.generationSettings.maxContextTokens
+      maxContextLength: preset.generationSettings.maxContextTokens,
     });
 
     // NOTE: this read `update.content` before, but `update` is out of scope in
@@ -908,7 +904,7 @@ async function streamGeneration(
 
     // Restore images in the final content
     const finalContent = imagePreserver.restoreImages(processedContent, {
-      appendMissing: appendMissingImages
+      appendMissing: appendMissingImages,
     }).finalContent;
 
     res.write(
@@ -916,8 +912,8 @@ async function streamGeneration(
         reasoning: result.reasoning || null,
         content: finalContent,
         finished: true,
-        imagesRestored: imagePreserver.saved.length > 0
-      })}\n\n`
+        imagesRestored: imagePreserver.saved.length > 0,
+      })}\n\n`,
     );
     if (res.flush) res.flush();
   }
@@ -951,7 +947,7 @@ router.post(
       // Character-specific generation
       generationType = 'character';
       const selectedChar = characterCards.find(
-        (c) => c.data.name === characterId || c.id === characterId
+        (c) => c.data.name === characterId || c.id === characterId,
       );
       if (selectedChar) {
         characterName = selectedChar.data?.name;
@@ -966,7 +962,7 @@ router.post(
     // Create abort controller for cancellation support
     const abortController = new AbortController();
     console.log(
-      `[Continue] Starting generation for story ${storyId}${characterId ? ` (character: ${characterId})` : ''}`
+      `[Continue] Starting generation for story ${storyId}${characterId ? ` (character: ${characterId})` : ''}`,
     );
 
     // Handle client disconnection (for SSE, listen to response close event)
@@ -986,9 +982,9 @@ router.post(
         generationType,
         {
           characterCards: useCharacterCards,
-          characterName
+          characterName,
         },
-        abortController.signal
+        abortController.signal,
       );
     } catch (error) {
       if (error.message === 'Generation cancelled' || abortController.signal.aborted) {
@@ -1000,7 +996,7 @@ router.post(
       }
       res.end();
     }
-  })
+  }),
 );
 
 // Continue with instruction
@@ -1022,7 +1018,7 @@ router.post(
     // Create abort controller for cancellation support
     const abortController = new AbortController();
     console.log(
-      `[Continue-with-Instruction] Starting ${generationType} generation for story ${storyId}`
+      `[Continue-with-Instruction] Starting ${generationType} generation for story ${storyId}`,
     );
 
     // Handle client disconnection (for SSE, listen to response close event)
@@ -1042,9 +1038,9 @@ router.post(
         generationType,
         {
           characterCards,
-          customInstruction: hasInstruction ? instruction.trim() : undefined
+          customInstruction: hasInstruction ? instruction.trim() : undefined,
         },
-        abortController.signal
+        abortController.signal,
       );
     } catch (error) {
       if (error.message === 'Generation cancelled' || abortController.signal.aborted) {
@@ -1056,7 +1052,7 @@ router.post(
       }
       res.end();
     }
-  })
+  }),
 );
 
 // Rewrite to third person
@@ -1090,9 +1086,9 @@ router.post(
         context,
         'rewriteThirdPerson',
         {
-          characterCards
+          characterCards,
         },
-        abortController.signal
+        abortController.signal,
       );
     } catch (error) {
       if (error.message === 'Generation cancelled' || abortController.signal.aborted) {
@@ -1104,7 +1100,7 @@ router.post(
       }
       res.end();
     }
-  })
+  }),
 );
 
 // Ideate - Ask AI for story ideas
@@ -1142,9 +1138,9 @@ router.post(
         'ideate',
         {
           characterCards,
-          userName
+          userName,
         },
-        abortController.signal
+        abortController.signal,
       );
     } catch (error) {
       if (error.message === 'Generation cancelled' || abortController.signal.aborted) {
@@ -1156,7 +1152,7 @@ router.post(
       }
       res.end();
     }
-  })
+  }),
 );
 
 // Story Starter - Generate opening for a fresh story
@@ -1194,9 +1190,9 @@ router.post(
         'storyStarter',
         {
           characterCards,
-          userName
+          userName,
         },
-        abortController.signal
+        abortController.signal,
       );
     } catch (error) {
       if (error.message === 'Generation cancelled' || abortController.signal.aborted) {
@@ -1208,7 +1204,7 @@ router.post(
       }
       res.end();
     }
-  })
+  }),
 );
 
 export default router;

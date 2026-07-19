@@ -42,9 +42,9 @@ describe('Stories API Routes - CRUD Operations', () => {
     app.use('/api/stories', storiesRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
@@ -432,7 +432,7 @@ describe('Stories API Routes - CRUD Operations', () => {
       const storyId = createResponse.body.story.id;
 
       const avatarWindows = [
-        { id: 'win1', characterId: 'char1', x: 100, y: 100, width: 200, height: 300 }
+        { id: 'win1', characterId: 'char1', x: 100, y: 100, width: 200, height: 300 },
       ];
 
       const response = await request(app)
@@ -468,7 +468,7 @@ describe('Stories API Routes - CRUD Operations', () => {
       const storyId = createResponse.body.story.id;
 
       const avatarWindows = [
-        { id: 'win1', x: 100, y: 100 } // missing characterId, width, height
+        { id: 'win1', x: 100, y: 100 }, // missing characterId, width, height
       ];
 
       const response = await request(app)
@@ -488,7 +488,7 @@ describe('Stories API Routes - CRUD Operations', () => {
       const storyId = createResponse.body.story.id;
 
       const avatarWindows = [
-        { id: 'win1', characterId: 'char1', x: 100, y: 100, width: -50, height: 300 }
+        { id: 'win1', characterId: 'char1', x: 100, y: 100, width: -50, height: 300 },
       ];
 
       const response = await request(app)
@@ -509,7 +509,7 @@ describe('Stories API Routes - CRUD Operations', () => {
 
       const avatarWindows = [
         { id: 'win1', characterId: 'char1', x: 100, y: 100, width: 200, height: 300 },
-        { id: 'win2', characterId: 'char2', x: 400, y: 100, width: 200, height: 300 }
+        { id: 'win2', characterId: 'char2', x: 400, y: 100, width: 200, height: 300 },
       ];
 
       const response = await request(app)
@@ -535,7 +535,7 @@ describe('Stories API Routes - CRUD Operations', () => {
         x: i * 100,
         y: 100,
         width: 200,
-        height: 300
+        height: 300,
       }));
 
       const response = await request(app)
@@ -675,9 +675,9 @@ describe('Stories API Routes - Story Characters', () => {
     app.use('/api/characters', charactersRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
@@ -732,7 +732,7 @@ describe('Stories API Routes - Story Characters', () => {
         .send({
           name: 'Greeter',
           description: 'Test',
-          first_mes: 'Hello there!'
+          first_mes: 'Hello there!',
         })
         .expect(201);
 
@@ -750,7 +750,7 @@ describe('Stories API Routes - Story Characters', () => {
 
       const response = await request(app)
         .get(
-          `/api/stories/${storyResponse.body.story.id}/characters/${charResponse.body.id}/greetings`
+          `/api/stories/${storyResponse.body.story.id}/characters/${charResponse.body.id}/greetings`,
         )
         .expect(200);
 
@@ -766,7 +766,7 @@ describe('Stories API Routes - Story Characters', () => {
         .send({
           name: 'Multi Greeter',
           description: 'Has alternates',
-          first_mes: 'Hello!'
+          first_mes: 'Hello!',
         })
         .expect(201);
 
@@ -776,7 +776,7 @@ describe('Stories API Routes - Story Characters', () => {
       await request(app)
         .put(`/api/characters/${charId}`)
         .send({
-          alternate_greetings: ['Alternate 1', 'Alternate 2']
+          alternate_greetings: ['Alternate 1', 'Alternate 2'],
         })
         .expect(200);
 
@@ -786,7 +786,7 @@ describe('Stories API Routes - Story Characters', () => {
       expect(charDataResponse.body.character.data.first_mes).toBe('Hello!');
       expect(charDataResponse.body.character.data.alternate_greetings).toEqual([
         'Alternate 1',
-        'Alternate 2'
+        'Alternate 2',
       ]);
 
       // Create a story
@@ -882,9 +882,9 @@ describe('Stories API Routes - Story Lorebooks', () => {
     app.use('/api/characters', charactersRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
@@ -911,7 +911,7 @@ describe('Stories API Routes - Story Lorebooks', () => {
       const lorebookId = uuidv4();
       await storage.saveLorebook(lorebookId, {
         name: 'Test Lorebook',
-        description: 'Test description'
+        description: 'Test description',
       });
 
       // Create a story
@@ -950,7 +950,7 @@ describe('Stories API Routes - Story Lorebooks', () => {
       const lorebookId = uuidv4();
       await storage.saveLorebook(lorebookId, {
         name: 'Test Lorebook',
-        description: 'Test description'
+        description: 'Test description',
       });
 
       // Create a story
@@ -993,12 +993,12 @@ describe('Stories API Routes - Generation Endpoints', () => {
       provider: options.provider || 'deepseek',
       apiConfig: options.apiConfig || {
         apiKey: 'test-api-key',
-        model: 'deepseek-v4-flash'
+        model: 'deepseek-v4-flash',
       },
       generationSettings: {
         maxTokens: 128,
         maxContextTokens: 4096,
-        temperature: 1.0
+        temperature: 1.0,
       },
       promptTemplates: {
         continue: '{{story}}',
@@ -1006,8 +1006,8 @@ describe('Stories API Routes - Generation Endpoints', () => {
         instruction: '{{story}}',
         rewriteThirdPerson: '{{story}}',
         ideate: '{{story}}',
-        storyStarter: '{{story}}'
-      }
+        storyStarter: '{{story}}',
+      },
     });
 
     await request(app)
@@ -1030,9 +1030,9 @@ describe('Stories API Routes - Generation Endpoints', () => {
     app.use('/api/stories', storiesRouter);
     app.use('/api/characters', charactersRouter);
 
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
@@ -1042,7 +1042,7 @@ describe('Stories API Routes - Generation Endpoints', () => {
     'continue-with-instruction',
     'rewrite-third-person',
     'ideate',
-    'story-starter'
+    'story-starter',
   ])('should return 400 for /%s when no preset is configured', async (endpoint) => {
     const storyResponse = await request(app)
       .post('/api/stories')
@@ -1062,20 +1062,20 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockResolvedValue({
       stream: (async function* () {
         yield { content: '*hello* ', finished: false };
         yield { content: '*world*', finished: true };
       })(),
-      metadata: {}
+      metadata: {},
     });
 
     const response = await request(app).post(`/api/stories/${storyId}/continue`).expect(200);
@@ -1101,19 +1101,19 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     const buildPromptsSpy = vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockResolvedValue({
       stream: (async function* () {
         yield { content: 'ok', finished: true };
       })(),
-      metadata: {}
+      metadata: {},
     });
 
     await request(app)
@@ -1137,21 +1137,21 @@ describe('Stories API Routes - Generation Endpoints', () => {
       async (context, generationType, params) => {
         params.imagePreserver.preserve(context.story.content);
         return { system: 'system prompt', user: 'user prompt [WG_IMAGE_0]' };
-      }
+      },
     );
 
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
 
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockResolvedValue({
       stream: (async function* () {
         yield { content: '[WG_IMAGE_0] rewritten', finished: true };
       })(),
-      metadata: {}
+      metadata: {},
     });
 
     const response = await request(app)
@@ -1159,7 +1159,7 @@ describe('Stories API Routes - Generation Endpoints', () => {
       .expect(200);
 
     expect(response.text).toContain(
-      '"finalContent":"![img](https://example.com/pic.png) rewritten"'
+      '"finalContent":"![img](https://example.com/pic.png) rewritten"',
     );
     expect(response.text).toContain('"imagesRestored":true');
   });
@@ -1168,25 +1168,25 @@ describe('Stories API Routes - Generation Endpoints', () => {
     const { storyId } = await createStoryWithPreset({
       name: 'AI Horde Preset',
       provider: 'aihorde',
-      apiConfig: { apiKey: '0000000000', models: ['test-model'] }
+      apiConfig: { apiKey: '0000000000', models: ['test-model'] },
     });
 
     vi.spyOn(AIHordeProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(AIHordeProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: false,
       requiresPolling: true,
       reasoning: false,
       visionAPI: false,
-      maxContextWindow: 8192
+      maxContextWindow: 8192,
     });
     vi.spyOn(AIHordeProvider.prototype, 'generateStreamingWithStatus').mockImplementation(() =>
       (async function* () {
         yield { type: 'status', queuePosition: 2, waitTime: 5, finished: false, faulted: false };
         yield { type: 'complete', content: '*done*' };
-      })()
+      })(),
     );
 
     const response = await request(app).post(`/api/stories/${storyId}/ideate`).expect(200);
@@ -1202,13 +1202,13 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockImplementation(() => {
       throw new Error('Generation cancelled');
@@ -1224,13 +1224,13 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockImplementation(() => {
       throw new Error('provider crashed');
@@ -1246,18 +1246,18 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: false,
       requiresPolling: false,
       reasoning: false,
       visionAPI: false,
-      maxContextWindow: 8192
+      maxContextWindow: 8192,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generate').mockResolvedValue({
       content: 'final text',
-      reasoning: ''
+      reasoning: '',
     });
 
     const response = await request(app)
@@ -1277,13 +1277,13 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockImplementation(() => {
       throw new Error('Generation cancelled');
@@ -1299,13 +1299,13 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
     vi.spyOn(DeepSeekProvider.prototype, 'buildPrompts').mockResolvedValue({
       system: 'system prompt',
-      user: 'user prompt'
+      user: 'user prompt',
     });
     vi.spyOn(DeepSeekProvider.prototype, 'getCapabilities').mockReturnValue({
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000
+      maxContextWindow: 1000000,
     });
     vi.spyOn(DeepSeekProvider.prototype, 'generateStreaming').mockImplementation(() => {
       throw new Error('ideate failed');
@@ -1336,7 +1336,7 @@ describe('Stories API Routes - Generation Endpoints', () => {
 
   it('POST /:id/continue should return 400 when provider initialization fails', async () => {
     const { storyId } = await createStoryWithPreset({
-      provider: 'nonexistent-provider'
+      provider: 'nonexistent-provider',
     });
 
     const response = await request(app).post(`/api/stories/${storyId}/continue`).expect(400);

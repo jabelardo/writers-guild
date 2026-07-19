@@ -22,12 +22,12 @@ import Modal from './Modal.vue';
 defineProps({
   systemPrompt: {
     type: String,
-    default: ''
+    default: '',
   },
   userPrompt: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 });
 
 defineEmits(['close']);

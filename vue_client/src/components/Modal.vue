@@ -27,28 +27,28 @@ import { computed, useSlots } from 'vue';
 const props = defineProps({
   title: {
     type: String,
-    default: ''
+    default: '',
   },
   maxWidth: {
     type: String,
-    default: '600px'
+    default: '600px',
   },
   maxHeight: {
     type: String,
-    default: '80vh'
+    default: '80vh',
   },
   hideHeader: {
     type: Boolean,
-    default: false
+    default: false,
   },
   hideCloseButton: {
     type: Boolean,
-    default: false
+    default: false,
   },
   closeOnOverlayClick: {
     type: Boolean,
-    default: true
-  }
+    default: true,
+  },
 });
 
 const emit = defineEmits(['close']);
@@ -62,7 +62,7 @@ const hasFooter = computed(() => {
 const contentStyle = computed(() => {
   return {
     maxWidth: props.maxWidth,
-    maxHeight: props.maxHeight
+    maxHeight: props.maxHeight,
   };
 });
 

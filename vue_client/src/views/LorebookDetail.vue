@@ -172,8 +172,8 @@ import EntryEditorModal from '../components/EntryEditorModal.vue';
 const props = defineProps({
   lorebookId: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const router = useRouter();
@@ -210,7 +210,7 @@ async function loadLorebook() {
       id: props.lorebookId,
       name: response.lorebook.name,
       description: response.lorebook.description || '',
-      entries: response.lorebook.entries || []
+      entries: response.lorebook.entries || [],
     };
     // Update page title with lorebook name
     setPageTitle(lorebook.value.name || 'Lorebook');
@@ -225,7 +225,7 @@ async function loadLorebook() {
 const sortedEntries = computed(() => {
   if (!lorebook.value?.entries) return [];
   // Sort by insertion order (descending) for display
-  return [...lorebook.value.entries].sort((a, b) => b.insertionOrder - a.insertionOrder);
+  return [...lorebook.value.entries].toSorted((a, b) => b.insertionOrder - a.insertionOrder);
 });
 
 function startEdit(section) {
@@ -251,7 +251,7 @@ function cancelEdit(section) {
 async function saveName() {
   try {
     await lorebooksAPI.update(props.lorebookId, {
-      name: editedName.value.trim()
+      name: editedName.value.trim(),
     });
     lorebook.value.name = editedName.value.trim();
     editingName.value = false;
@@ -267,7 +267,7 @@ async function saveName() {
 async function saveDescription() {
   try {
     await lorebooksAPI.update(props.lorebookId, {
-      description: editedDescription.value
+      description: editedDescription.value,
     });
     lorebook.value.description = editedDescription.value;
     editingDescription.value = false;
@@ -282,7 +282,7 @@ async function deleteLorebook() {
   const confirmed = await confirm({
     message: `Are you sure you want to delete "${lorebook.value.name}"? This cannot be undone.`,
     confirmText: 'Delete Lorebook',
-    variant: 'danger'
+    variant: 'danger',
   });
 
   if (!confirmed) return;

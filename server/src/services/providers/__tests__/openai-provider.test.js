@@ -12,7 +12,7 @@ describe('OpenAIProvider', () => {
 
     provider = new OpenAIProvider({
       apiKey: 'test-api-key',
-      model: 'gpt-4-turbo-preview'
+      model: 'gpt-4-turbo-preview',
     });
   });
 
@@ -25,7 +25,7 @@ describe('OpenAIProvider', () => {
     it('should allow custom base URL', () => {
       const customProvider = new OpenAIProvider({
         apiKey: 'test-key',
-        baseURL: 'https://custom-api.com/v1'
+        baseURL: 'https://custom-api.com/v1',
       });
       expect(customProvider.baseURL).toBe('https://custom-api.com/v1');
     });
@@ -33,7 +33,7 @@ describe('OpenAIProvider', () => {
     it('should allow custom model', () => {
       const customProvider = new OpenAIProvider({
         apiKey: 'test-key',
-        model: 'gpt-4o'
+        model: 'gpt-4o',
       });
       expect(customProvider.model).toBe('gpt-4o');
     });
@@ -73,7 +73,7 @@ describe('OpenAIProvider', () => {
     it('should use max_completion_tokens for gpt-5 models', () => {
       const provider = new OpenAIProvider({
         apiKey: 'test-key',
-        model: 'gpt-5'
+        model: 'gpt-5',
       });
       expect(provider.usesMaxCompletionTokens()).toBe(true);
     });
@@ -81,7 +81,7 @@ describe('OpenAIProvider', () => {
     it('should use max_completion_tokens for o1 models', () => {
       const provider = new OpenAIProvider({
         apiKey: 'test-key',
-        model: 'o1-preview'
+        model: 'o1-preview',
       });
       expect(provider.usesMaxCompletionTokens()).toBe(true);
     });
@@ -89,7 +89,7 @@ describe('OpenAIProvider', () => {
     it('should use max_completion_tokens for o3 models', () => {
       const provider = new OpenAIProvider({
         apiKey: 'test-key',
-        model: 'o3-mini'
+        model: 'o3-mini',
       });
       expect(provider.usesMaxCompletionTokens()).toBe(true);
     });
@@ -97,7 +97,7 @@ describe('OpenAIProvider', () => {
     it('should use max_completion_tokens for chatgpt models', () => {
       const provider = new OpenAIProvider({
         apiKey: 'test-key',
-        model: 'chatgpt-4o-latest'
+        model: 'chatgpt-4o-latest',
       });
       expect(provider.usesMaxCompletionTokens()).toBe(true);
     });
@@ -105,7 +105,7 @@ describe('OpenAIProvider', () => {
     it('should use max_tokens for gpt-4 models', () => {
       const provider = new OpenAIProvider({
         apiKey: 'test-key',
-        model: 'gpt-4-turbo'
+        model: 'gpt-4-turbo',
       });
       expect(provider.usesMaxCompletionTokens()).toBe(false);
     });
@@ -113,7 +113,7 @@ describe('OpenAIProvider', () => {
     it('should use max_tokens for gpt-3.5 models', () => {
       const provider = new OpenAIProvider({
         apiKey: 'test-key',
-        model: 'gpt-3.5-turbo'
+        model: 'gpt-3.5-turbo',
       });
       expect(provider.usesMaxCompletionTokens()).toBe(false);
     });
@@ -123,12 +123,12 @@ describe('OpenAIProvider', () => {
     it('should build correct request body with max_tokens for older models', () => {
       const messages = [
         { role: 'system', content: 'System' },
-        { role: 'user', content: 'User' }
+        { role: 'user', content: 'User' },
       ];
 
       const body = provider.buildRequestBody(messages, {
         maxTokens: 2000,
-        temperature: 0.7
+        temperature: 0.7,
       });
 
       expect(body.model).toBe('gpt-4-turbo-preview');
@@ -141,12 +141,12 @@ describe('OpenAIProvider', () => {
     it('should build correct request body with max_completion_tokens for newer models', () => {
       const newProvider = new OpenAIProvider({
         apiKey: 'test-key',
-        model: 'gpt-5'
+        model: 'gpt-5',
       });
 
       const messages = [{ role: 'user', content: 'Hello' }];
       const body = newProvider.buildRequestBody(messages, {
-        maxTokens: 2000
+        maxTokens: 2000,
       });
 
       expect(body.max_completion_tokens).toBe(2000);
@@ -159,7 +159,7 @@ describe('OpenAIProvider', () => {
         top_p: 0.9,
         frequency_penalty: 0.5,
         presence_penalty: 0.3,
-        stop_sequences: ['STOP', 'END']
+        stop_sequences: ['STOP', 'END'],
       });
 
       expect(body.top_p).toBe(0.9);
@@ -196,15 +196,15 @@ describe('OpenAIProvider', () => {
             {
               message: {
                 content: 'Generated response',
-                role: 'assistant'
-              }
-            }
+                role: 'assistant',
+              },
+            },
           ],
           usage: {
             prompt_tokens: 100,
-            completion_tokens: 50
-          }
-        })
+            completion_tokens: 50,
+          },
+        }),
       });
 
       const result = await provider.generate('You are a helpful assistant', 'Hello, how are you?');
@@ -217,13 +217,13 @@ describe('OpenAIProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: 'Response' } }]
-        })
+          choices: [{ message: { content: 'Response' } }],
+        }),
       });
 
       await provider.generate('System prompt', 'User prompt', {
         maxTokens: 2000,
-        temperature: 0.7
+        temperature: 0.7,
       });
 
       const callArgs = mockFetch.mock.calls[0];
@@ -237,7 +237,7 @@ describe('OpenAIProvider', () => {
       expect(requestBody.stream).toBe(false);
       expect(requestBody.messages).toEqual([
         { role: 'system', content: 'System prompt' },
-        { role: 'user', content: 'User prompt' }
+        { role: 'user', content: 'User prompt' },
       ]);
       expect(requestBody.max_tokens).toBe(2000);
       expect(requestBody.temperature).toBe(0.7);
@@ -254,8 +254,8 @@ describe('OpenAIProvider', () => {
         ok: false,
         statusText: 'Bad Request',
         json: async () => ({
-          error: { message: 'Invalid request' }
-        })
+          error: { message: 'Invalid request' },
+        }),
       });
 
       await expect(provider.generate('System', 'User')).rejects.toThrow('Invalid request');
@@ -265,11 +265,11 @@ describe('OpenAIProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         statusText: 'Internal Server Error',
-        json: async () => ({})
+        json: async () => ({}),
       });
 
       await expect(provider.generate('System', 'User')).rejects.toThrow(
-        'API request failed: Internal Server Error'
+        'API request failed: Internal Server Error',
       );
     });
 
@@ -279,11 +279,11 @@ describe('OpenAIProvider', () => {
         statusText: 'Bad Request',
         json: async () => {
           throw new Error('Invalid JSON');
-        }
+        },
       });
 
       await expect(provider.generate('System', 'User')).rejects.toThrow(
-        'API request failed: Bad Request'
+        'API request failed: Bad Request',
       );
     });
 
@@ -291,8 +291,8 @@ describe('OpenAIProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: 'Response' } }]
-        })
+          choices: [{ message: { content: 'Response' } }],
+        }),
       });
 
       const controller = new AbortController();
@@ -305,8 +305,8 @@ describe('OpenAIProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: null } }]
-        })
+          choices: [{ message: { content: null } }],
+        }),
       });
 
       const result = await provider.generate('System', 'User');
@@ -319,8 +319,8 @@ describe('OpenAIProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: 'Response' } }]
-        })
+          choices: [{ message: { content: 'Response' } }],
+        }),
       });
 
       await provider.generate('System', 'User', { temperature: 0 });
@@ -333,8 +333,8 @@ describe('OpenAIProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: 'Response' } }]
-        })
+          choices: [{ message: { content: 'Response' } }],
+        }),
       });
 
       await provider.generate('System', 'User', { temperature: 2.0 });
@@ -347,8 +347,8 @@ describe('OpenAIProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: 'Response' } }]
-        })
+          choices: [{ message: { content: 'Response' } }],
+        }),
       });
 
       await provider.generate('System', 'User', { stop_sequences: [] });
@@ -361,8 +361,8 @@ describe('OpenAIProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: 'Response' } }]
-        })
+          choices: [{ message: { content: 'Response' } }],
+        }),
       });
 
       const longPrompt = 'a'.repeat(10000);
@@ -376,8 +376,8 @@ describe('OpenAIProvider', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{ message: { content: 'Response' } }]
-        })
+          choices: [{ message: { content: 'Response' } }],
+        }),
       });
 
       const specialPrompt = 'Test with "quotes" and \\backslashes\\ and \nnewlines';
@@ -392,7 +392,7 @@ describe('OpenAIProvider', () => {
     it('should handle case-insensitive model detection', () => {
       const provider = new OpenAIProvider({
         apiKey: 'test-key',
-        model: 'GPT-5'
+        model: 'GPT-5',
       });
       expect(provider.usesMaxCompletionTokens()).toBe(true);
     });
@@ -400,7 +400,7 @@ describe('OpenAIProvider', () => {
     it('should correctly identify O1-preview model', () => {
       const provider = new OpenAIProvider({
         apiKey: 'test-key',
-        model: 'o1-preview-2024'
+        model: 'o1-preview-2024',
       });
       expect(provider.usesMaxCompletionTokens()).toBe(true);
     });
@@ -408,7 +408,7 @@ describe('OpenAIProvider', () => {
     it('should correctly identify ChatGPT models', () => {
       const provider = new OpenAIProvider({
         apiKey: 'test-key',
-        model: 'chatgpt-something'
+        model: 'chatgpt-something',
       });
       expect(provider.usesMaxCompletionTokens()).toBe(true);
     });

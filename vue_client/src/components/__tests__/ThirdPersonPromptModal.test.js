@@ -17,12 +17,12 @@ const localStorageMock = (() => {
     }),
     clear: vi.fn(() => {
       store = {};
-    })
+    }),
   };
 })();
 
 Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock
+  value: localStorageMock,
 });
 
 describe('ThirdPersonPromptModal', () => {
@@ -42,7 +42,7 @@ describe('ThirdPersonPromptModal', () => {
       const wrapper = mount(ThirdPersonPromptModal);
 
       expect(wrapper.find('.prompt-message').text()).toBe(
-        'Would you like to rewrite this text to third-person narrative style?'
+        'Would you like to rewrite this text to third-person narrative style?',
       );
     });
 

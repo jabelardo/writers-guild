@@ -23,7 +23,7 @@ const cacheTimestamps = {
   stories: 0,
   characters: 0,
   lorebooks: 0,
-  presets: 0
+  presets: 0,
 };
 
 // Cache duration in milliseconds (5 minutes)
@@ -171,7 +171,7 @@ export function useDataCache() {
       try {
         const [presetsData, defaultData] = await Promise.all([
           presetsAPI.list(),
-          presetsAPI.getDefaultId()
+          presetsAPI.getDefaultId(),
         ]);
         presets.value = presetsData.presets || [];
         defaultPresetId.value = defaultData.defaultPresetId;
@@ -195,7 +195,7 @@ export function useDataCache() {
       loadStories(force),
       loadCharacters(force),
       loadLorebooks(force),
-      loadPresets(force)
+      loadPresets(force),
     ]);
   }
 
@@ -321,6 +321,6 @@ export function useDataCache() {
     removeLorebookLocally,
     updatePresetLocally,
     removePresetLocally,
-    setDefaultPresetIdLocally
+    setDefaultPresetIdLocally,
   };
 }

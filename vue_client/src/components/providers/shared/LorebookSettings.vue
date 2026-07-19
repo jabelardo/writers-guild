@@ -60,8 +60,8 @@ import { computed } from 'vue';
 const props = defineProps({
   modelValue: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -72,7 +72,7 @@ const localSettings = computed({
   },
   set(value) {
     emit('update:modelValue', value);
-  }
+  },
 });
 </script>
 

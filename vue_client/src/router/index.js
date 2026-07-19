@@ -16,46 +16,46 @@ const routes = [
     path: '/onboarding',
     name: 'onboarding',
     component: OnboardingWizard,
-    meta: { title: 'Welcome - Writers Guild', skipOnboardingCheck: true }
+    meta: { title: 'Welcome - Writers Guild', skipOnboardingCheck: true },
   },
   {
     path: '/',
     name: 'home',
     component: LandingPage,
-    meta: { title: 'Writers Guild' }
+    meta: { title: 'Writers Guild' },
   },
   {
     path: '/story/:storyId',
     name: 'story',
     component: StoryEditor,
     props: true,
-    meta: { title: 'Story Editor - Writers Guild', dynamicTitle: true }
+    meta: { title: 'Story Editor - Writers Guild', dynamicTitle: true },
   },
   {
     path: '/characters/:characterId',
     name: 'character-detail',
     component: CharacterDetail,
     props: true,
-    meta: { title: 'Character - Writers Guild', dynamicTitle: true }
+    meta: { title: 'Character - Writers Guild', dynamicTitle: true },
   },
   {
     path: '/lorebooks/:lorebookId',
     name: 'lorebook-detail',
     component: LorebookDetail,
     props: true,
-    meta: { title: 'Lorebook - Writers Guild', dynamicTitle: true }
+    meta: { title: 'Lorebook - Writers Guild', dynamicTitle: true },
   },
   {
     path: '/settings',
     name: 'settings',
     component: SettingsPage,
-    meta: { title: 'Settings - Writers Guild' }
-  }
+    meta: { title: 'Settings - Writers Guild' },
+  },
 ];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
 });
 
 // Track onboarding status to avoid repeated API calls

@@ -44,18 +44,18 @@ const props = defineProps({
   // Single character (legacy mode)
   character: {
     type: Object,
-    default: null
+    default: null,
   },
   // Multiple characters (new mode)
   characters: {
     type: Array,
-    default: null
+    default: null,
   },
   // Maximum number of avatars to show before using +X indicator
   maxDisplay: {
     type: Number,
-    default: 3
-  }
+    default: 3,
+  },
 });
 
 const isMultiMode = computed(() => {

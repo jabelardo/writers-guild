@@ -26,8 +26,8 @@ import CharacterCard from './CharacterCard.vue';
 defineProps({
   characters: {
     type: Array,
-    default: () => []
-  }
+    default: () => [],
+  },
 });
 
 defineEmits(['close', 'select']);

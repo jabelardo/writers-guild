@@ -6,7 +6,7 @@ const config = ref({
   message: '',
   confirmText: 'Confirm',
   cancelText: 'Cancel',
-  variant: 'default'
+  variant: 'default',
 });
 let resolveCallback = null;
 
@@ -26,7 +26,7 @@ export function useConfirm() {
         message: options.message || '',
         confirmText: options.confirmText || 'Confirm',
         cancelText: options.cancelText || 'Cancel',
-        variant: options.variant || 'default'
+        variant: options.variant || 'default',
       };
 
       resolveCallback = resolve;
@@ -58,6 +58,6 @@ export function useConfirm() {
 
     // State (for use in template)
     isVisible,
-    config
+    config,
   };
 }

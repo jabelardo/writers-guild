@@ -13,7 +13,7 @@ export class AnthropicProvider extends LLMProvider {
       ...config,
       baseURL: config.baseURL || 'https://api.anthropic.com/v1',
       model: config.model || 'claude-3-5-sonnet-20241022',
-      anthropicVersion: config.anthropicVersion || '2023-06-01'
+      anthropicVersion: config.anthropicVersion || '2023-06-01',
     };
 
     super(anthropicConfig);
@@ -28,7 +28,7 @@ export class AnthropicProvider extends LLMProvider {
       streaming: true,
       reasoning: false, // Anthropic doesn't expose reasoning tokens
       visionAPI: true, // Claude 3+ supports vision
-      maxContextWindow: 200000 // Claude 3.5 Sonnet context window
+      maxContextWindow: 200000, // Claude 3.5 Sonnet context window
     };
   }
 
@@ -39,7 +39,7 @@ export class AnthropicProvider extends LLMProvider {
     if (!this.apiKey || this.apiKey.trim() === '') {
       return {
         valid: false,
-        error: 'API key is required'
+        error: 'API key is required',
       };
     }
 
@@ -53,7 +53,7 @@ export class AnthropicProvider extends LLMProvider {
     return {
       'Content-Type': 'application/json',
       'x-api-key': this.apiKey,
-      'anthropic-version': this.anthropicVersion
+      'anthropic-version': this.anthropicVersion,
     };
   }
 
@@ -77,7 +77,7 @@ export class AnthropicProvider extends LLMProvider {
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
       max_tokens: options.maxTokens || 4000,
-      temperature: temperature
+      temperature: temperature,
     };
 
     // Add optional sampling parameters if provided
@@ -95,7 +95,7 @@ export class AnthropicProvider extends LLMProvider {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(requestBody),
-      signal: options.signal
+      signal: options.signal,
     });
 
     if (!response.ok) {
@@ -114,7 +114,7 @@ export class AnthropicProvider extends LLMProvider {
     return {
       content: content || '',
       reasoning: '', // Anthropic doesn't provide reasoning tokens
-      usage: data.usage
+      usage: data.usage,
     };
   }
 
@@ -141,7 +141,7 @@ export class AnthropicProvider extends LLMProvider {
       messages: [{ role: 'user', content: userPrompt }],
       max_tokens: options.maxTokens || 4000,
       temperature: temperature,
-      stream: true
+      stream: true,
     };
 
     // Add optional sampling parameters if provided
@@ -159,7 +159,7 @@ export class AnthropicProvider extends LLMProvider {
       method: 'POST',
       headers: this.buildHeaders(),
       body: JSON.stringify(requestBody),
-      signal: options.signal || controller.signal
+      signal: options.signal || controller.signal,
     });
 
     if (!response.ok) {
@@ -172,8 +172,8 @@ export class AnthropicProvider extends LLMProvider {
       abort: () => controller.abort(),
       metadata: {
         userPrompt,
-        systemPrompt
-      }
+        systemPrompt,
+      },
     };
   }
 
@@ -214,14 +214,14 @@ export class AnthropicProvider extends LLMProvider {
                 yield {
                   reasoning: null,
                   content: data.delta.text || null,
-                  finished: false
+                  finished: false,
                 };
               }
             } else if (data.type === 'message_stop') {
               yield {
                 reasoning: null,
                 content: null,
-                finished: true
+                finished: true,
               };
             }
           } catch (e) {
@@ -247,7 +247,7 @@ export class AnthropicProvider extends LLMProvider {
       return {
         code: 'AUTH_ERROR',
         message: 'Invalid API key',
-        original: error
+        original: error,
       };
     }
 
@@ -255,7 +255,7 @@ export class AnthropicProvider extends LLMProvider {
       return {
         code: 'RATE_LIMIT',
         message: 'Rate limit exceeded. Please try again later.',
-        original: error
+        original: error,
       };
     }
 
@@ -263,7 +263,7 @@ export class AnthropicProvider extends LLMProvider {
       return {
         code: 'OVERLOADED',
         message: 'Anthropic API is overloaded. Please try again.',
-        original: error
+        original: error,
       };
     }
 
@@ -278,7 +278,7 @@ export class AnthropicProvider extends LLMProvider {
     try {
       const response = await fetch(`${this.baseURL}/models`, {
         method: 'GET',
-        headers: this.buildHeaders()
+        headers: this.buildHeaders(),
       });
 
       if (!response.ok) {
@@ -296,12 +296,12 @@ export class AnthropicProvider extends LLMProvider {
           contextLength: this.getContextLength(model.id),
           pricing: {
             prompt: 0, // Pricing not provided by API
-            completion: 0
+            completion: 0,
           },
           created: model.created_at,
-          type: model.type
+          type: model.type,
         }))
-        .sort((a, b) => new Date(b.created) - new Date(a.created)); // Most recent first
+        .toSorted((a, b) => new Date(b.created) - new Date(a.created)); // Most recent first
     } catch (error) {
       console.error('Failed to fetch Anthropic models:', error);
       return [];
@@ -318,7 +318,7 @@ export class AnthropicProvider extends LLMProvider {
       const version = parts
         .slice(
           1,
-          parts.findIndex((p) => /^\d{8}$/.test(p))
+          parts.findIndex((p) => /^\d{8}$/.test(p)),
         )
         .join('.');
       const variant = parts.find((p) => ['opus', 'sonnet', 'haiku'].includes(p));

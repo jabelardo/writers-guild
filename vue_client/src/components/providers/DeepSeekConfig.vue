@@ -78,8 +78,8 @@ import { useModelSelector } from '../../composables/useModelSelector';
 const props = defineProps({
   config: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['update:config']);
@@ -91,7 +91,7 @@ const localApiConfig = computed({
   },
   set(value) {
     emit('update:config', { ...props.config, apiConfig: value });
-  }
+  },
 });
 
 const localGenerationSettings = computed(() => props.config.generationSettings || {});
@@ -101,8 +101,8 @@ function updateThinking(enabled) {
     ...props.config,
     generationSettings: {
       ...localGenerationSettings.value,
-      thinking: enabled
-    }
+      thinking: enabled,
+    },
   });
 }
 
@@ -111,8 +111,8 @@ function updateReasoningEffort(value) {
     ...props.config,
     generationSettings: {
       ...localGenerationSettings.value,
-      reasoningEffort: value
-    }
+      reasoningEffort: value,
+    },
   });
 }
 
@@ -123,7 +123,7 @@ const {
   modelsError,
   fetchAvailableModels,
   selectModel: baseSelectModel,
-  formatContextLength
+  formatContextLength,
 } = useModelSelector({
   apiConfig: localApiConfig,
   fetchModels: presetsAPI.getDeepSeekModels,
@@ -133,14 +133,14 @@ const {
       ...props.config,
       apiConfig: {
         ...localApiConfig.value,
-        model: updates.model
+        model: updates.model,
       },
       generationSettings: {
         ...props.config.generationSettings,
-        maxContextTokens: updates.contextLength
-      }
+        maxContextTokens: updates.contextLength,
+      },
     });
-  }
+  },
 });
 
 // Wrapper to handle model selection
@@ -169,7 +169,7 @@ watch(
       hasAutoFetched = true;
       fetchAvailableModels(true);
     }
-  }
+  },
 );
 </script>
 

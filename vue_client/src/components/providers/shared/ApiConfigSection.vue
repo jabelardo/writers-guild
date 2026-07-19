@@ -44,28 +44,28 @@ import { ref } from 'vue';
 const props = defineProps({
   modelValue: {
     type: Object,
-    required: true
+    required: true,
   },
   providerId: {
     type: String,
-    required: true
+    required: true,
   },
   placeholder: {
     type: String,
-    default: ''
+    default: '',
   },
   helpText: {
     type: String,
-    default: ''
+    default: '',
   },
   baseURLPlaceholder: {
     type: String,
-    required: true
+    required: true,
   },
   required: {
     type: Boolean,
-    default: true
-  }
+    default: true,
+  },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -75,14 +75,14 @@ const showAdvanced = ref(false);
 function updateApiKey(event) {
   emit('update:modelValue', {
     ...props.modelValue,
-    apiKey: event.target.value
+    apiKey: event.target.value,
   });
 }
 
 function updateBaseURL(event) {
   emit('update:modelValue', {
     ...props.modelValue,
-    baseURL: event.target.value
+    baseURL: event.target.value,
   });
 }
 

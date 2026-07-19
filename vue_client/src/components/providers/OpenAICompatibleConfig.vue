@@ -66,8 +66,8 @@ import { useToast } from '../../composables/useToast';
 const props = defineProps({
   config: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['update:config']);
@@ -84,7 +84,7 @@ const localApiConfig = computed({
   },
   set(value) {
     emit('update:config', { ...props.config, apiConfig: value });
-  }
+  },
 });
 
 async function fetchModels(silent = false) {
@@ -98,14 +98,14 @@ async function fetchModels(silent = false) {
     modelsError.value = null;
     const response = await presetsAPI.getOpenAICompatibleModels(
       localApiConfig.value.baseURL,
-      localApiConfig.value.apiKey
+      localApiConfig.value.apiKey,
     );
     availableModels.value = response.models || [];
     if (availableModels.value.length === 0) {
       modelsError.value = 'Endpoint returned no models. Load one in your server first.';
     } else if (!silent) {
       toast.success(
-        `Loaded ${availableModels.value.length} model${availableModels.value.length !== 1 ? 's' : ''}`
+        `Loaded ${availableModels.value.length} model${availableModels.value.length !== 1 ? 's' : ''}`,
       );
     }
   } catch (error) {
@@ -119,7 +119,7 @@ async function fetchModels(silent = false) {
 function selectModel(model) {
   localApiConfig.value = {
     ...localApiConfig.value,
-    model: model.id
+    model: model.id,
   };
   toast.success(`Selected model: ${model.name || model.id}`);
 }

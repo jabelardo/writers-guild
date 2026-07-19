@@ -8,7 +8,7 @@ export class MacroProcessor {
     this.context = {
       userName: context.userName || 'User',
       charName: context.charName || 'Character',
-      ...context
+      ...context,
     };
   }
 

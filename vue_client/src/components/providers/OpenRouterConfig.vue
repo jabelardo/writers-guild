@@ -246,8 +246,8 @@ import { useToast } from '../../composables/useToast';
 const props = defineProps({
   config: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['update:config']);
@@ -287,7 +287,7 @@ const commonProviders = [
   { id: 'Nous', name: 'Nous Research' },
   { id: 'Qwen', name: 'Qwen (Alibaba)' },
   { id: 'DeepSeek', name: 'DeepSeek' },
-  { id: 'xAI', name: 'xAI (Grok)' }
+  { id: 'xAI', name: 'xAI (Grok)' },
 ];
 
 // Local computed for API config
@@ -297,7 +297,7 @@ const localApiConfig = computed({
   },
   set(value) {
     emit('update:config', { ...props.config, apiConfig: value });
-  }
+  },
 });
 
 // Local providers array that syncs with apiConfig.providers
@@ -308,9 +308,9 @@ const localProviders = computed({
   set(value) {
     localApiConfig.value = {
       ...localApiConfig.value,
-      providers: value
+      providers: value,
     };
-  }
+  },
 });
 
 // Local allow fallbacks that syncs with apiConfig.allowFallbacks
@@ -321,9 +321,9 @@ const localAllowFallbacks = computed({
   set(value) {
     localApiConfig.value = {
       ...localApiConfig.value,
-      allowFallbacks: value
+      allowFallbacks: value,
     };
-  }
+  },
 });
 
 // Automatically fetch models on mount if API key is present
@@ -371,12 +371,12 @@ const filteredAndSortedModels = computed(() => {
       (m) =>
         m.name.toLowerCase().includes(query) ||
         m.id.toLowerCase().includes(query) ||
-        m.vendor.toLowerCase().includes(query)
+        m.vendor.toLowerCase().includes(query),
     );
   }
 
   // Apply sorting
-  const sorted = [...models].sort((a, b) => {
+  const sorted = [...models].toSorted((a, b) => {
     switch (sortBy.value) {
       case 'name':
         return a.name.localeCompare(b.name);
@@ -413,7 +413,7 @@ const groupedModels = computed(() => {
 function selectModel(model) {
   localApiConfig.value = {
     ...localApiConfig.value,
-    model: model.id
+    model: model.id,
   };
 
   // Auto-update context length if the setting exists
@@ -422,12 +422,12 @@ function selectModel(model) {
       ...props.config,
       apiConfig: {
         ...localApiConfig.value,
-        model: model.id
+        model: model.id,
       },
       generationSettings: {
         ...props.config.generationSettings,
-        maxContextTokens: model.contextLength
-      }
+        maxContextTokens: model.contextLength,
+      },
     });
   }
 

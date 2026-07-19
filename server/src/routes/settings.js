@@ -24,7 +24,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const settings = await storage.getSettings();
     res.json({ settings });
-  })
+  }),
 );
 
 // Update settings
@@ -46,7 +46,7 @@ router.put(
       lorebookRecursionDepth,
       lorebookEnableRecursion,
       defaultPersonaId,
-      onboardingCompleted
+      onboardingCompleted,
     } = req.body;
 
     // Get current settings
@@ -64,29 +64,29 @@ router.put(
       ...(thirdPerson !== undefined && { thirdPerson: Boolean(thirdPerson) }),
       ...(filterAsterisks !== undefined && { filterAsterisks: Boolean(filterAsterisks) }),
       ...(includeDialogueExamples !== undefined && {
-        includeDialogueExamples: Boolean(includeDialogueExamples)
+        includeDialogueExamples: Boolean(includeDialogueExamples),
       }),
       ...(lorebookScanDepth !== undefined && {
-        lorebookScanDepth: parseInt(lorebookScanDepth) || 2000
+        lorebookScanDepth: parseInt(lorebookScanDepth) || 2000,
       }),
       ...(lorebookTokenBudget !== undefined && {
-        lorebookTokenBudget: parseInt(lorebookTokenBudget) || 1800
+        lorebookTokenBudget: parseInt(lorebookTokenBudget) || 1800,
       }),
       ...(lorebookRecursionDepth !== undefined && {
-        lorebookRecursionDepth: parseInt(lorebookRecursionDepth) || 3
+        lorebookRecursionDepth: parseInt(lorebookRecursionDepth) || 3,
       }),
       ...(lorebookEnableRecursion !== undefined && {
-        lorebookEnableRecursion: Boolean(lorebookEnableRecursion)
+        lorebookEnableRecursion: Boolean(lorebookEnableRecursion),
       }),
       ...(defaultPersonaId !== undefined && { defaultPersonaId: defaultPersonaId || null }),
       ...(onboardingCompleted !== undefined && {
-        onboardingCompleted: Boolean(onboardingCompleted)
-      })
+        onboardingCompleted: Boolean(onboardingCompleted),
+      }),
     };
 
     const saved = await storage.saveSettings(updated);
     res.json({ settings: saved });
-  })
+  }),
 );
 
 export default router;

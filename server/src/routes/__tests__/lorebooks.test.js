@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import fs from 'fs';
@@ -32,9 +32,9 @@ describe('Lorebooks API Routes', () => {
     app.use('/api/lorebooks', lorebooksRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
@@ -153,12 +153,12 @@ describe('Lorebooks API Routes', () => {
     });
 
     it('should update lorebook settings', async () => {
-      const response = await request(app)
+      await request(app)
         .put(`/api/lorebooks/${lorebookId}`)
         .send({
           scanDepth: 1000,
           tokenBudget: 500,
-          recursiveScanning: false
+          recursiveScanning: false,
         })
         .expect(200);
 
@@ -207,7 +207,7 @@ describe('Lorebooks API Routes', () => {
           .post(`/api/lorebooks/${lorebookId}/entries`)
           .send({
             keys: ['test'],
-            content: 'Test content'
+            content: 'Test content',
           })
           .expect(200);
 
@@ -238,7 +238,7 @@ describe('Lorebooks API Routes', () => {
           scanDepth: 1500,
           group: 'creatures',
           preventRecursion: true,
-          delayUntilRecursion: false
+          delayUntilRecursion: false,
         };
 
         const response = await request(app)
@@ -432,10 +432,10 @@ describe('Lorebooks API Routes', () => {
             content: 'A mythical creature',
             comment: 'Dragon entry',
             enabled: true,
-            order: 100
-          }
+            order: 100,
+          },
         },
-        name: 'Imported Lorebook'
+        name: 'Imported Lorebook',
       };
 
       const response = await request(app)
@@ -457,11 +457,11 @@ describe('Lorebooks API Routes', () => {
             content: 'A dragon ![img](https://example.com/dragon.png)',
             comment: 'See reference ![map](https://example.com/map.jpg)',
             enabled: true,
-            order: 100
-          }
+            order: 100,
+          },
         },
         name: 'Cached Lorebook',
-        description: 'Lorebook with ![cover](https://example.com/cover.png)'
+        description: 'Lorebook with ![cover](https://example.com/cover.png)',
       };
 
       const response = await request(app)

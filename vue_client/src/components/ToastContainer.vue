@@ -29,7 +29,7 @@ function getIcon(type) {
     success: 'fas fa-check-circle',
     error: 'fas fa-exclamation-circle',
     info: 'fas fa-info-circle',
-    warning: 'fas fa-exclamation-triangle'
+    warning: 'fas fa-exclamation-triangle',
   };
   return icons[type] || icons.info;
 }

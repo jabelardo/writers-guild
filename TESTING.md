@@ -104,7 +104,7 @@ describe('MacroProcessor', () => {
   beforeEach(() => {
     processor = new MacroProcessor({
       userName: 'Alice',
-      charName: 'Bob'
+      charName: 'Bob',
     });
   });
 
@@ -133,7 +133,7 @@ describe('AnthropicProvider', () => {
 
     provider = new AnthropicProvider({
       apiKey: 'test-api-key',
-      model: 'claude-3-5-sonnet-20241022'
+      model: 'claude-3-5-sonnet-20241022',
     });
   });
 
@@ -141,8 +141,8 @@ describe('AnthropicProvider', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        content: [{ type: 'text', text: 'Generated response' }]
-      })
+        content: [{ type: 'text', text: 'Generated response' }],
+      }),
     });
 
     const result = await provider.generate('System prompt', 'User prompt');
@@ -199,8 +199,8 @@ describe('ConfirmDialog', () => {
   it('should render with required props', () => {
     const wrapper = mount(ConfirmDialog, {
       props: {
-        message: 'Are you sure?'
-      }
+        message: 'Are you sure?',
+      },
     });
 
     expect(wrapper.text()).toContain('Are you sure?');
@@ -208,7 +208,7 @@ describe('ConfirmDialog', () => {
 
   it('should emit confirm event when confirm button clicked', async () => {
     const wrapper = mount(ConfirmDialog, {
-      props: { message: 'Test' }
+      props: { message: 'Test' },
     });
 
     const confirmButton = wrapper.findAll('button')[1];
@@ -265,7 +265,7 @@ expect(doSomething).toHaveBeenCalled();
 
 ```javascript
 vi.mock('./module.js', () => ({
-  default: vi.fn(() => 'mocked')
+  default: vi.fn(() => 'mocked'),
 }));
 ```
 
@@ -311,8 +311,8 @@ expect(wrapper.emitted('event-name')[0]).toEqual(['arg1', 'arg2']);
 ```javascript
 mount(Component, {
   slots: {
-    default: '<div>Slot content</div>'
-  }
+    default: '<div>Slot content</div>',
+  },
 });
 ```
 

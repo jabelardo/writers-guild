@@ -55,9 +55,9 @@ describe('Presets API Routes', () => {
     app.use('/api/presets', presetsRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
@@ -79,8 +79,8 @@ describe('Presets API Routes', () => {
         apiKey: 'sk-test-key',
         generationSettings: {
           maxTokens: 4000,
-          temperature: 1.0
-        }
+          temperature: 1.0,
+        },
       };
 
       const response = await request(app).post('/api/presets').send(presetData).expect(201);
@@ -117,7 +117,7 @@ describe('Presets API Routes', () => {
         .send({
           name: 'Test Preset',
           provider: 'anthropic',
-          apiKey: 'test-key'
+          apiKey: 'test-key',
         })
         .expect(201);
 
@@ -143,7 +143,7 @@ describe('Presets API Routes', () => {
         .send({
           name: 'Original Name',
           provider: 'deepseek',
-          apiKey: 'original-key'
+          apiKey: 'original-key',
         })
         .expect(201);
 
@@ -184,7 +184,7 @@ describe('Presets API Routes', () => {
         .post('/api/presets')
         .send({
           name: 'To Delete',
-          provider: 'deepseek'
+          provider: 'deepseek',
         })
         .expect(201);
 
@@ -218,7 +218,7 @@ describe('Presets API Routes', () => {
         .post('/api/presets')
         .send({
           name: 'Default',
-          provider: 'deepseek'
+          provider: 'deepseek',
         })
         .expect(201);
 
@@ -239,7 +239,7 @@ describe('Presets API Routes', () => {
         .post('/api/presets')
         .send({
           name: 'New Default',
-          provider: 'deepseek'
+          provider: 'deepseek',
         })
         .expect(201);
 
@@ -297,7 +297,7 @@ describe('Presets API Routes', () => {
     it('should return models and auto-selected models on success', async () => {
       const models = [
         { name: 'llama-3-70b', count: 5 },
-        { name: 'qwen2.5-32b', count: 2 }
+        { name: 'qwen2.5-32b', count: 2 },
       ];
       const autoSelected = ['llama-3-70b'];
 
@@ -313,7 +313,7 @@ describe('Presets API Routes', () => {
 
     it('should return cached models on second request', async () => {
       vi.spyOn(AIHordeProvider.prototype, 'getAvailableModels').mockResolvedValue([
-        { name: 'llama-3-70b', count: 5 }
+        { name: 'llama-3-70b', count: 5 },
       ]);
       vi.spyOn(AIHordeProvider.prototype, 'autoSelectModels').mockReturnValue(['llama-3-70b']);
 
@@ -381,7 +381,7 @@ describe('Presets API Routes', () => {
 
     it('should return cached response within cache duration', async () => {
       vi.spyOn(OpenRouterProvider.prototype, 'getAvailableModels').mockResolvedValue([
-        { id: 'm1' }
+        { id: 'm1' },
       ]);
 
       await request(app).get('/api/presets/openrouter/models?apiKey=or-key').expect(200);
@@ -431,7 +431,7 @@ describe('Presets API Routes', () => {
 
     it('should return cached models on second request', async () => {
       vi.spyOn(OpenAIProvider.prototype, 'getAvailableModels').mockResolvedValue([
-        { id: 'gpt-4.1' }
+        { id: 'gpt-4.1' },
       ]);
 
       await request(app).get('/api/presets/openai/models?apiKey=sk-test').expect(200);
@@ -481,7 +481,7 @@ describe('Presets API Routes', () => {
 
     it('should return cached models on second request', async () => {
       vi.spyOn(AnthropicProvider.prototype, 'getAvailableModels').mockResolvedValue([
-        { id: 'claude-3-5-sonnet-20241022' }
+        { id: 'claude-3-5-sonnet-20241022' },
       ]);
 
       await request(app).get('/api/presets/anthropic/models?apiKey=ak-test').expect(200);
@@ -531,7 +531,7 @@ describe('Presets API Routes', () => {
 
     it('should return cached models on second request', async () => {
       vi.spyOn(DeepSeekProvider.prototype, 'getAvailableModels').mockResolvedValue([
-        { id: 'deepseek-v4-flash' }
+        { id: 'deepseek-v4-flash' },
       ]);
 
       await request(app).get('/api/presets/deepseek/models?apiKey=ds-test').expect(200);

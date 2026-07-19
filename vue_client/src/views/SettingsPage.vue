@@ -165,7 +165,7 @@ const settings = ref({
   lorebookScanDepth: 2000,
   lorebookTokenBudget: 1800,
   lorebookRecursionDepth: 3,
-  lorebookEnableRecursion: true
+  lorebookEnableRecursion: true,
 });
 
 onMounted(async () => {
@@ -179,7 +179,7 @@ watch(
     if (!isInitialLoad.value && newValue !== originalApiKey.value) {
       apiKeyChanged.value = true;
     }
-  }
+  },
 );
 
 // Watch for settings changes and auto-save with debounce
@@ -199,7 +199,7 @@ watch(
       saveSettings();
     }, 500);
   },
-  { deep: true }
+  { deep: true },
 );
 
 async function loadSettings() {
@@ -225,7 +225,7 @@ async function loadSettings() {
       lorebookScanDepth: serverSettings.lorebookScanDepth ?? 2000,
       lorebookTokenBudget: serverSettings.lorebookTokenBudget ?? 1800,
       lorebookRecursionDepth: serverSettings.lorebookRecursionDepth ?? 3,
-      lorebookEnableRecursion: serverSettings.lorebookEnableRecursion ?? true
+      lorebookEnableRecursion: serverSettings.lorebookEnableRecursion ?? true,
     };
   } catch (error) {
     console.error('Failed to load settings:', error);

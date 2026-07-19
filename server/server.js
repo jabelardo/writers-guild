@@ -72,16 +72,16 @@ if (!fs.existsSync(DATA_ROOT)) {
 app.use(
   helmet({
     contentSecurityPolicy: false, // Disable CSP for now (can enable later)
-    crossOriginEmbedderPolicy: false
-  })
+    crossOriginEmbedderPolicy: false,
+  }),
 );
 
 // CORS configuration
 app.use(
   cors({
     origin: config.security.cors.origins,
-    credentials: true
-  })
+    credentials: true,
+  }),
 );
 
 // Optional HTTP Basic Authentication
@@ -96,8 +96,8 @@ app.use(
         return false;
       }
       return compression.filter(req, res);
-    }
-  })
+    },
+  }),
 );
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
@@ -140,7 +140,7 @@ if (isProduction) {
 }
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error('Error:', err);
 
   const statusCode = err.statusCode || 500;
@@ -148,7 +148,7 @@ app.use((err, req, res, next) => {
 
   res.status(statusCode).json({
     error: message,
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });
 

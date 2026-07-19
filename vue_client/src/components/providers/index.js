@@ -23,7 +23,7 @@ export const PROVIDER_COMPONENTS = {
   openrouter: OpenRouterConfig,
   koboldcpp: KoboldCppConfig,
   ollama: OllamaConfig,
-  openaicompatible: OpenAICompatibleConfig
+  openaicompatible: OpenAICompatibleConfig,
 };
 
 /**

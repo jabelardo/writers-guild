@@ -15,7 +15,7 @@ export class AIHordeProvider extends LLMProvider {
       models: config.models || [], // Empty = use auto-selected models
       workers: config.workers || [],
       trustedWorkers: config.trustedWorkers || false,
-      slowWorkers: config.slowWorkers !== false // Default true
+      slowWorkers: config.slowWorkers !== false, // Default true
     };
 
     super(hordeConfig);
@@ -41,7 +41,7 @@ export class AIHordeProvider extends LLMProvider {
       'chronos',
       'stheno',
       'euryale',
-      'fimbulvetr'
+      'fimbulvetr',
     ];
 
     // Patterns to exclude from auto-selection
@@ -57,7 +57,7 @@ export class AIHordeProvider extends LLMProvider {
       reasoning: false, // AI Horde does not provide reasoning
       visionAPI: false,
       maxContextWindow: 8192, // Varies by model, but typically around 8k
-      requiresPolling: true // Special flag for queue-based providers
+      requiresPolling: true, // Special flag for queue-based providers
     };
   }
 
@@ -69,7 +69,7 @@ export class AIHordeProvider extends LLMProvider {
     if (!this.apiKey || this.apiKey.trim() === '') {
       return {
         valid: false,
-        error: 'API key is required (use "0000000000" for anonymous)'
+        error: 'API key is required (use "0000000000" for anonymous)',
       };
     }
 
@@ -114,7 +114,7 @@ export class AIHordeProvider extends LLMProvider {
       try {
         const { maxContextLength } = await this.calculateDynamicContextLimit(
           modelsToUse,
-          maxGenerationTokens
+          maxGenerationTokens,
         );
         maxContextTokens = maxContextLength;
       } catch (error) {
@@ -128,7 +128,7 @@ export class AIHordeProvider extends LLMProvider {
       generationType,
       // Pass imagePreserver if provided (for preserving images after truncation)
       imagePreserver: customParams.imagePreserver || null,
-      ...customParams
+      ...customParams,
     });
   }
 
@@ -145,7 +145,7 @@ export class AIHordeProvider extends LLMProvider {
 
     if (options.maxTokens && options.maxTokens > 1024) {
       console.warn(
-        `[AI Horde] Requested maxTokens (${options.maxTokens}) exceeds AI Horde limit. Capping at 1024.`
+        `[AI Horde] Requested maxTokens (${options.maxTokens}) exceeds AI Horde limit. Capping at 1024.`,
       );
     }
 
@@ -162,7 +162,7 @@ export class AIHordeProvider extends LLMProvider {
           ? options.rep_pen_range
           : 320,
       sampler_order: options.sampler_order || [6, 0, 1, 3, 4, 2, 5],
-      use_default_badwordsids: true // Prevent EOS token issues
+      use_default_badwordsids: true, // Prevent EOS token issues
     };
 
     // Add optional advanced samplers if provided
@@ -206,7 +206,7 @@ export class AIHordeProvider extends LLMProvider {
     const payload = {
       prompt: fullPrompt,
       params: params,
-      models: this.config.models || [] // Empty array = any available model
+      models: this.config.models || [], // Empty array = any available model
     };
 
     // Only add optional fields if explicitly configured
@@ -228,10 +228,10 @@ export class AIHordeProvider extends LLMProvider {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        apikey: this.apiKey
+        apikey: this.apiKey,
       },
       body: JSON.stringify(payload),
-      signal: options.signal
+      signal: options.signal,
     });
 
     if (!response.ok) {
@@ -265,8 +265,8 @@ export class AIHordeProvider extends LLMProvider {
     const response = await fetch(`${this.baseURL}/generate/text/status/${requestId}`, {
       method: 'GET',
       headers: {
-        apikey: this.apiKey
-      }
+        apikey: this.apiKey,
+      },
     });
 
     if (!response.ok) {
@@ -281,7 +281,7 @@ export class AIHordeProvider extends LLMProvider {
       queuePosition: data.queue_position || 0,
       waitTime: data.wait_time || 0,
       kudos: data.kudos || 0,
-      generations: data.generations || []
+      generations: data.generations || [],
     };
   }
 
@@ -295,15 +295,15 @@ export class AIHordeProvider extends LLMProvider {
     const response = await fetch(`${this.baseURL}/generate/text/status/${requestId}`, {
       method: 'DELETE',
       headers: {
-        apikey: this.apiKey
-      }
+        apikey: this.apiKey,
+      },
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error(`[AI Horde] Cancel request failed: ${response.statusText}`);
       throw new Error(
-        errorData.message || `AI Horde cancel request failed: ${response.statusText}`
+        errorData.message || `AI Horde cancel request failed: ${response.statusText}`,
       );
     }
 
@@ -312,7 +312,7 @@ export class AIHordeProvider extends LLMProvider {
     return {
       finished: data.done || false,
       faulted: data.faulted || false,
-      generations: data.generations || []
+      generations: data.generations || [],
     };
   }
 
@@ -349,14 +349,14 @@ export class AIHordeProvider extends LLMProvider {
           content: cleanedText,
           reasoning: null, // AI Horde doesn't provide reasoning
           usage: {
-            totalTokens: generation.kudos || 0
+            totalTokens: generation.kudos || 0,
           },
           metadata: {
             requestId,
             model: generation.model,
             worker: generation.worker_name,
-            workerI: generation.worker_id
-          }
+            workerI: generation.worker_id,
+          },
         };
       }
 
@@ -373,7 +373,7 @@ export class AIHordeProvider extends LLMProvider {
     // Submit request
     const requestId = await this.submitRequest(systemPrompt, userPrompt, options);
     console.log(
-      `[AI Horde] Started polling for request ${requestId}, signal present: ${!!options.signal}`
+      `[AI Horde] Started polling for request ${requestId}, signal present: ${!!options.signal}`,
     );
 
     // Poll for completion and yield status updates
@@ -403,7 +403,7 @@ export class AIHordeProvider extends LLMProvider {
           queuePosition: status.queuePosition,
           waitTime: status.waitTime,
           finished: status.finished,
-          faulted: status.faulted
+          faulted: status.faulted,
         };
 
         if (status.faulted) {
@@ -421,8 +421,8 @@ export class AIHordeProvider extends LLMProvider {
             metadata: {
               requestId,
               model: generation.model,
-              worker: generation.worker_name
-            }
+              worker: generation.worker_name,
+            },
           };
           return;
         }
@@ -470,9 +470,9 @@ export class AIHordeProvider extends LLMProvider {
   /**
    * Required by base class but not supported by AI Horde
    */
-  async generateStreaming(systemPrompt, userPrompt, options = {}) {
+  async generateStreaming(_systemPrompt, _userPrompt, _options = {}) {
     throw new Error(
-      'AI Horde does not support streaming. Use generate() instead or generateStreamingWithStatus() for status updates.'
+      'AI Horde does not support streaming. Use generate() instead or generateStreamingWithStatus() for status updates.',
     );
   }
 
@@ -484,7 +484,7 @@ export class AIHordeProvider extends LLMProvider {
       return {
         code: 'AUTH_ERROR',
         message: 'Invalid API key',
-        original: error
+        original: error,
       };
     }
 
@@ -492,7 +492,7 @@ export class AIHordeProvider extends LLMProvider {
       return {
         code: 'TIMEOUT',
         message: 'Generation timed out. Try again or use faster workers.',
-        original: error
+        original: error,
       };
     }
 
@@ -500,7 +500,7 @@ export class AIHordeProvider extends LLMProvider {
       return {
         code: 'QUEUE_ERROR',
         message: 'Queue error. Please try again.',
-        original: error
+        original: error,
       };
     }
 
@@ -516,8 +516,8 @@ export class AIHordeProvider extends LLMProvider {
       const response = await fetch(`${this.baseURL}/status/models?type=text`, {
         method: 'GET',
         headers: {
-          apikey: this.apiKey
-        }
+          apikey: this.apiKey,
+        },
       });
 
       if (!response.ok) {
@@ -534,9 +534,9 @@ export class AIHordeProvider extends LLMProvider {
           performance: model.performance || 0,
           queued: model.queued || 0,
           eta: model.eta || 0,
-          type: model.type || 'text'
+          type: model.type || 'text',
         }))
-        .sort((a, b) => b.count - a.count); // Sort by worker count
+        .toSorted((a, b) => b.count - a.count); // Sort by worker count
     } catch (error) {
       console.error('Failed to fetch AI Horde models:', error);
       return [];
@@ -552,8 +552,8 @@ export class AIHordeProvider extends LLMProvider {
       const response = await fetch(`${this.baseURL}/workers?type=text`, {
         method: 'GET',
         headers: {
-          apikey: this.apiKey
-        }
+          apikey: this.apiKey,
+        },
       });
 
       if (!response.ok) {
@@ -571,7 +571,7 @@ export class AIHordeProvider extends LLMProvider {
           max_length: worker.max_length || 512,
           online: worker.online || false,
           trusted: worker.trusted || false,
-          performance: worker.performance || 0
+          performance: worker.performance || 0,
         }))
         .filter((w) => w.online); // Only return online workers
     } catch (error) {
@@ -596,7 +596,7 @@ export class AIHordeProvider extends LLMProvider {
     const filtered = availableModels.filter((model) => {
       const nameLower = model.name.toLowerCase();
       return !this.excludeModelPatterns.some((pattern) =>
-        nameLower.includes(pattern.toLowerCase())
+        nameLower.includes(pattern.toLowerCase()),
       );
     });
 
@@ -604,7 +604,7 @@ export class AIHordeProvider extends LLMProvider {
     for (const model of filtered) {
       const nameLower = model.name.toLowerCase();
       const matches = this.defaultModelPatterns.some((pattern) =>
-        nameLower.includes(pattern.toLowerCase())
+        nameLower.includes(pattern.toLowerCase()),
       );
 
       if (matches && model.count > 0) {
@@ -637,7 +637,7 @@ export class AIHordeProvider extends LLMProvider {
 
         // Find workers that support at least one of our selected models
         const relevantWorkers = workers.filter((worker) =>
-          worker.models.some((model) => modelNames.includes(model))
+          worker.models.some((model) => modelNames.includes(model)),
         );
 
         if (relevantWorkers.length > 0) {
@@ -655,7 +655,7 @@ export class AIHordeProvider extends LLMProvider {
 
     return {
       maxContextLength,
-      maxChars: Math.max(1000, maxChars) // Minimum 1000 chars
+      maxChars: Math.max(1000, maxChars), // Minimum 1000 chars
     };
   }
 }

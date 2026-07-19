@@ -123,8 +123,8 @@ import { useToast } from '../../composables/useToast';
 const props = defineProps({
   config: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['update:config']);
@@ -146,7 +146,7 @@ const localApiConfig = computed({
   },
   set(value) {
     emit('update:config', { ...props.config, apiConfig: value });
-  }
+  },
 });
 
 // Local models array that syncs with apiConfig.models
@@ -157,9 +157,9 @@ const localModels = computed({
   set(value) {
     localApiConfig.value = {
       ...localApiConfig.value,
-      models: value
+      models: value,
     };
-  }
+  },
 });
 
 const selectedModelsCount = computed(() => {

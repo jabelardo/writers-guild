@@ -9,7 +9,7 @@ export class LorebookActivator {
       scanDepth: settings.lorebookScanDepth || 2000, // Tokens to scan
       tokenBudget: settings.lorebookTokenBudget || 1800, // Max tokens for lorebook content
       recursionDepth: settings.lorebookRecursionDepth || 3, // Max recursive depth
-      enableRecursion: settings.lorebookEnableRecursion !== false
+      enableRecursion: settings.lorebookEnableRecursion !== false,
     };
   }
 
@@ -31,8 +31,8 @@ export class LorebookActivator {
         allEntries.push(
           ...lorebook.entries.map((e) => ({
             ...e,
-            lorebookName: lorebook.name
-          }))
+            lorebookName: lorebook.name,
+          })),
         );
       }
     }
@@ -135,7 +135,7 @@ export class LorebookActivator {
           allEntries,
           recursiveScanContent,
           depth + 1,
-          processedIds
+          processedIds,
         );
 
         activated.push(...recursiveActivated);
@@ -166,7 +166,7 @@ export class LorebookActivator {
     // If selective, check secondary keys with logic
     if (entry.selective && entry.secondaryKeys && entry.secondaryKeys.length > 0) {
       const secondaryMatches = entry.secondaryKeys.map((key) =>
-        this._matchKey(key, content, entry)
+        this._matchKey(key, content, entry),
       );
 
       const anyMatch = secondaryMatches.some((m) => m);
@@ -326,7 +326,7 @@ export class LorebookActivator {
 
     // Select one entry from each group
     const selected = [];
-    for (const [groupKey, groupEntries] of groups) {
+    for (const groupEntries of groups.values()) {
       if (groupEntries.length === 1) {
         selected.push(groupEntries[0]);
       } else {

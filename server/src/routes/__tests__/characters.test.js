@@ -4,7 +4,7 @@ import request from 'supertest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { createTestPng, createTestCharacterPng, PNG_SIGNATURE } from './test-helpers.js';
+import { createTestPng, createTestCharacterPng } from './test-helpers.js';
 
 // Import the routers
 import charactersRouter from '../characters.js';
@@ -42,9 +42,9 @@ describe('Characters API Routes', () => {
     app.use('/api/stories', storiesRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
@@ -78,7 +78,7 @@ describe('Characters API Routes', () => {
           description: 'A detailed description',
           personality: 'Brave and kind',
           scenario: 'In a fantasy world',
-          first_mes: 'Hello there!'
+          first_mes: 'Hello there!',
         })
         .expect(201);
 
@@ -119,7 +119,7 @@ describe('Characters API Routes', () => {
         description: 'Has an image',
         personality: 'Cheerful',
         scenario: 'Modern day',
-        first_mes: 'Hi!'
+        first_mes: 'Hi!',
       };
 
       const response = await request(app)
@@ -187,7 +187,7 @@ describe('Characters API Routes', () => {
         .send({
           name: 'Original Name',
           description: 'Original Desc',
-          personality: 'Original Personality'
+          personality: 'Original Personality',
         })
         .expect(201);
 
@@ -220,7 +220,7 @@ describe('Characters API Routes', () => {
           description: 'New Desc',
           personality: 'New Personality',
           scenario: 'New Scenario',
-          first_mes: 'New First Message'
+          first_mes: 'New First Message',
         })
         .expect(200);
 
@@ -230,7 +230,7 @@ describe('Characters API Routes', () => {
     it('should update alternate greetings', async () => {
       const alternateGreetings = ['Greeting 1', 'Greeting 2'];
 
-      const response = await request(app)
+      await request(app)
         .put(`/api/characters/${charId}`)
         .send({ alternate_greetings: alternateGreetings })
         .expect(200);
@@ -244,7 +244,7 @@ describe('Characters API Routes', () => {
     it('should update lorebook association', async () => {
       const lorebookId = 'test-lorebook-id';
 
-      const response = await request(app)
+      await request(app)
         .put(`/api/characters/${charId}`)
         .send({ ursceal_lorebook_id: lorebookId })
         .expect(200);
@@ -369,7 +369,7 @@ describe('Characters API Routes', () => {
       const testPng = createTestPng();
       const characterData = {
         name: 'Image Char',
-        description: 'Has image'
+        description: 'Has image',
       };
 
       const createResponse = await request(app)
@@ -377,7 +377,7 @@ describe('Characters API Routes', () => {
         .field('characterData', JSON.stringify(characterData))
         .attach('image', testPng, {
           filename: 'test.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(201);
 
@@ -410,7 +410,7 @@ describe('Characters API Routes', () => {
       const testPng = createTestPng();
       const characterData = {
         name: 'Thumb Char',
-        description: 'Has thumbnail'
+        description: 'Has thumbnail',
       };
 
       const createResponse = await request(app)
@@ -418,7 +418,7 @@ describe('Characters API Routes', () => {
         .field('characterData', JSON.stringify(characterData))
         .attach('image', testPng, {
           filename: 'test.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(201);
 
@@ -455,7 +455,7 @@ describe('Characters API Routes', () => {
       const testPng = createTestPng();
       const characterData = {
         name: 'Medium Thumb Char',
-        description: 'Has medium thumbnail'
+        description: 'Has medium thumbnail',
       };
 
       const createResponse = await request(app)
@@ -463,7 +463,7 @@ describe('Characters API Routes', () => {
         .field('characterData', JSON.stringify(characterData))
         .attach('image', testPng, {
           filename: 'test.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(201);
 
@@ -510,7 +510,7 @@ describe('Characters API Routes', () => {
       const characterPng = await createTestCharacterPng({
         name: 'URL Image Char',
         description: 'Imported from image URL',
-        first_mes: 'Hello from URL!'
+        first_mes: 'Hello from URL!',
       });
 
       const mockResponse = {
@@ -519,8 +519,8 @@ describe('Characters API Routes', () => {
         arrayBuffer: async () =>
           characterPng.buffer.slice(
             characterPng.byteOffset,
-            characterPng.byteOffset + characterPng.byteLength
-          )
+            characterPng.byteOffset + characterPng.byteLength,
+          ),
       };
       vi.stubGlobal('fetch', async () => mockResponse);
 
@@ -542,7 +542,7 @@ describe('Characters API Routes', () => {
 
     it('should import character from JPEG image URL', async () => {
       const characterPng = await createTestCharacterPng({
-        name: 'JPEG URL Char'
+        name: 'JPEG URL Char',
       });
 
       const mockResponse = {
@@ -551,8 +551,8 @@ describe('Characters API Routes', () => {
         arrayBuffer: async () =>
           characterPng.buffer.slice(
             characterPng.byteOffset,
-            characterPng.byteOffset + characterPng.byteLength
-          )
+            characterPng.byteOffset + characterPng.byteLength,
+          ),
       };
       vi.stubGlobal('fetch', async () => mockResponse);
 
@@ -571,7 +571,7 @@ describe('Characters API Routes', () => {
 
     it('should import character from WebP image URL', async () => {
       const characterPng = await createTestCharacterPng({
-        name: 'WebP URL Char'
+        name: 'WebP URL Char',
       });
 
       const mockResponse = {
@@ -580,8 +580,8 @@ describe('Characters API Routes', () => {
         arrayBuffer: async () =>
           characterPng.buffer.slice(
             characterPng.byteOffset,
-            characterPng.byteOffset + characterPng.byteLength
-          )
+            characterPng.byteOffset + characterPng.byteLength,
+          ),
       };
       vi.stubGlobal('fetch', async () => mockResponse);
 
@@ -599,7 +599,7 @@ describe('Characters API Routes', () => {
 
     it('should import character from image URL with query parameters', async () => {
       const characterPng = await createTestCharacterPng({
-        name: 'Query URL Char'
+        name: 'Query URL Char',
       });
 
       const mockResponse = {
@@ -608,8 +608,8 @@ describe('Characters API Routes', () => {
         arrayBuffer: async () =>
           characterPng.buffer.slice(
             characterPng.byteOffset,
-            characterPng.byteOffset + characterPng.byteLength
-          )
+            characterPng.byteOffset + characterPng.byteLength,
+          ),
       };
       vi.stubGlobal('fetch', async () => mockResponse);
 
@@ -628,7 +628,7 @@ describe('Characters API Routes', () => {
     it('should return 400 when image URL fetch fails', async () => {
       vi.stubGlobal('fetch', async () => ({
         ok: false,
-        statusText: 'Not Found'
+        statusText: 'Not Found',
       }));
 
       try {
@@ -649,7 +649,7 @@ describe('Characters API Routes', () => {
         ok: true,
         statusText: 'OK',
         arrayBuffer: async () =>
-          notPng.buffer.slice(notPng.byteOffset, notPng.byteOffset + notPng.byteLength)
+          notPng.buffer.slice(notPng.byteOffset, notPng.byteOffset + notPng.byteLength),
       }));
 
       try {
@@ -668,7 +668,7 @@ describe('Characters API Routes', () => {
       // Verifies that a successful image URL import returns 201 and does NOT
       // fall through to the CHUB URL check (which would throw a 400 error).
       const characterPng = await createTestCharacterPng({
-        name: 'No Fallthrough Char'
+        name: 'No Fallthrough Char',
       });
 
       const mockResponse = {
@@ -677,8 +677,8 @@ describe('Characters API Routes', () => {
         arrayBuffer: async () =>
           characterPng.buffer.slice(
             characterPng.byteOffset,
-            characterPng.byteOffset + characterPng.byteLength
-          )
+            characterPng.byteOffset + characterPng.byteLength,
+          ),
       };
       vi.stubGlobal('fetch', async () => mockResponse);
 
@@ -710,7 +710,7 @@ describe('Characters API Routes', () => {
         .post('/api/characters/import')
         .attach('character', Buffer.from('not an image'), {
           filename: 'test.txt',
-          contentType: 'text/plain'
+          contentType: 'text/plain',
         })
         .expect(400);
 
@@ -724,7 +724,7 @@ describe('Characters API Routes', () => {
         .post('/api/characters/import')
         .attach('character', largeBuffer, {
           filename: 'large.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(500); // multer might throw 500 for size limits
 
@@ -738,14 +738,14 @@ describe('Characters API Routes', () => {
         name: 'Imported Char',
         description: 'From JSON',
         personality: 'Friendly',
-        first_mes: 'Hello from JSON!'
+        first_mes: 'Hello from JSON!',
       };
 
       const response = await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from(JSON.stringify(characterJson)), {
           filename: 'character.json',
-          contentType: 'application/json'
+          contentType: 'application/json',
         })
         .expect(201);
 
@@ -759,13 +759,13 @@ describe('Characters API Routes', () => {
       const flatCharacter = {
         name: 'Flat Char',
         description: 'Flat format',
-        first_mes: 'Hi'
+        first_mes: 'Hi',
       };
 
       const response = await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from(JSON.stringify(flatCharacter)), {
-          filename: 'character.json'
+          filename: 'character.json',
         })
         .expect(201);
 
@@ -789,7 +789,7 @@ describe('Characters API Routes', () => {
       const response = await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from('not valid json'), {
-          filename: 'bad.json'
+          filename: 'bad.json',
         })
         .expect(400);
 
@@ -798,13 +798,13 @@ describe('Characters API Routes', () => {
 
     it('should return 400 for missing name in character data', async () => {
       const invalidChar = {
-        description: 'No name field'
+        description: 'No name field',
       };
 
       const response = await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from(JSON.stringify(invalidChar)), {
-          filename: 'bad.json'
+          filename: 'bad.json',
         })
         .expect(400);
 
@@ -822,16 +822,16 @@ describe('Characters API Routes', () => {
               uid: 1,
               key: ['magic'],
               content: 'Magic lore content',
-              comment: 'Magic entry'
-            }
-          ]
-        }
+              comment: 'Magic entry',
+            },
+          ],
+        },
       };
 
       const response = await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from(JSON.stringify(characterWithLorebook)), {
-          filename: 'char.json'
+          filename: 'char.json',
         })
         .expect(201);
 
@@ -872,7 +872,7 @@ describe('Characters API Routes', () => {
     it('should update character with valid JSON data', async () => {
       const updateData = {
         name: 'Updated Name',
-        description: 'Updated Description'
+        description: 'Updated Description',
       };
 
       const response = await request(app)
@@ -889,17 +889,17 @@ describe('Characters API Routes', () => {
     it('should list characters sorted alphabetically', async () => {
       // Clean up any existing characters by using a fresh temp dir
       // Create characters in non-alphabetical order
-      const char1 = await request(app)
+      await request(app)
         .post('/api/characters')
         .send({ name: 'Zebra Char', description: 'Z' })
         .expect(201);
 
-      const char2 = await request(app)
+      await request(app)
         .post('/api/characters')
         .send({ name: 'Apple Char', description: 'A' })
         .expect(201);
 
-      const char3 = await request(app)
+      await request(app)
         .post('/api/characters')
         .send({ name: 'Mango Char', description: 'M' })
         .expect(201);
@@ -908,7 +908,7 @@ describe('Characters API Routes', () => {
 
       // Find our test characters in the list
       const testChars = response.body.characters.filter((c) =>
-        ['Zebra Char', 'Apple Char', 'Mango Char'].includes(c.name)
+        ['Zebra Char', 'Apple Char', 'Mango Char'].includes(c.name),
       );
 
       const names = testChars.map((c) => c.name);
@@ -922,7 +922,7 @@ describe('Characters API Routes', () => {
       const testPng = createTestPng();
       const characterData = {
         name: 'Image List Char',
-        description: 'Has image'
+        description: 'Has image',
       };
 
       const createResponse = await request(app)
@@ -930,7 +930,7 @@ describe('Characters API Routes', () => {
         .field('characterData', JSON.stringify(characterData))
         .attach('image', testPng, {
           filename: 'test.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(201);
 
@@ -957,7 +957,6 @@ describe('Characters API Routes', () => {
       const story1 = await storage.createStory('Story 1', 'First');
       await storage.addCharacterToStory(story1.id, charId);
       // Update word count
-      const story1Data = await storage.getStory(story1.id);
       await storage.stmts.updateStoryContent.run('', 1000, new Date().toISOString(), story1.id);
 
       const story2 = await storage.createStory('Story 2', 'Second');
@@ -979,7 +978,7 @@ describe('Characters API Routes', () => {
         description: 'Has an image',
         personality: 'Cheerful',
         scenario: 'Modern day',
-        first_mes: 'Hi!'
+        first_mes: 'Hi!',
       };
 
       const response = await request(app)
@@ -987,7 +986,7 @@ describe('Characters API Routes', () => {
         .field('characterData', JSON.stringify(characterData))
         .attach('image', testPng, {
           filename: 'test.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(201);
 
@@ -1051,7 +1050,7 @@ describe('Characters API Routes', () => {
         .send({
           name: 'Original Name',
           description: 'Original Desc',
-          personality: 'Original Personality'
+          personality: 'Original Personality',
         })
         .expect(201);
 
@@ -1059,7 +1058,7 @@ describe('Characters API Routes', () => {
     });
 
     it('should update system_prompt field', async () => {
-      const response = await request(app)
+      await request(app)
         .put(`/api/characters/${charId}`)
         .send({ system_prompt: 'New system prompt' })
         .expect(200);
@@ -1071,7 +1070,7 @@ describe('Characters API Routes', () => {
     });
 
     it('should update mes_example field', async () => {
-      const response = await request(app)
+      await request(app)
         .put(`/api/characters/${charId}`)
         .send({ mes_example: 'Example dialogue' })
         .expect(200);
@@ -1092,7 +1091,7 @@ describe('Characters API Routes', () => {
       globalThis.fetch = async () =>
         new Response(pngBuffer, {
           status: 200,
-          headers: { 'Content-Type': 'image/png' }
+          headers: { 'Content-Type': 'image/png' },
         });
     });
 
@@ -1113,8 +1112,8 @@ describe('Characters API Routes', () => {
         JSON.stringify({
           name,
           description: 'One ![a](https://example.com/one.png)',
-          first_mes: 'Two ![b](https://example.com/two.png)'
-        })
+          first_mes: 'Two ![b](https://example.com/two.png)',
+        }),
       );
     }
 
@@ -1173,10 +1172,10 @@ describe('Characters API Routes', () => {
             name: 'Embedded',
             entries: [
               { keys: ['k'], content: 'Lore one ![b](https://example.com/lore1.png)' },
-              { keys: ['j'], content: 'Lore two ![c](https://example.com/lore2.png)' }
-            ]
-          }
-        })
+              { keys: ['j'], content: 'Lore two ![c](https://example.com/lore2.png)' },
+            ],
+          },
+        }),
       );
 
       const response = await request(app)
@@ -1196,7 +1195,7 @@ describe('Characters API Routes', () => {
       expect(starts[1].total).toBe(2);
 
       const lorebookImages = events.filter(
-        (e) => e.phase === 'image' && e.entityType === 'lorebooks'
+        (e) => e.phase === 'image' && e.entityType === 'lorebooks',
       );
       expect(lorebookImages).toHaveLength(2);
 
@@ -1256,7 +1255,7 @@ describe('Characters API Routes', () => {
       globalThis.fetch = async () =>
         new Response(pngBuffer, {
           status: 200,
-          headers: { 'Content-Type': 'image/png' }
+          headers: { 'Content-Type': 'image/png' },
         });
     });
 
@@ -1269,7 +1268,7 @@ describe('Characters API Routes', () => {
         .post('/api/characters')
         .send({
           name: 'Persist Create',
-          description: 'External image ![img](https://example.com/photo.png)'
+          description: 'External image ![img](https://example.com/photo.png)',
         })
         .expect(201);
 
@@ -1293,7 +1292,7 @@ describe('Characters API Routes', () => {
       await request(app)
         .put(`/api/characters/${charId}`)
         .send({
-          description: 'Now with an image ![img](https://example.com/added.png)'
+          description: 'Now with an image ![img](https://example.com/added.png)',
         })
         .expect(200);
 
@@ -1309,7 +1308,7 @@ describe('Characters API Routes', () => {
         .post('/api/characters')
         .send({
           name: 'Persist Serve',
-          description: 'External image ![img](https://example.com/served.png)'
+          description: 'External image ![img](https://example.com/served.png)',
         })
         .expect(201);
 
@@ -1319,7 +1318,7 @@ describe('Characters API Routes', () => {
 
       // Pull the rewritten local path back out and fetch it end-to-end.
       const match = dataResponse.body.character.data.description.match(
-        /\/api\/assets\/characters\/[^)\s]+/
+        /\/api\/assets\/characters\/[^)\s]+/,
       );
       expect(match).not.toBeNull();
 
@@ -1334,14 +1333,14 @@ describe('Characters API Routes', () => {
         description: 'Has empty lorebook',
         character_book: {
           name: 'Empty',
-          entries: []
-        }
+          entries: [],
+        },
       };
 
       const response = await request(app)
         .post('/api/characters/import-json')
         .attach('character', Buffer.from(JSON.stringify(characterWithEmptyLorebook)), {
-          filename: 'char.json'
+          filename: 'char.json',
         })
         .expect(201);
 
@@ -1362,7 +1361,7 @@ describe('Characters API Routes', () => {
       const charId = createResponse.body.id;
 
       // Update with only ursceal_lorebook_id (covers extensions init path)
-      const response = await request(app)
+      await request(app)
         .put(`/api/characters/${charId}`)
         .send({ ursceal_lorebook_id: 'some-lorebook-id' })
         .expect(200);
@@ -1371,7 +1370,7 @@ describe('Characters API Routes', () => {
       const dataResponse = await request(app).get(`/api/characters/${charId}/data`).expect(200);
 
       expect(dataResponse.body.character.data.extensions.ursceal_lorebook_id).toBe(
-        'some-lorebook-id'
+        'some-lorebook-id',
       );
     });
   });
@@ -1387,14 +1386,14 @@ describe('Characters API Routes', () => {
       const charId = createResponse.body.id;
 
       // Update with lorebook_id (covers extensions init in update-with-image)
-      const response = await request(app)
+      await request(app)
         .put(`/api/characters/${charId}/update-with-image`)
         .field(
           'characterData',
           JSON.stringify({
             name: 'Lorebook Updated',
-            ursceal_lorebook_id: 'test-lorebook-id'
-          })
+            ursceal_lorebook_id: 'test-lorebook-id',
+          }),
         )
         .expect(200);
 
@@ -1402,7 +1401,7 @@ describe('Characters API Routes', () => {
       const dataResponse = await request(app).get(`/api/characters/${charId}/data`).expect(200);
 
       expect(dataResponse.body.character.data.extensions.ursceal_lorebook_id).toBe(
-        'test-lorebook-id'
+        'test-lorebook-id',
       );
     });
 
@@ -1422,7 +1421,7 @@ describe('Characters API Routes', () => {
         .field('characterData', JSON.stringify({ name: 'Updated Img', description: 'With image' }))
         .attach('image', testPng, {
           filename: 'avatar.png',
-          contentType: 'image/png'
+          contentType: 'image/png',
         })
         .expect(200);
 

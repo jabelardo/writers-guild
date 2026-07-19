@@ -74,8 +74,8 @@ import { useToast } from '../../composables/useToast';
 const props = defineProps({
   config: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['update:config']);
@@ -91,7 +91,7 @@ const localApiConfig = computed({
   },
   set(value) {
     emit('update:config', { ...props.config, apiConfig: value });
-  }
+  },
 });
 
 async function detectEndpoint() {
@@ -100,7 +100,7 @@ async function detectEndpoint() {
     detectError.value = null;
     const response = await presetsAPI.getKoboldCppInfo(
       localApiConfig.value.baseURL,
-      localApiConfig.value.password
+      localApiConfig.value.password,
     );
     const modelName = response.model || '';
     const maxContext = response.maxContextLength;
@@ -109,9 +109,9 @@ async function detectEndpoint() {
     // Emit a single update so reactive computed props in the parent pick up everything.
     const nextConfig = {
       ...props.config,
-      apiConfig: { ...(props.config.apiConfig || {}), model: modelName }
+      apiConfig: { ...props.config.apiConfig, model: modelName },
     };
-    const nextGenSettings = { ...(props.config.generationSettings || {}) };
+    const nextGenSettings = { ...props.config.generationSettings };
     let touched = false;
     if (typeof maxContext === 'number' && maxContext > 0) {
       nextGenSettings.maxContextTokens = maxContext;

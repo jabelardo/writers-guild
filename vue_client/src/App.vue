@@ -23,7 +23,7 @@ const {
   isVisible: isConfirmVisible,
   config: confirmConfig,
   handleConfirm,
-  handleCancel
+  handleCancel,
 } = useConfirm();
 </script>
 

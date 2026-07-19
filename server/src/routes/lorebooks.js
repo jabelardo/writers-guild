@@ -60,7 +60,7 @@ router.get(
                 id: char.id,
                 name: characterData.data?.name || 'Unknown',
                 imageUrl,
-                thumbnailUrl
+                thumbnailUrl,
               });
             }
           } catch (error) {
@@ -70,13 +70,13 @@ router.get(
 
         return {
           ...lorebook,
-          characters: associatedCharacters
+          characters: associatedCharacters,
         };
-      })
+      }),
     );
 
     res.json({ lorebooks: enrichedLorebooks });
-  })
+  }),
 );
 
 /**
@@ -88,7 +88,7 @@ router.get(
     const { lorebookId } = req.params;
     const lorebook = await storage.getLorebook(lorebookId);
     res.json({ lorebook });
-  })
+  }),
 );
 
 /**
@@ -117,7 +117,7 @@ router.post(
         lorebookId,
         parsed,
         req.app.locals.dataRoot,
-        channel.send
+        channel.send,
       );
 
       // Save to storage
@@ -129,8 +129,8 @@ router.post(
           id: lorebookId,
           name: parsed.name,
           description: parsed.description,
-          entryCount: parsed.entries.length
-        }
+          entryCount: parsed.entries.length,
+        },
       });
     } catch (error) {
       console.error('Failed to import lorebook:', error);
@@ -140,7 +140,7 @@ router.post(
       }
       throw new AppError(`Failed to import lorebook: ${error.message}`, 400);
     }
-  })
+  }),
 );
 
 /**
@@ -184,7 +184,7 @@ router.post(
         lorebookId,
         parsed,
         req.app.locals.dataRoot,
-        channel.send
+        channel.send,
       );
 
       // Save to storage
@@ -196,8 +196,8 @@ router.post(
           id: lorebookId,
           name: parsed.name,
           description: parsed.description,
-          entryCount: parsed.entries.length
-        }
+          entryCount: parsed.entries.length,
+        },
       });
     } catch (error) {
       console.error('Failed to import lorebook from URL:', error);
@@ -207,7 +207,7 @@ router.post(
       }
       throw new AppError(`Failed to import lorebook from URL: ${error.message}`, 400);
     }
-  })
+  }),
 );
 
 /**
@@ -231,7 +231,7 @@ router.post(
       tokenBudget: null, // Use global setting
       recursiveScanning: true,
       entries: [],
-      extensions: {}
+      extensions: {},
     };
 
     await storage.saveLorebook(lorebookId, lorebookData);
@@ -240,9 +240,9 @@ router.post(
       id: lorebookId,
       name: lorebookData.name,
       description: lorebookData.description,
-      entryCount: 0
+      entryCount: 0,
     });
-  })
+  }),
 );
 
 /**
@@ -264,7 +264,7 @@ router.put(
       ...(description !== undefined && { description }),
       ...(scanDepth !== undefined && { scanDepth }),
       ...(tokenBudget !== undefined && { tokenBudget }),
-      ...(recursiveScanning !== undefined && { recursiveScanning })
+      ...(recursiveScanning !== undefined && { recursiveScanning }),
     };
 
     await storage.saveLorebook(lorebookId, updated);
@@ -273,9 +273,9 @@ router.put(
       id: lorebookId,
       name: updated.name,
       description: updated.description,
-      entryCount: updated.entries.length
+      entryCount: updated.entries.length,
     });
-  })
+  }),
 );
 
 /**
@@ -296,7 +296,7 @@ router.delete(
     }
 
     res.json({ success: true });
-  })
+  }),
 );
 
 // ==================== Lorebook Entry Operations ====================
@@ -341,7 +341,7 @@ router.post(
       preventRecursion: entryData.preventRecursion || false,
       delayUntilRecursion: entryData.delayUntilRecursion || false,
       displayIndex: entryData.displayIndex !== undefined ? entryData.displayIndex : entryId,
-      extensions: entryData.extensions || {}
+      extensions: entryData.extensions || {},
     };
 
     // Add to lorebook
@@ -355,7 +355,7 @@ router.post(
     const savedEntry = savedLorebook.entries[savedLorebook.entries.length - 1];
 
     res.json({ entry: savedEntry });
-  })
+  }),
 );
 
 /**
@@ -380,14 +380,14 @@ router.put(
     lorebook.entries[entryIndex] = {
       ...lorebook.entries[entryIndex],
       ...updates,
-      id: parseInt(entryId) // Prevent ID from being changed
+      id: parseInt(entryId), // Prevent ID from being changed
     };
 
     // Save
     await storage.saveLorebook(lorebookId, lorebook);
 
     res.json({ entry: lorebook.entries[entryIndex] });
-  })
+  }),
 );
 
 /**
@@ -408,7 +408,7 @@ router.delete(
     await storage.saveLorebook(lorebookId, lorebook);
 
     res.json({ success: true });
-  })
+  }),
 );
 
 export default router;

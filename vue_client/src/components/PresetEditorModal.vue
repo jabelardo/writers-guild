@@ -62,12 +62,12 @@ import { getProviderDefaults, PROVIDER_INFO } from '../config/providerDefaults';
 const props = defineProps({
   preset: {
     type: Object,
-    default: null
+    default: null,
   },
   provider: {
     type: String,
-    default: null
-  }
+    default: null,
+  },
 });
 
 const emit = defineEmits(['close', 'saved']);
@@ -84,18 +84,18 @@ const formData = ref({
     apiKey: '',
     baseURL: '',
     model: '',
-    models: []
+    models: [],
   },
   generationSettings: {
     maxTokens: 4000,
     temperature: 1.5,
-    includeDialogueExamples: false
+    includeDialogueExamples: false,
   },
   lorebookSettings: {
     scanDepth: 2000,
     tokenBudget: 1800,
     recursionDepth: 3,
-    enableRecursion: true
+    enableRecursion: true,
   },
   promptTemplates: {
     systemPrompt: null,
@@ -103,8 +103,8 @@ const formData = ref({
     character: null,
     instruction: null,
     rewriteThirdPerson: null,
-    ideate: null
-  }
+    ideate: null,
+  },
 });
 
 // Get the dynamic provider component based on the selected provider
@@ -135,18 +135,18 @@ onMounted(async () => {
         character: presetTemplates.character ?? null,
         instruction: presetTemplates.instruction ?? null,
         rewriteThirdPerson: presetTemplates.rewriteThirdPerson ?? null,
-        ideate: presetTemplates.ideate ?? null
+        ideate: presetTemplates.ideate ?? null,
       };
 
       formData.value = {
         ...preset,
         apiConfig: {
           ...(preset.apiConfig || formData.value.apiConfig),
-          models: Array.isArray(preset.apiConfig?.models) ? preset.apiConfig.models : []
+          models: Array.isArray(preset.apiConfig?.models) ? preset.apiConfig.models : [],
         },
         generationSettings: preset.generationSettings || formData.value.generationSettings,
         lorebookSettings: preset.lorebookSettings || formData.value.lorebookSettings,
-        promptTemplates
+        promptTemplates,
       };
     } catch (error) {
       console.error('Failed to load preset:', error);
@@ -157,7 +157,7 @@ onMounted(async () => {
     const defaults = getProviderDefaults(props.provider);
     formData.value = {
       ...defaults,
-      name: '' // Keep name empty for user to fill
+      name: '', // Keep name empty for user to fill
     };
   }
 
@@ -186,7 +186,7 @@ async function savePreset() {
 
     // Prepare data - provider defaults already include baseURL and model
     const presetData = {
-      ...formData.value
+      ...formData.value,
     };
 
     if (props.preset) {

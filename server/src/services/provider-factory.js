@@ -21,7 +21,7 @@ const PROVIDERS = {
   anthropic: AnthropicProvider,
   koboldcpp: KoboldCppProvider,
   ollama: OllamaProvider,
-  openaicompatible: OpenAICompatibleProvider
+  openaicompatible: OpenAICompatibleProvider,
 };
 
 /**
@@ -44,7 +44,7 @@ export function getProvider(preset) {
 
   if (!ProviderClass) {
     throw new Error(
-      `Unknown provider: ${preset.provider}. Available providers: ${Object.keys(PROVIDERS).join(', ')}`
+      `Unknown provider: ${preset.provider}. Available providers: ${Object.keys(PROVIDERS).join(', ')}`,
     );
   }
 

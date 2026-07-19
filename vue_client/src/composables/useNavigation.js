@@ -60,6 +60,6 @@ export function useNavigation() {
   return {
     goBack,
     hasPreviousPage,
-    previousRoute
+    previousRoute,
   };
 }

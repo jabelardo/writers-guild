@@ -430,8 +430,8 @@ import GreetingSelectorModal from '../components/GreetingSelectorModal.vue';
 const props = defineProps({
   characterId: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const router = useRouter();
@@ -512,7 +512,7 @@ async function loadCharacter() {
       imageUrl: imageUrl,
       hasImage: false, // Will be set by checkImageExists
       // Store the full data in case we need it
-      _fullData: response.character
+      _fullData: response.character,
     };
 
     // Check if image actually exists by trying to load it
@@ -531,7 +531,7 @@ async function loadCharacter() {
 async function checkImageExists() {
   try {
     const response = await fetch(`/api/characters/${props.characterId}/image`, {
-      method: 'HEAD'
+      method: 'HEAD',
     });
     character.value.hasImage = response.ok;
   } catch (error) {
@@ -592,7 +592,7 @@ function cancelEdit(section) {
 async function saveName() {
   try {
     await charactersAPI.update(props.characterId, {
-      name: editedName.value.trim()
+      name: editedName.value.trim(),
     });
     character.value.name = editedName.value.trim();
     editingName.value = false;
@@ -608,7 +608,7 @@ async function saveName() {
 async function saveDescription() {
   try {
     await charactersAPI.update(props.characterId, {
-      description: editedDescription.value
+      description: editedDescription.value,
     });
     character.value.description = editedDescription.value;
     editingDescription.value = false;
@@ -622,7 +622,7 @@ async function saveDescription() {
 async function saveLorebook() {
   try {
     await charactersAPI.update(props.characterId, {
-      ursceal_lorebook_id: editedLorebookId.value
+      ursceal_lorebook_id: editedLorebookId.value,
     });
     character.value.ursceal_lorebook_id = editedLorebookId.value;
     editingLorebook.value = false;
@@ -636,7 +636,7 @@ async function saveLorebook() {
 async function savePersonality() {
   try {
     await charactersAPI.update(props.characterId, {
-      personality: editedPersonality.value
+      personality: editedPersonality.value,
     });
     character.value.personality = editedPersonality.value;
     editingPersonality.value = false;
@@ -650,7 +650,7 @@ async function savePersonality() {
 async function saveScenario() {
   try {
     await charactersAPI.update(props.characterId, {
-      scenario: editedScenario.value
+      scenario: editedScenario.value,
     });
     character.value.scenario = editedScenario.value;
     editingScenario.value = false;
@@ -664,7 +664,7 @@ async function saveScenario() {
 async function saveDialogueExamples() {
   try {
     await charactersAPI.update(props.characterId, {
-      mes_example: editedDialogueExamples.value
+      mes_example: editedDialogueExamples.value,
     });
     character.value.mes_example = editedDialogueExamples.value;
     editingDialogueExamples.value = false;
@@ -678,7 +678,7 @@ async function saveDialogueExamples() {
 async function saveFirstMessage() {
   try {
     await charactersAPI.update(props.characterId, {
-      first_mes: editedFirstMessage.value
+      first_mes: editedFirstMessage.value,
     });
     character.value.first_mes = editedFirstMessage.value;
     editingFirstMessage.value = false;
@@ -719,8 +719,8 @@ async function saveImage() {
         mes_example: character.value.mes_example || '',
         first_mes: character.value.first_mes || '',
         alternate_greetings: character.value.alternate_greetings || [],
-        ursceal_lorebook_id: character.value.ursceal_lorebook_id || null
-      })
+        ursceal_lorebook_id: character.value.ursceal_lorebook_id || null,
+      }),
     );
 
     const updated = await charactersAPI.updateWithImage(props.characterId, formData);
@@ -755,7 +755,7 @@ async function deleteCharacter() {
   const confirmed = await confirm({
     message: `Are you sure you want to delete "${character.value.name}"? This cannot be undone.`,
     confirmText: 'Delete Character',
-    variant: 'danger'
+    variant: 'danger',
   });
 
   if (!confirmed) return;
@@ -791,7 +791,7 @@ async function addAlternateGreeting() {
   if (newGreetingElement) {
     newGreetingElement.scrollIntoView({
       behavior: 'smooth',
-      block: 'center'
+      block: 'center',
     });
   }
 
@@ -832,7 +832,7 @@ async function saveAlternateGreeting() {
 
     // Save to server
     await charactersAPI.update(props.characterId, {
-      alternate_greetings: character.value.alternate_greetings
+      alternate_greetings: character.value.alternate_greetings,
     });
 
     // Reset editing state
@@ -848,7 +848,7 @@ async function deleteAlternateGreeting(index) {
   const confirmed = await confirm({
     message: 'Delete this alternate greeting?',
     confirmText: 'Delete',
-    variant: 'danger'
+    variant: 'danger',
   });
 
   if (!confirmed) return;
@@ -859,7 +859,7 @@ async function deleteAlternateGreeting(index) {
 
     // Save to server
     await charactersAPI.update(props.characterId, {
-      alternate_greetings: character.value.alternate_greetings
+      alternate_greetings: character.value.alternate_greetings,
     });
   } catch (error) {
     console.error('Failed to delete alternate greeting:', error);
@@ -879,7 +879,7 @@ async function createNewStory() {
     createdStoryId.value = story.id;
     createdStoryForModal.value = {
       id: story.id,
-      characterIds: [props.characterId]
+      characterIds: [props.characterId],
     };
 
     // Show greeting selector instead of navigating immediately

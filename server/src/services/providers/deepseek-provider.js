@@ -11,7 +11,7 @@ export class DeepSeekProvider extends LLMProvider {
     const deepseekConfig = {
       ...config,
       baseURL: config.baseURL || 'https://api.deepseek.com/v1',
-      model: config.model || 'deepseek-v4-flash'
+      model: config.model || 'deepseek-v4-flash',
     };
 
     super(deepseekConfig);
@@ -25,7 +25,7 @@ export class DeepSeekProvider extends LLMProvider {
       streaming: true,
       reasoning: true,
       visionAPI: false,
-      maxContextWindow: 1000000 // V4 models support 1M token context
+      maxContextWindow: 1000000, // V4 models support 1M token context
     };
   }
 
@@ -36,7 +36,7 @@ export class DeepSeekProvider extends LLMProvider {
     if (!this.apiKey || this.apiKey.trim() === '') {
       return {
         valid: false,
-        error: 'API key is required'
+        error: 'API key is required',
       };
     }
 
@@ -60,9 +60,9 @@ export class DeepSeekProvider extends LLMProvider {
       thinking: thinkingEnabled
         ? {
             type: 'enabled',
-            reasoning_effort: options.reasoningEffort === 'max' ? 'max' : 'high'
+            reasoning_effort: options.reasoningEffort === 'max' ? 'max' : 'high',
           }
-        : { type: 'disabled' }
+        : { type: 'disabled' },
     };
 
     if (!thinkingEnabled) {
@@ -95,7 +95,7 @@ export class DeepSeekProvider extends LLMProvider {
 
     const messages = [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
+      { role: 'user', content: userPrompt },
     ];
 
     const requestBody = this.buildRequestBody(messages, options, false);
@@ -104,10 +104,10 @@ export class DeepSeekProvider extends LLMProvider {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`
+        Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify(requestBody),
-      signal: options.signal
+      signal: options.signal,
     });
 
     if (!response.ok) {
@@ -121,7 +121,7 @@ export class DeepSeekProvider extends LLMProvider {
     return {
       content: choice.message.content || '',
       reasoning: choice.message.reasoning_content || '',
-      usage: data.usage
+      usage: data.usage,
     };
   }
 
@@ -135,7 +135,7 @@ export class DeepSeekProvider extends LLMProvider {
 
     const messages = [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
+      { role: 'user', content: userPrompt },
     ];
 
     const controller = new AbortController();
@@ -145,10 +145,10 @@ export class DeepSeekProvider extends LLMProvider {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`
+        Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify(requestBody),
-      signal: options.signal || controller.signal
+      signal: options.signal || controller.signal,
     });
 
     if (!response.ok) {
@@ -161,8 +161,8 @@ export class DeepSeekProvider extends LLMProvider {
       abort: () => controller.abort(),
       metadata: {
         userPrompt,
-        systemPrompt
-      }
+        systemPrompt,
+      },
     };
   }
 
@@ -181,7 +181,7 @@ export class DeepSeekProvider extends LLMProvider {
       return {
         code: 'AUTH_ERROR',
         message: 'Invalid API key',
-        original: error
+        original: error,
       };
     }
 
@@ -189,7 +189,7 @@ export class DeepSeekProvider extends LLMProvider {
       return {
         code: 'RATE_LIMIT',
         message: 'Rate limit exceeded. Please try again later.',
-        original: error
+        original: error,
       };
     }
 
@@ -205,8 +205,8 @@ export class DeepSeekProvider extends LLMProvider {
       const response = await fetch(`${this.baseURL}/models`, {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${this.apiKey}`
-        }
+          Authorization: `Bearer ${this.apiKey}`,
+        },
       });
 
       if (!response.ok) {
@@ -222,10 +222,10 @@ export class DeepSeekProvider extends LLMProvider {
         contextLength: 1000000, // V4 models: 1M tokens
         pricing: {
           prompt: 0,
-          completion: 0
+          completion: 0,
         },
         created: model.created,
-        ownedBy: model.owned_by
+        ownedBy: model.owned_by,
       }));
     } catch (error) {
       console.error('Failed to fetch DeepSeek models:', error);
@@ -243,7 +243,7 @@ export class DeepSeekProvider extends LLMProvider {
       'deepseek-v4-pro':
         'DeepSeek V4 Pro — higher-quality, 1M context. Supports optional thinking mode.',
       'deepseek-chat': 'Deprecated — aliases to deepseek-v4-flash (non-thinking).',
-      'deepseek-reasoner': 'Deprecated — aliases to deepseek-v4-flash (thinking enabled).'
+      'deepseek-reasoner': 'Deprecated — aliases to deepseek-v4-flash (thinking enabled).',
     };
     return descriptions[modelId] || '';
   }

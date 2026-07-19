@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { MacroProcessor } from '../macro-processor.js';
 
 describe('MacroProcessor', () => {
@@ -7,7 +7,7 @@ describe('MacroProcessor', () => {
   beforeEach(() => {
     processor = new MacroProcessor({
       userName: 'Alice',
-      charName: 'Bob'
+      charName: 'Bob',
     });
   });
 

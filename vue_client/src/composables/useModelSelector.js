@@ -45,7 +45,7 @@ export function useModelSelector({ apiConfig, fetchModels, onModelSelect, update
         modelsError.value = 'No models available at this time';
       } else if (!silent) {
         toast.success(
-          `Loaded ${availableModels.value.length} model${availableModels.value.length !== 1 ? 's' : ''}`
+          `Loaded ${availableModels.value.length} model${availableModels.value.length !== 1 ? 's' : ''}`,
         );
       }
     } catch (error) {
@@ -70,7 +70,7 @@ export function useModelSelector({ apiConfig, fetchModels, onModelSelect, update
       if (updateConfig && model.contextLength) {
         updateConfig({
           model: model.id,
-          contextLength: model.contextLength
+          contextLength: model.contextLength,
         });
       }
     }
@@ -116,6 +116,6 @@ export function useModelSelector({ apiConfig, fetchModels, onModelSelect, update
     fetchAvailableModels,
     selectModel,
     isModelSelected,
-    formatContextLength
+    formatContextLength,
   };
 }

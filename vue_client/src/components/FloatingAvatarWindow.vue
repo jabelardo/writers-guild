@@ -49,24 +49,24 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 const props = defineProps({
   characters: {
     type: Array,
-    required: true
+    required: true,
   },
   windowId: {
     type: String,
-    required: true
+    required: true,
   },
   initialCharacterId: {
     type: String,
-    default: null
+    default: null,
   },
   initialPosition: {
     type: Object,
-    default: () => ({ x: 20, y: 100 })
+    default: () => ({ x: 20, y: 100 }),
   },
   initialSize: {
     type: Object,
-    default: () => ({ width: 300, height: 400 })
-  }
+    default: () => ({ width: 300, height: 400 }),
+  },
 });
 
 const emit = defineEmits(['close', 'update']);
@@ -124,7 +124,7 @@ function emitUpdate() {
     x: position.value.x,
     y: position.value.y,
     width: size.value.width,
-    height: size.value.height
+    height: size.value.height,
   });
 }
 
@@ -132,14 +132,14 @@ const windowStyle = computed(() => ({
   left: `${position.value.x}px`,
   top: `${position.value.y}px`,
   width: `${size.value.width}px`,
-  height: `${size.value.height}px`
+  height: `${size.value.height}px`,
 }));
 
 function startDrag(e) {
   isDragging.value = true;
   dragStart.value = {
     x: e.clientX - position.value.x,
-    y: e.clientY - position.value.y
+    y: e.clientY - position.value.y,
   };
   e.preventDefault();
 }
@@ -150,7 +150,7 @@ function startResize(e) {
     x: e.clientX,
     y: e.clientY,
     width: size.value.width,
-    height: size.value.height
+    height: size.value.height,
   };
   e.preventDefault();
 }
@@ -159,7 +159,7 @@ function onMouseMove(e) {
   if (isDragging.value) {
     position.value = {
       x: e.clientX - dragStart.value.x,
-      y: e.clientY - dragStart.value.y
+      y: e.clientY - dragStart.value.y,
     };
   } else if (isResizing.value) {
     const deltaX = e.clientX - resizeStart.value.x;
@@ -167,7 +167,7 @@ function onMouseMove(e) {
 
     size.value = {
       width: Math.max(200, resizeStart.value.width + deltaX),
-      height: Math.max(200, resizeStart.value.height + deltaY)
+      height: Math.max(200, resizeStart.value.height + deltaY),
     };
   }
 }

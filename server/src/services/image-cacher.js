@@ -35,7 +35,7 @@ const CACHEABLE_CARD_FIELDS = [
   'personality',
   'scenario',
   'first_mes',
-  'mes_example'
+  'mes_example',
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ function collectAllImageUrls(cardData) {
 
   const fields = [
     ...CACHEABLE_CARD_FIELDS.map((f) => data[f]),
-    ...(Array.isArray(data.alternate_greetings) ? data.alternate_greetings : [])
+    ...(Array.isArray(data.alternate_greetings) ? data.alternate_greetings : []),
   ];
 
   const all = new Set();
@@ -260,8 +260,8 @@ async function downloadImage(url) {
         redirect: 'manual',
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; WritersGuild/2.0)',
-          Accept: 'image/*'
-        }
+          Accept: 'image/*',
+        },
       });
 
       if (response.status >= 300 && response.status < 400) {
@@ -366,7 +366,7 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
   }
 
   console.log(
-    `[ImageCacher] Found ${urls.size} external image(s) in ${entityType.slice(0, -1)} "${label || entityId}"`
+    `[ImageCacher] Found ${urls.size} external image(s) in ${entityType.slice(0, -1)} "${label || entityId}"`,
   );
 
   const meta = await assetManager.readMetadata(entityId);
@@ -394,7 +394,7 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
             total: urlArray.length,
             url,
             ok: true,
-            alreadyCached: true
+            alreadyCached: true,
           });
           return;
         }
@@ -408,7 +408,7 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
             completed: ++completed,
             total: urlArray.length,
             url,
-            ok: false
+            ok: false,
           });
           return;
         }
@@ -440,9 +440,9 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
           total: urlArray.length,
           url,
           ok: true,
-          alreadyCached: false
+          alreadyCached: false,
         });
-      })
+      }),
     );
 
     for (const result of results) {
@@ -461,7 +461,7 @@ async function cacheImageSet(entityId, urls, dataRoot, entityType, label, option
   }
 
   console.log(
-    `[ImageCacher] Cached ${imageMap.size}/${urls.size} image(s) for ${entityType.slice(0, -1)} "${label || entityId}"`
+    `[ImageCacher] Cached ${imageMap.size}/${urls.size} image(s) for ${entityType.slice(0, -1)} "${label || entityId}"`,
   );
   // cachedCount, not `cached` — per-image events use alreadyCached as a
   // boolean, and reusing one key for both a flag and a count invites
@@ -531,7 +531,7 @@ export async function cacheAndRewriteLorebookImages(
   lorebookId,
   lorebookData,
   dataRoot,
-  onProgress
+  onProgress,
 ) {
   try {
     const imageMap = await cacheLorebookImages(lorebookId, lorebookData, dataRoot, { onProgress });
@@ -558,7 +558,7 @@ function patternFor(imageMap) {
   // Longest first: one URL can be a prefix of another (a.png vs a.png?v=2).
   // Regex alternation matches leftmost-first, so listing the longer URL first
   // makes it win instead of the shorter one truncating it.
-  const ordered = [...imageMap.keys()].sort((a, b) => b.length - a.length);
+  const ordered = [...imageMap.keys()].toSorted((a, b) => b.length - a.length);
   const escaped = ordered.map((url) => url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 
   cached = new RegExp(escaped.join('|'), 'g');

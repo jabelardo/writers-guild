@@ -27,7 +27,7 @@ export class LorebookParser {
       tokenBudget: json.token_budget || json.tokenBudget || null,
       recursiveScanning: json.recursive_scanning !== undefined ? json.recursive_scanning : true,
       entries: entriesArray.map((entry) => this.normalizeEntry(entry, 'standalone')),
-      extensions: json.extensions || {}
+      extensions: json.extensions || {},
     };
   }
 
@@ -49,7 +49,7 @@ export class LorebookParser {
       recursiveScanning:
         characterBook.recursive_scanning !== undefined ? characterBook.recursive_scanning : true,
       entries: characterBook.entries.map((entry) => this.normalizeEntry(entry, 'v2')),
-      extensions: characterBook.extensions || {}
+      extensions: characterBook.extensions || {},
     };
   }
 
@@ -89,7 +89,7 @@ export class LorebookParser {
         preventRecursion: entry.preventRecursion || entry.excludeRecursion || false,
         delayUntilRecursion: entry.delayUntilRecursion || false,
         displayIndex: entry.displayIndex !== undefined ? entry.displayIndex : entry.id || 0,
-        extensions: entry.extensions || {}
+        extensions: entry.extensions || {},
       };
     } else {
       // V2 format uses: keys, content, enabled, insertion_order, etc.
@@ -121,7 +121,7 @@ export class LorebookParser {
         preventRecursion: entry.prevent_recursion || entry.excludeRecursion || false,
         delayUntilRecursion: entry.delay_until_recursion || false,
         displayIndex: entry.display_index !== undefined ? entry.display_index : entry.id || 0,
-        extensions: entry.extensions || {}
+        extensions: entry.extensions || {},
       };
     }
   }
@@ -144,7 +144,7 @@ export class LorebookParser {
       top_an: 4,
       bottom_an: 5,
       at_depth: 6,
-      outlet: 7
+      outlet: 7,
     };
 
     return positionMap[position] || 1; // Default to after_char
@@ -182,7 +182,7 @@ export class LorebookParser {
         excludeRecursion: entry.preventRecursion,
         delayUntilRecursion: entry.delayUntilRecursion,
         displayIndex: entry.displayIndex,
-        extensions: entry.extensions
+        extensions: entry.extensions,
       };
     });
 
@@ -193,7 +193,7 @@ export class LorebookParser {
       token_budget: lorebook.tokenBudget,
       recursive_scanning: lorebook.recursiveScanning,
       entries,
-      extensions: lorebook.extensions
+      extensions: lorebook.extensions,
     };
   }
 

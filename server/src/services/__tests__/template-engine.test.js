@@ -151,7 +151,7 @@ describe('TemplateEngine', () => {
     it('should iterate over arrays', () => {
       const template = '{{#each items}}{{name}} {{/each}}';
       const data = {
-        items: [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Charlie' }]
+        items: [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Charlie' }],
       };
       const result = engine.render(template, data);
       expect(result).toBe('Alice Bob Charlie ');
@@ -160,7 +160,7 @@ describe('TemplateEngine', () => {
     it('should provide @index variable', () => {
       const template = '{{#each items}}{{@index}}: {{name}} {{/each}}';
       const data = {
-        items: [{ name: 'Alice' }, { name: 'Bob' }]
+        items: [{ name: 'Alice' }, { name: 'Bob' }],
       };
       const result = engine.render(template, data);
       expect(result).toBe('0: Alice 1: Bob ');
@@ -169,7 +169,7 @@ describe('TemplateEngine', () => {
     it('should provide @index_1 variable (1-based index)', () => {
       const template = '{{#each items}}{{@index_1}}. {{name}} {{/each}}';
       const data = {
-        items: [{ name: 'First' }, { name: 'Second' }]
+        items: [{ name: 'First' }, { name: 'Second' }],
       };
       const result = engine.render(template, data);
       expect(result).toBe('1. First 2. Second ');
@@ -178,7 +178,7 @@ describe('TemplateEngine', () => {
     it('should provide @first variable', () => {
       const template = '{{#each items}}{{@first}} {{/each}}';
       const data = {
-        items: [{ name: 'Alice' }, { name: 'Bob' }]
+        items: [{ name: 'Alice' }, { name: 'Bob' }],
       };
       const result = engine.render(template, data);
       expect(result).toBe('true false ');
@@ -187,7 +187,7 @@ describe('TemplateEngine', () => {
     it('should provide @last variable', () => {
       const template = '{{#each items}}{{@last}} {{/each}}';
       const data = {
-        items: [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Charlie' }]
+        items: [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Charlie' }],
       };
       const result = engine.render(template, data);
       expect(result).toBe('false false true ');
@@ -196,7 +196,7 @@ describe('TemplateEngine', () => {
     it('should provide @length variable', () => {
       const template = '{{#each items}}{{@index_1}}/{{@length}} {{/each}}';
       const data = {
-        items: [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Charlie' }]
+        items: [{ name: 'Alice' }, { name: 'Bob' }, { name: 'Charlie' }],
       };
       const result = engine.render(template, data);
       expect(result).toBe('1/3 2/3 3/3 ');
@@ -214,8 +214,8 @@ describe('TemplateEngine', () => {
       const data = {
         groups: [
           { name: 'A', members: [{ name: 'A1' }, { name: 'A2' }] },
-          { name: 'B', members: [{ name: 'B1' }] }
-        ]
+          { name: 'B', members: [{ name: 'B1' }] },
+        ],
       };
       const result = engine.render(template, data);
       expect(result).toBe('A: A1 A2 | B: B1 | ');
@@ -225,8 +225,8 @@ describe('TemplateEngine', () => {
       const template = '{{#each user.items}}{{name}} {{/each}}';
       const data = {
         user: {
-          items: [{ name: 'Item1' }, { name: 'Item2' }]
-        }
+          items: [{ name: 'Item1' }, { name: 'Item2' }],
+        },
       };
       const result = engine.render(template, data);
       expect(result).toBe('Item1 Item2 ');
@@ -244,8 +244,8 @@ Character: {{name}}
         characters: [
           { name: 'Alice', description: 'A brave hero', personality: 'Bold' },
           { name: 'Bob', description: 'A wise sage' },
-          { name: 'Charlie', personality: 'Mysterious' }
-        ]
+          { name: 'Charlie', personality: 'Mysterious' },
+        ],
       };
       const result = engine.render(template, data);
 
@@ -270,7 +270,7 @@ Character: {{name}}
     it('should handle unless inside each blocks with item context', () => {
       const template = '{{#each items}}{{name}}{{#unless hidden}} (visible){{/unless}} {{/each}}';
       const data = {
-        items: [{ name: 'A', hidden: false }, { name: 'B', hidden: true }, { name: 'C' }]
+        items: [{ name: 'A', hidden: false }, { name: 'B', hidden: true }, { name: 'C' }],
       };
       const result = engine.render(template, data);
       expect(result).toBe('A (visible) B C (visible) ');
@@ -289,8 +289,8 @@ Items:
         hasItems: true,
         items: [
           { name: 'Item1', active: true },
-          { name: 'Item2', active: false }
-        ]
+          { name: 'Item2', active: false },
+        ],
       };
       const result = engine.render(template, data);
       expect(result).toContain('Items:');
@@ -308,8 +308,8 @@ Items:
         user: {
           name: 'Alice',
           premium: true,
-          items: [{ title: 'First' }, { title: 'Second' }]
-        }
+          items: [{ title: 'First' }, { title: 'Second' }],
+        },
       };
       const result = engine.render(template, data);
       expect(result).toContain('Hello Alice!');

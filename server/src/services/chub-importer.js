@@ -4,8 +4,6 @@
  * Fetches character data from CHUB API and downloads character images.
  */
 
-import { CharacterParser } from './character-parser.js';
-
 export class ChubImporter {
   /**
    * Extract character path from CHUB URL
@@ -46,8 +44,8 @@ export class ChubImporter {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           Accept: 'application/json',
-          Referer: 'https://chub.ai/'
-        }
+          Referer: 'https://chub.ai/',
+        },
       });
 
       if (!response.ok) {
@@ -63,7 +61,7 @@ export class ChubImporter {
       if (error.message.includes('CHUB')) {
         throw error;
       }
-      throw new Error(`Failed to fetch from CHUB: ${error.message}`);
+      throw new Error(`Failed to fetch from CHUB: ${error.message}`, { cause: error });
     }
   }
 
@@ -82,20 +80,20 @@ export class ChubImporter {
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           Accept: '*/*',
           Origin: 'https://chub.ai',
-          Referer: 'https://chub.ai/'
-        }
+          Referer: 'https://chub.ai/',
+        },
       });
 
       if (!response.ok) {
         throw new Error(
-          `Failed to fetch character JSON: ${response.status} ${response.statusText}`
+          `Failed to fetch character JSON: ${response.status} ${response.statusText}`,
         );
       }
 
       const data = await response.json();
       return data;
     } catch (error) {
-      throw new Error(`Character JSON fetch failed: ${error.message}`);
+      throw new Error(`Character JSON fetch failed: ${error.message}`, { cause: error });
     }
   }
 
@@ -110,8 +108,8 @@ export class ChubImporter {
         headers: {
           'User-Agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          Referer: 'https://chub.ai/'
-        }
+          Referer: 'https://chub.ai/',
+        },
       });
 
       if (!response.ok) {
@@ -122,7 +120,7 @@ export class ChubImporter {
       const buffer = Buffer.from(arrayBuffer);
       return buffer;
     } catch (error) {
-      throw new Error(`Image download failed: ${error.message}`);
+      throw new Error(`Image download failed: ${error.message}`, { cause: error });
     }
   }
 
@@ -156,7 +154,7 @@ export class ChubImporter {
       characterData.data.character_book.entries.length > 0;
     if (hasLorebook) {
       console.log(
-        `[CHUB Import] Imported character with ${characterData.data.character_book.entries.length} lorebook entries`
+        `[CHUB Import] Imported character with ${characterData.data.character_book.entries.length} lorebook entries`,
       );
     }
 
@@ -171,7 +169,7 @@ export class ChubImporter {
       const imageUrl = chubData.node?.max_res_url || chubData.node?.avatar_url;
 
       if (!imageUrl) {
-        throw new Error('No character image available');
+        throw new Error('No character image available', { cause: error });
       }
 
       imageBuffer = await this.downloadImage(imageUrl);
@@ -180,7 +178,7 @@ export class ChubImporter {
     return {
       characterData,
       imageBuffer,
-      imageMimetype: 'image/png'
+      imageMimetype: 'image/png',
     };
   }
 }

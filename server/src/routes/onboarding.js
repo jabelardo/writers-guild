@@ -35,9 +35,9 @@ router.get(
   asyncHandler(async (req, res) => {
     const settings = await storage.getSettings();
     res.json({
-      onboardingCompleted: settings?.onboardingCompleted || false
+      onboardingCompleted: settings?.onboardingCompleted || false,
     });
-  })
+  }),
 );
 
 // Create persona during onboarding
@@ -76,9 +76,9 @@ router.post(
         creator: '',
         character_version: '1.0',
         extensions: {
-          is_persona: true
-        }
-      }
+          is_persona: true,
+        },
+      },
     };
 
     // Save character (no image)
@@ -92,9 +92,9 @@ router.post(
     res.status(201).json({
       id: characterId,
       name: characterData.data.name,
-      description: characterData.data.description
+      description: characterData.data.description,
     });
-  })
+  }),
 );
 
 // Create preset during onboarding
@@ -115,7 +115,7 @@ router.post(
       'aihorde',
       'koboldcpp',
       'ollama',
-      'openaicompatible'
+      'openaicompatible',
     ];
     if (!validProviders.includes(provider)) {
       throw new AppError(`Invalid provider. Must be one of: ${validProviders.join(', ')}`, 400);
@@ -133,7 +133,7 @@ router.post(
       const labels = {
         koboldcpp: 'KoboldCpp',
         ollama: 'Ollama',
-        openaicompatible: 'OpenAI Compatible'
+        openaicompatible: 'OpenAI Compatible',
       };
       throw new AppError(`Base URL is required for ${labels[provider]}`, 400);
     }
@@ -164,7 +164,7 @@ router.post(
 
     await storage.savePreset(presetId, {
       ...presetConfig,
-      id: presetId
+      id: presetId,
     });
 
     // Set as default preset
@@ -173,9 +173,9 @@ router.post(
     res.status(201).json({
       id: presetId,
       name: presetConfig.name,
-      provider: presetConfig.provider
+      provider: presetConfig.provider,
     });
-  })
+  }),
 );
 
 // Import default characters and stories
@@ -207,16 +207,16 @@ router.post(
     }
 
     console.log(
-      `Imported ${importedCharacters.length} characters and created ${defaultStories.length} stories`
+      `Imported ${importedCharacters.length} characters and created ${defaultStories.length} stories`,
     );
 
     res.json({
       importedCharacters: importedCharacters.length,
       createdStories: defaultStories.length,
       characters: importedCharacters.map((c) => ({ id: c.id, name: c.name })),
-      stories: defaultStories
+      stories: defaultStories,
     });
-  })
+  }),
 );
 
 // Complete onboarding
@@ -228,7 +228,7 @@ router.post(
     await storage.saveSettings(settings);
 
     res.json({ success: true });
-  })
+  }),
 );
 
 // Skip onboarding (for advanced users)
@@ -242,7 +242,7 @@ router.post(
       const presetId = uuidv4();
       await storage.savePreset(presetId, {
         ...defaults.aihorde,
-        id: presetId
+        id: presetId,
       });
       await storage.setDefaultPresetId(presetId);
     }
@@ -253,7 +253,7 @@ router.post(
     await storage.saveSettings(settings);
 
     res.json({ success: true });
-  })
+  }),
 );
 
 /**
@@ -270,13 +270,13 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
       top_k: null,
       frequency_penalty: null,
       presence_penalty: null,
-      stop_sequences: []
+      stop_sequences: [],
     },
     lorebookSettings: {
       scanDepth: 2000,
       tokenBudget: 1800,
       recursionDepth: 3,
-      enableRecursion: true
+      enableRecursion: true,
     },
     promptTemplates: {
       systemPrompt: null,
@@ -284,8 +284,8 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
       character: null,
       instruction: null,
       rewriteThirdPerson: null,
-      ideate: null
-    }
+      ideate: null,
+    },
   };
 
   switch (provider) {
@@ -296,7 +296,7 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
         apiConfig: {
           apiKey: apiKey,
           baseURL: 'https://api.deepseek.com/v1',
-          model: 'deepseek-v4-flash'
+          model: 'deepseek-v4-flash',
         },
         ...baseConfig,
         generationSettings: {
@@ -305,8 +305,8 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
           maxContextTokens: 128000,
           temperature: 1.0,
           thinking: false,
-          reasoningEffort: 'high'
-        }
+          reasoningEffort: 'high',
+        },
       };
 
     case 'openai':
@@ -316,9 +316,9 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
         apiConfig: {
           apiKey: apiKey,
           baseURL: 'https://api.openai.com/v1',
-          model: 'gpt-4o'
+          model: 'gpt-4o',
         },
-        ...baseConfig
+        ...baseConfig,
       };
 
     case 'anthropic':
@@ -327,9 +327,9 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
         provider: 'anthropic',
         apiConfig: {
           apiKey: apiKey,
-          model: 'claude-sonnet-4-20250514'
+          model: 'claude-sonnet-4-20250514',
         },
-        ...baseConfig
+        ...baseConfig,
       };
 
     case 'openrouter':
@@ -339,9 +339,9 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
         apiConfig: {
           apiKey: apiKey,
           baseURL: 'https://openrouter.ai/api/v1',
-          model: 'deepseek/deepseek-chat'
+          model: 'deepseek/deepseek-chat',
         },
-        ...baseConfig
+        ...baseConfig,
       };
 
     case 'aihorde':
@@ -354,7 +354,7 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
           models: [],
           workerBlacklist: [],
           trustedWorkers: false,
-          slowWorkers: true
+          slowWorkers: true,
         },
         generationSettings: {
           maxTokens: 512,
@@ -364,10 +364,10 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
           timeout: 300000,
           rep_pen: 1.1,
           rep_pen_range: 320,
-          sampler_order: [6, 0, 1, 3, 4, 2, 5]
+          sampler_order: [6, 0, 1, 3, 4, 2, 5],
         },
         lorebookSettings: baseConfig.lorebookSettings,
-        promptTemplates: baseConfig.promptTemplates
+        promptTemplates: baseConfig.promptTemplates,
       };
 
     case 'koboldcpp':
@@ -377,17 +377,17 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
         apiConfig: {
           baseURL: (extraConfig.baseURL || 'http://localhost:5001/api').trim(),
           password: (extraConfig.password || '').trim(),
-          model: ''
+          model: '',
         },
         generationSettings: {
           maxTokens: 200,
           maxContextTokens: 4096,
           temperature: 0.7,
           includeDialogueExamples: false,
-          stop_sequences: []
+          stop_sequences: [],
         },
         lorebookSettings: baseConfig.lorebookSettings,
-        promptTemplates: baseConfig.promptTemplates
+        promptTemplates: baseConfig.promptTemplates,
       };
 
     case 'ollama':
@@ -397,17 +397,17 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
         apiConfig: {
           baseURL: (extraConfig.baseURL || 'http://localhost:11434').trim(),
           password: (extraConfig.password || '').trim(),
-          model: ''
+          model: '',
         },
         generationSettings: {
           maxTokens: 200,
           maxContextTokens: 4096,
           temperature: 0.7,
           includeDialogueExamples: false,
-          stop_sequences: []
+          stop_sequences: [],
         },
         lorebookSettings: baseConfig.lorebookSettings,
-        promptTemplates: baseConfig.promptTemplates
+        promptTemplates: baseConfig.promptTemplates,
       };
 
     case 'openaicompatible':
@@ -417,17 +417,17 @@ function getProviderPresetConfig(provider, apiKey, extraConfig = {}) {
         apiConfig: {
           baseURL: (extraConfig.baseURL || 'http://localhost:1234/v1').trim(),
           apiKey: (extraConfig.apiKey || '').trim(),
-          model: ''
+          model: '',
         },
         generationSettings: {
           maxTokens: 4000,
           maxContextTokens: 8192,
           temperature: 0.7,
           includeDialogueExamples: false,
-          stop_sequences: []
+          stop_sequences: [],
         },
         lorebookSettings: baseConfig.lorebookSettings,
-        promptTemplates: baseConfig.promptTemplates
+        promptTemplates: baseConfig.promptTemplates,
       };
 
     default:

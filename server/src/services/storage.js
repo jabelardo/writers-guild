@@ -47,7 +47,7 @@ export class StorageService {
           lorebookScanDepth: 2000, // Tokens to scan (approx 8000 chars)
           lorebookTokenBudget: 1800, // Max tokens for lorebook content
           lorebookRecursionDepth: 3, // Max recursive activation depth
-          lorebookEnableRecursion: true
+          lorebookEnableRecursion: true,
         });
       }
 
@@ -151,7 +151,7 @@ export class StorageService {
     return {
       ...metadata,
       content,
-      characters
+      characters,
     };
   }
 
@@ -176,7 +176,7 @@ export class StorageService {
       characterIds: [], // Array of character IDs (references to global library)
       personaCharacterId: null, // Optional: use a character as persona for this story
       lorebookIds: [], // Array of lorebook IDs (references to global library)
-      configPresetId: null // Optional: configuration preset for this story (null = use default)
+      configPresetId: null, // Optional: configuration preset for this story (null = use default)
     };
 
     await this.writeJSON(path.join(storyPath, 'metadata.json'), metadata);
@@ -203,7 +203,7 @@ export class StorageService {
       ...metadata,
       ...updates,
       id: storyId, // Prevent ID from being changed
-      modified: new Date().toISOString()
+      modified: new Date().toISOString(),
     };
 
     await this.writeJSON(metadataPath, updated);
@@ -295,7 +295,7 @@ export class StorageService {
     const jsonFiles = files.filter((f) => f.endsWith('.json'));
 
     return jsonFiles.map((filename) => ({
-      id: path.parse(filename).name
+      id: path.parse(filename).name,
     }));
   }
 
@@ -334,7 +334,7 @@ export class StorageService {
         .resize(96, 96, {
           fit: 'cover',
           position: 'top',
-          withoutEnlargement: false
+          withoutEnlargement: false,
         })
         .png({ quality: 90 })
         .toBuffer();
@@ -571,7 +571,7 @@ export class StorageService {
           id: lorebookId,
           name: data.name || 'Untitled',
           description: data.description || '',
-          entryCount: data.entries ? data.entries.length : 0
+          entryCount: data.entries ? data.entries.length : 0,
         });
       } catch (error) {
         console.error(`Failed to read lorebook ${lorebookId}:`, error);
@@ -605,7 +605,7 @@ export class StorageService {
             id: lorebookId,
             name: data.name || 'Untitled',
             description: data.description || '',
-            entryCount: data.entries ? data.entries.length : 0
+            entryCount: data.entries ? data.entries.length : 0,
           });
         } catch (error) {
           console.error(`Failed to read lorebook ${lorebookId}:`, error);
@@ -758,7 +758,7 @@ export class StorageService {
           id: presetId,
           name: data.name || 'Untitled',
           provider: data.provider || 'deepseek',
-          isDefault: data.isDefault || false
+          isDefault: data.isDefault || false,
         });
       } catch (error) {
         console.error(`Failed to read preset ${presetId}:`, error);

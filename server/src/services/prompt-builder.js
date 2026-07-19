@@ -21,7 +21,7 @@ export class PromptBuilder {
       instructionTemplates: config.instructionTemplates || {
         continue: DEFAULT_PROMPT_TEMPLATES.continue,
         character: DEFAULT_PROMPT_TEMPLATES.character,
-        custom: 'Continue the story.'
+        custom: 'Continue the story.',
       },
 
       // Whether to always filter asterisks (core feature)
@@ -35,8 +35,8 @@ export class PromptBuilder {
         worldInfo: '=== WORLD INFORMATION ===',
         persona: '=== USER CHARACTER (PERSONA) ===',
         instructions: '=== INSTRUCTIONS ===',
-        perspective: '=== PERSPECTIVE ==='
-      }
+        perspective: '=== PERSPECTIVE ===',
+      },
     };
   }
 
@@ -104,7 +104,7 @@ export class PromptBuilder {
     if (!content) return content;
     const processed = this.filterAsterisks(
       macroProcessor.process(content),
-      this.config.filterAsterisks
+      this.config.filterAsterisks,
     );
     return this.preserveImages(processed);
   }
@@ -125,7 +125,7 @@ export class PromptBuilder {
         char.description,
         characterCard,
         persona,
-        macroProcessor
+        macroProcessor,
       );
       prompt += `Description: ${processed}\n`;
     }
@@ -135,7 +135,7 @@ export class PromptBuilder {
         char.personality,
         characterCard,
         persona,
-        macroProcessor
+        macroProcessor,
       );
       prompt += `Personality: ${processed}\n`;
     }
@@ -151,7 +151,7 @@ export class PromptBuilder {
         char.mes_example,
         characterCard,
         persona,
-        macroProcessor
+        macroProcessor,
       );
       prompt += `\n${headers.dialogueExamples}\n${processed}\n`;
     }
@@ -162,7 +162,7 @@ export class PromptBuilder {
   /**
    * Build character section (multiple characters)
    */
-  buildMultipleCharactersSection(characterCards, persona, macroProcessor, settings = {}) {
+  buildMultipleCharactersSection(characterCards, persona, macroProcessor, _settings = {}) {
     if (!characterCards || characterCards.length === 0) return '';
 
     const headers = this.config.sectionHeaders;
@@ -224,7 +224,7 @@ export class PromptBuilder {
   /**
    * Build persona section
    */
-  buildPersonaSection(persona, characterCard, macroProcessor, settings = {}) {
+  buildPersonaSection(persona, characterCard, macroProcessor, _settings = {}) {
     if (!persona || !persona.name) return '';
 
     const headers = this.config.sectionHeaders;
@@ -236,7 +236,7 @@ export class PromptBuilder {
         persona.description,
         characterCard,
         persona,
-        macroProcessor
+        macroProcessor,
       );
       prompt += `Description: ${processed}\n`;
     }
@@ -246,7 +246,7 @@ export class PromptBuilder {
         persona.writingStyle,
         characterCard,
         persona,
-        macroProcessor
+        macroProcessor,
       );
       prompt += `Writing Style: ${processed}\n`;
     }
@@ -304,7 +304,7 @@ export class PromptBuilder {
         characterCard?.data?.name ||
         (allCharacterCards && allCharacterCards.length > 0
           ? allCharacterCards[0].data?.name
-          : 'Character')
+          : 'Character'),
     });
 
     // Prepare granular template data
@@ -323,26 +323,26 @@ export class PromptBuilder {
               characterCard.data.description,
               characterCard,
               persona,
-              macroProcessor
+              macroProcessor,
             ),
             personality: this.processContent(
               characterCard.data.personality,
               characterCard,
               persona,
-              macroProcessor
+              macroProcessor,
             ),
             scenario: this.processContent(
               characterCard.data.scenario,
               characterCard,
               persona,
-              macroProcessor
+              macroProcessor,
             ),
             mes_example: this.processContent(
               characterCard.data.mes_example,
               characterCard,
               persona,
-              macroProcessor
-            )
+              macroProcessor,
+            ),
           }
         : null,
       characters: allCharacterCards
@@ -350,7 +350,7 @@ export class PromptBuilder {
             name: card.data.name || '',
             description: this.processContent(card.data.description, card, persona, macroProcessor),
             personality: this.processContent(card.data.personality, card, persona, macroProcessor),
-            scenario: this.processContent(card.data.scenario, card, persona, macroProcessor)
+            scenario: this.processContent(card.data.scenario, card, persona, macroProcessor),
           }))
         : [],
 
@@ -359,7 +359,7 @@ export class PromptBuilder {
       lorebook_entries: activatedLorebooks
         ? activatedLorebooks.map((entry) => ({
             content: this.processLorebookContent(entry.content, macroProcessor),
-            comment: entry.comment || ''
+            comment: entry.comment || '',
           }))
         : [],
 
@@ -373,19 +373,19 @@ export class PromptBuilder {
                 persona.description,
                 characterCard,
                 persona,
-                macroProcessor
+                macroProcessor,
               ),
               writing_style: this.processContent(
                 persona.writingStyle,
                 characterCard,
                 persona,
-                macroProcessor
-              )
+                macroProcessor,
+              ),
             }
           : null,
 
       // Settings
-      include_dialogue_examples: settings.includeDialogueExamples !== false
+      include_dialogue_examples: settings.includeDialogueExamples !== false,
     };
 
     // Use custom template if provided, otherwise use default template
@@ -436,7 +436,7 @@ export class PromptBuilder {
         : storyContent;
       return {
         instruction: instruction.replace(/\{\{storyContent\}\}/g, preserved),
-        storyContext: ''
+        storyContext: '',
       };
     }
 
@@ -449,7 +449,7 @@ export class PromptBuilder {
     const truncated = this.truncateStoryContent(storyContent, maxChars);
     return {
       instruction,
-      storyContext: imagePreserver ? imagePreserver.preserve(truncated, 'story') : truncated
+      storyContext: imagePreserver ? imagePreserver.preserve(truncated, 'story') : truncated,
     };
   }
 
@@ -461,7 +461,7 @@ export class PromptBuilder {
       templateText,
       maxChars,
       userName,
-      imagePreserver
+      imagePreserver,
     } = params;
 
     let storyContext = '';
@@ -489,7 +489,7 @@ export class PromptBuilder {
           templateText,
           storyContent,
           maxChars,
-          imagePreserver
+          imagePreserver,
         );
         instruction = applied.instruction;
         storyContext = applied.storyContext;
@@ -543,7 +543,7 @@ export class PromptBuilder {
           defaultTemplate,
           storyContent,
           maxChars,
-          imagePreserver
+          imagePreserver,
         );
         instruction = applied.instruction;
         storyContext = applied.storyContext;
@@ -600,7 +600,7 @@ export class PromptBuilder {
       templateText,
       systemPromptTemplate = null,
       userName,
-      imagePreserver = null
+      imagePreserver = null,
     } = options;
 
     // Exposed on the instance so processContent() can reach it — character,
@@ -611,7 +611,7 @@ export class PromptBuilder {
     // Build system prompt first (with custom template if provided and not null)
     const systemPrompt = this.buildSystemPrompt(
       context,
-      systemPromptTemplate !== null ? systemPromptTemplate : undefined
+      systemPromptTemplate !== null ? systemPromptTemplate : undefined,
     );
 
     // Estimate system prompt token usage
@@ -633,12 +633,12 @@ export class PromptBuilder {
       templateText,
       maxChars: availableChars,
       userName,
-      imagePreserver
+      imagePreserver,
     });
 
     return {
       system: systemPrompt,
-      user: userPrompt
+      user: userPrompt,
     };
   }
 }

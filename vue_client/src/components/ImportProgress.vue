@@ -29,8 +29,8 @@ defineProps({
   /** null | { completed, total, failed, stage } */
   progress: {
     type: Object,
-    default: null
-  }
+    default: null,
+  },
 });
 </script>
 

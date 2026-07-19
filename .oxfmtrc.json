@@ -1,75 +1,16 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "printWidth": 100,
-  "tabWidth": 2,
-  "useTabs": false,
-  "semi": true,
   "singleQuote": true,
-  "trailingComma": "none",
-  "arrowParens": "always",
-  "bracketSpacing": true,
-  "quoteProps": "as-needed",
-  "objectWrap": "preserve",
-  "endOfLine": "lf",
-  "jsdoc": false,
-  "sortImports": false,
-  "sortPackageJson": true,
-  "proseWrap": "preserve",
+  "printWidth": 100,
+  "sortPackageJson": false,
   "ignorePatterns": [
-    "node_modules/**",
+    "package-lock.json",
+    "server/package-lock.json",
+    "vue_client/package-lock.json",
+    "LICENSE",
     "coverage/**",
     "data/**",
-    "dist/**",
     "server/public/**",
-    "*.log",
-    "*.lock"
-  ],
-  "overrides": [
-    {
-      "files": ["*.vue"],
-      "options": {
-        "singleQuote": true,
-        "semi": true,
-        "trailingComma": "none",
-        "printWidth": 100,
-        "tabWidth": 2,
-        "vueIndentScriptAndStyle": false,
-        "bracketSameLine": false,
-        "singleAttributePerLine": false
-      }
-    },
-    {
-      "files": ["*.css"],
-      "options": {
-        "singleQuote": true,
-        "tabWidth": 2
-      }
-    },
-    {
-      "files": ["*.json"],
-      "options": {
-        "tabWidth": 2
-      }
-    },
-    {
-      "files": ["*.yaml", "*.yml"],
-      "options": {
-        "tabWidth": 2,
-        "singleQuote": true
-      }
-    },
-    {
-      "files": ["*.html"],
-      "options": {
-        "tabWidth": 2,
-        "singleQuote": true
-      }
-    },
-    {
-      "files": ["*.md", "*.mdx"],
-      "options": {
-        "proseWrap": "preserve"
-      }
-    }
+    "**/dist/**"
   ]
 }

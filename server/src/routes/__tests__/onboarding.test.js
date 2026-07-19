@@ -24,9 +24,9 @@ describe('Onboarding API Routes', () => {
     app.use('/api/onboarding', onboardingRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
@@ -355,13 +355,12 @@ describe('Onboarding API Routes', () => {
       const importResponse = await request(app).post('/api/onboarding/import-defaults').expect(200);
 
       // Verify stories have the persona set
-      if (importResponse.body.stories.length > 0) {
-        const storage = new SqliteStorageService(tempDir);
-        const story = await storage.getStory(importResponse.body.stories[0].id);
-        storage.close();
+      expect(importResponse.body.stories.length).toBeGreaterThan(0);
+      const storage = new SqliteStorageService(tempDir);
+      const story = await storage.getStory(importResponse.body.stories[0].id);
+      storage.close();
 
-        expect(story.personaCharacterId).toBe(personaResponse.body.id);
-      }
+      expect(story.personaCharacterId).toBe(personaResponse.body.id);
     });
   });
 

@@ -49,8 +49,8 @@ import { charactersAPI } from '../services/api';
 const props = defineProps({
   story: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const emit = defineEmits(['close', 'select']);
@@ -92,7 +92,7 @@ async function loadGreetings() {
       try {
         // Get processed greetings from server (with placeholders replaced)
         const response = await fetch(
-          `/api/stories/${props.story.id}/characters/${characterId}/greetings`
+          `/api/stories/${props.story.id}/characters/${characterId}/greetings`,
         );
         const { greetings: processedGreetings } = await response.json();
 
@@ -101,11 +101,11 @@ async function loadGreetings() {
           allGreetings.push({
             character: {
               id: characterId,
-              name: greeting.characterName
+              name: greeting.characterName,
             },
             greeting: greeting.content, // Already processed server-side
             label: greeting.label,
-            isAlternate: greeting.index > 0
+            isAlternate: greeting.index > 0,
           });
         });
       } catch (error) {

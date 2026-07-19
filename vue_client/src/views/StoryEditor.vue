@@ -301,7 +301,7 @@ import { setPageTitle } from '../router';
 import {
   MARKDOWN_IMAGE_RE,
   MARKDOWN_IMAGE_NORMALIZE_RE,
-  HTML_IMAGE_RE
+  HTML_IMAGE_RE,
 } from '../../../shared/regex-patterns.js';
 import DOMPurify from 'dompurify';
 import ReasoningPanel from '../components/ReasoningPanel.vue';
@@ -321,8 +321,8 @@ import { SKIP_THIRD_PERSON_PROMPT_KEY } from '../config/storageKeys';
 const props = defineProps({
   storyId: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 });
 
 const router = useRouter();
@@ -409,7 +409,7 @@ function renderContent(text) {
   MARKDOWN_IMAGE_RE.lastIndex = 0;
   html = html.replace(
     MARKDOWN_IMAGE_RE,
-    '<img src="$2" alt="$1" class="story-image" loading="lazy">'
+    '<img src="$2" alt="$1" class="story-image" loading="lazy">',
   );
 
   // 4. Convert double newlines to paragraphs
@@ -859,7 +859,7 @@ async function handleStoryStarter() {
       if (chunk.prompts) {
         lastPrompts.value = {
           system: chunk.prompts.system || '',
-          user: chunk.prompts.user || ''
+          user: chunk.prompts.user || '',
         };
       }
 
@@ -951,7 +951,7 @@ async function handleStoryStarter() {
         message: `Story Starter Failed\n\n${errorMessage}`,
         confirmText: 'OK',
         cancelText: 'Dismiss',
-        variant: 'danger'
+        variant: 'danger',
       });
     }
   } finally {
@@ -993,7 +993,7 @@ async function generate(isCustom, instruction, characterId) {
       if (chunk.prompts) {
         lastPrompts.value = {
           system: chunk.prompts.system || '',
-          user: chunk.prompts.user || ''
+          user: chunk.prompts.user || '',
         };
       }
 
@@ -1093,7 +1093,7 @@ async function generate(isCustom, instruction, characterId) {
         message: `Generation Failed\n\n${errorMessage}`,
         confirmText: 'OK',
         cancelText: 'Dismiss',
-        variant: 'danger'
+        variant: 'danger',
       });
     }
   } finally {
@@ -1151,7 +1151,7 @@ async function rewriteToThirdPerson(skipConfirm = false) {
       message:
         'This will replace the entire document with a rewritten version in third-person past tense. Continue?',
       confirmText: 'Rewrite',
-      variant: 'warning'
+      variant: 'warning',
     });
 
     if (!confirmed) return;
@@ -1184,7 +1184,7 @@ async function rewriteToThirdPerson(skipConfirm = false) {
       if (chunk.prompts) {
         lastPrompts.value = {
           system: chunk.prompts.system || '',
-          user: chunk.prompts.user || ''
+          user: chunk.prompts.user || '',
         };
       }
 
@@ -1291,7 +1291,7 @@ async function rewriteToThirdPerson(skipConfirm = false) {
         message: `Rewrite Failed\n\n${errorMessage}`,
         confirmText: 'OK',
         cancelText: 'Dismiss',
-        variant: 'danger'
+        variant: 'danger',
       });
     }
   } finally {
@@ -1304,7 +1304,7 @@ async function clearStory() {
   const confirmed = await confirm({
     message: 'Clear all story content? This cannot be undone.',
     confirmText: 'Clear Content',
-    variant: 'warning'
+    variant: 'warning',
   });
 
   if (!confirmed) return;
@@ -1340,7 +1340,7 @@ async function deleteStory() {
   const confirmed = await confirm({
     message: `Are you sure you want to delete "${story.value?.title}"? This cannot be undone.`,
     confirmText: 'Delete Story',
-    variant: 'danger'
+    variant: 'danger',
   });
 
   if (!confirmed) return;
@@ -1457,7 +1457,7 @@ function findNextWindowPosition() {
   const nextIndex = maxOffsetIndex + 1;
   return {
     x: baseX + nextIndex * offset,
-    y: baseY + nextIndex * offset
+    y: baseY + nextIndex * offset,
   };
 }
 
@@ -1472,7 +1472,7 @@ function handleAddAvatarWindow() {
     x: position.x,
     y: position.y,
     width: 300,
-    height: 400
+    height: 400,
   };
 
   avatarWindows.value.push(newWindow);
@@ -1495,7 +1495,7 @@ function handleAvatarWindowUpdate(update) {
       x: update.x,
       y: update.y,
       width: update.width,
-      height: update.height
+      height: update.height,
     };
     saveAvatarWindows();
   }

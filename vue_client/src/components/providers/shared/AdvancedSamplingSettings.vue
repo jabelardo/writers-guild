@@ -369,16 +369,16 @@ import { computed } from 'vue';
 const props = defineProps({
   modelValue: {
     type: Object,
-    required: true
+    required: true,
   },
   provider: {
     type: String,
-    required: true
+    required: true,
   },
   model: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -393,7 +393,7 @@ const supportsTopP = computed(() => {
     'aihorde',
     'koboldcpp',
     'ollama',
-    'openaicompatible'
+    'openaicompatible',
   ].includes(props.provider);
 });
 
@@ -423,7 +423,7 @@ const localSettings = computed({
   },
   set(value) {
     emit('update:modelValue', value);
-  }
+  },
 });
 
 // Convert stop_sequences array to text and back
@@ -433,7 +433,7 @@ const stopSequencesText = computed({
   },
   set(value) {
     localSettings.value.stop_sequences = value.split('\n').filter((s) => s.trim() !== '');
-  }
+  },
 });
 </script>
 

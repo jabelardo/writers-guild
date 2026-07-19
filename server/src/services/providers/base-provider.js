@@ -16,7 +16,7 @@ export class LLMProvider {
   constructor(config) {
     if (new.target === LLMProvider) {
       throw new TypeError(
-        'Cannot construct LLMProvider instances directly - must extend this class'
+        'Cannot construct LLMProvider instances directly - must extend this class',
       );
     }
 
@@ -106,7 +106,7 @@ export class LLMProvider {
       systemPromptTemplate,
       // Pass imagePreserver if provided (for preserving images after truncation)
       imagePreserver: customParams.imagePreserver || null,
-      ...customParams
+      ...customParams,
     });
   }
 
@@ -124,7 +124,7 @@ export class LLMProvider {
    * @returns {Object} [result.usage] - Token usage statistics
    * @returns {Object} [result.metadata] - Provider-specific metadata
    */
-  async generate(systemPrompt, userPrompt, options = {}) {
+  async generate(_systemPrompt, _userPrompt, _options = {}) {
     throw new Error('generate() must be implemented by subclass');
   }
 
@@ -147,7 +147,7 @@ export class LLMProvider {
    * @yields {boolean} chunk.finished - Whether generation is complete
    * @yields {Object} [chunk.usage] - Token usage (typically only on final chunk)
    */
-  async generateStreaming(systemPrompt, userPrompt, options = {}) {
+  async generateStreaming(_systemPrompt, _userPrompt, _options = {}) {
     throw new Error('generateStreaming() must be implemented by subclass');
   }
 
@@ -164,7 +164,7 @@ export class LLMProvider {
     return {
       code: 'API_ERROR',
       message: error.message || 'Unknown error occurred',
-      original: error
+      original: error,
     };
   }
 }

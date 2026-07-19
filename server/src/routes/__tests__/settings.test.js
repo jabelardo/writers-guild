@@ -32,9 +32,9 @@ describe('Settings API Routes', () => {
     app.use('/api/settings', settingsRouter);
 
     // Add error handler
-    app.use((err, req, res, next) => {
+    app.use((err, req, res, _next) => {
       res.status(err.statusCode || 500).json({
-        error: err.message || 'Internal server error'
+        error: err.message || 'Internal server error',
       });
     });
   });
@@ -138,7 +138,7 @@ describe('Settings API Routes', () => {
           lorebookScanDepth: 3000,
           lorebookTokenBudget: 2500,
           lorebookRecursionDepth: 5,
-          lorebookEnableRecursion: false
+          lorebookEnableRecursion: false,
         })
         .expect(200);
 
@@ -187,7 +187,7 @@ describe('Settings API Routes', () => {
           maxTokens: 5000,
           temperature: 1.0,
           showReasoning: true,
-          autoSave: true
+          autoSave: true,
         })
         .expect(200);
 
